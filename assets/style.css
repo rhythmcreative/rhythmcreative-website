@@ -1,0 +1,620 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rhythm
+   Paleta por defecto: tinta sobre papel. Negro casi puro, hueso calido, y un
+   acento que luego se puede sustituir por el del fondo de pantalla (tema "pywal").
+
+   Los temas se cambian con data-theme en <html>. Ninguno necesita recargar: son
+   variables CSS, asi que el cambio es un solo atributo.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #0a0a0b;
+  --bg-2: #101012;
+  --bg-3: #16161a;
+  --fg: #e9e5dd;
+  --fg-dim: #9a958c;
+  --fg-faint: #605c55;
+  --line: #24242a;
+  --line-2: #33333b;
+  --accent: #ba5f44;
+  --accent-2: #99bac9;
+  --accent-ink: #0a0a0b;
+
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  --step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.84rem);
+  --step-0: clamp(0.95rem, 0.92rem + 0.15vw, 1.02rem);
+  --step-1: clamp(1.15rem, 1.08rem + 0.35vw, 1.35rem);
+  --step-2: clamp(1.5rem, 1.35rem + 0.75vw, 2rem);
+  --step-3: clamp(2rem, 1.6rem + 2vw, 3.2rem);
+  --step-4: clamp(2.4rem, 1.6rem + 3.4vw, 4.2rem);
+  --step-5: clamp(2.8rem, 1.5rem + 5.4vw, 5.6rem);
+
+  --gap: clamp(1rem, 0.6rem + 1.6vw, 1.75rem);
+  --pad: clamp(1.1rem, 0.7rem + 2vw, 2.4rem);
+  --max: 1180px;
+  --radius: 14px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Temas ────────────────────────────────────────────────────────────────── */
+
+[data-theme="papel"] {
+  --bg: #efece4;
+  --bg-2: #e7e3d9;
+  --bg-3: #dedace;
+  --fg: #1b1a17;
+  --fg-dim: #5c584f;
+  --fg-faint: #8e897e;
+  --line: #d6d1c4;
+  --line-2: #c2bcae;
+  --accent: #a4432a;
+  --accent-2: #3d5a6c;
+  --accent-ink: #f7f5f0;
+}
+
+[data-theme="catppuccin"] {
+  --bg: #1e1e2e;
+  --bg-2: #181825;
+  --bg-3: #11111b;
+  --fg: #cdd6f4;
+  --fg-dim: #a6adc8;
+  --fg-faint: #6c7086;
+  --line: #313244;
+  --line-2: #45475a;
+  --accent: #fab387;
+  --accent-2: #89b4fa;
+  --accent-ink: #1e1e2e;
+}
+
+[data-theme="tokyo"] {
+  --bg: #1a1b26;
+  --bg-2: #16161e;
+  --bg-3: #0f0f17;
+  --fg: #c0caf5;
+  --fg-dim: #a9b1d6;
+  --fg-faint: #565f89;
+  --line: #292e42;
+  --line-2: #3b4261;
+  --accent: #7aa2f7;
+  --accent-2: #bb9af7;
+  --accent-ink: #1a1b26;
+}
+
+[data-theme="nord"] {
+  --bg: #2e3440;
+  --bg-2: #3b4252;
+  --bg-3: #434c5e;
+  --fg: #eceff4;
+  --fg-dim: #d8dee9;
+  --fg-faint: #7b88a1;
+  --line: #434c5e;
+  --line-2: #4c566a;
+  --accent: #88c0d0;
+  --accent-2: #a3be8c;
+  --accent-ink: #2e3440;
+}
+
+[data-theme="gruvbox"] {
+  --bg: #282828;
+  --bg-2: #32302f;
+  --bg-3: #3c3836;
+  --fg: #ebdbb2;
+  --fg-dim: #bdae93;
+  --fg-faint: #928374;
+  --line: #3c3836;
+  --line-2: #504945;
+  --accent: #fabd2f;
+  --accent-2: #83a598;
+  --accent-ink: #282828;
+}
+
+[data-theme="vacio"] {
+  --bg: #000;
+  --bg-2: #000;
+  --bg-3: #0a0a0a;
+  --fg: #fafafa;
+  --fg-dim: #8a8a8a;
+  --fg-faint: #4a4a4a;
+  --line: #171717;
+  --line-2: #262626;
+  --accent: #fff;
+  --accent-2: #666;
+  --accent-ink: #000;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 var(--step-0)/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Un halo muy tenue del acento arriba, como una luz que sale de la pantalla. */
+  background-image: radial-gradient(120ch 60ch at 50% -20%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%);
+  background-attachment: fixed;
+  transition: background-color 0.45s var(--ease), color 0.45s var(--ease);
+}
+
+a { color: inherit; text-decoration: none; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+h1, h2, h3 { line-height: 1.08; letter-spacing: -0.02em; margin: 0; font-weight: 600; }
+p { margin: 0; }
+
+code, kbd, .mono { font-family: var(--mono); font-variant-ligatures: none; }
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0.15em 0.45em;
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  font: 500 0.85em/1.4 var(--mono);
+  text-align: center;
+  color: var(--fg);
+}
+
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
+
+.seccion { padding: clamp(3rem, 2rem + 5vw, 6.5rem) 0; }
+.seccion + .seccion { border-top: 1px solid var(--line); }
+
+.etiqueta {
+  font: 500 var(--step--1)/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  margin-bottom: 1.4rem;
+}
+.etiqueta::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line-2), transparent);
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
+
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in oklab, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s var(--ease);
+}
+.cabecera.pegada { border-bottom-color: var(--line); }
+
+.cabecera .wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  height: 60px;
+}
+
+.marca {
+  font: 700 var(--step-0)/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-right: auto;
+}
+.punto {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 22%, transparent);
+  animation: latido 3.4s var(--ease) infinite;
+}
+@keyframes latido {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in oklab, var(--accent) 4%, transparent); }
+}
+
+.nav { display: flex; gap: 1.4rem; font-size: var(--step--1); color: var(--fg-dim); }
+.nav a { position: relative; padding: 0.2rem 0; }
+.nav a::after {
+  content: "";
+  position: absolute; left: 0; right: 100%; bottom: 0;
+  height: 1px; background: var(--accent);
+  transition: right 0.3s var(--ease);
+}
+.nav a:hover { color: var(--fg); }
+.nav a:hover::after { right: 0; }
+
+.tema-btn {
+  font: 500 var(--step--1)/1 var(--mono);
+  color: var(--fg-dim);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 0.45rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.tema-btn:hover { color: var(--fg); border-color: var(--accent); }
+.tema-btn .swatch {
+  width: 10px; height: 10px; border-radius: 3px;
+  background: var(--accent);
+  transition: background 0.45s var(--ease);
+}
+
+/* ── Portada ──────────────────────────────────────────────────────────────── */
+
+.portada {
+  padding: clamp(4rem, 2rem + 9vw, 9rem) 0 clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+  position: relative;
+}
+
+.portada h1 {
+  font-size: var(--step-5);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  max-width: 16ch;
+}
+.portada h1 .fuerte { font-weight: 700; }
+.portada h1 .tinte {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.entradilla {
+  margin-top: 1.6rem;
+  font-size: var(--step-1);
+  color: var(--fg-dim);
+  max-width: 54ch;
+  text-wrap: pretty;
+}
+
+.acciones { margin-top: 2.2rem; display: flex; flex-wrap: wrap; gap: 0.7rem; }
+
+.boton {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.72rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--fg);
+  font: 500 var(--step-0)/1 var(--sans);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s, color 0.2s;
+}
+.boton:hover { transform: translateY(-2px); border-color: var(--accent); }
+.boton.primario {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.boton.primario:hover { background: color-mix(in oklab, var(--accent) 85%, var(--fg)); }
+
+/* Tira de sistema bajo la portada */
+.tira {
+  margin-top: clamp(2.5rem, 1.5rem + 4vw, 4rem);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tira > div {
+  background: var(--bg);
+  padding: 0.95rem 1.1rem;
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.tira dt {
+  font: 500 0.68rem/1 var(--mono);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-faint);
+}
+.tira dd { margin: 0; font: 600 var(--step-1)/1.1 var(--mono); }
+.tira small { font: 400 var(--step--1)/1.2 var(--sans); color: var(--fg-dim); }
+
+/* ── Proyectos ────────────────────────────────────────────────────────────── */
+
+.filtros {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  align-items: center;
+  margin-bottom: var(--gap);
+}
+.chip {
+  font: 500 var(--step--1)/1 var(--mono);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: transparent; color: var(--fg-dim);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.chip:hover { color: var(--fg); border-color: var(--fg-faint); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+.buscador {
+  margin-left: auto; position: relative; display: flex; align-items: center;
+}
+.buscador input {
+  font: 400 var(--step-0)/1 var(--sans);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--fg);
+  padding: 0.5rem 0.9rem 0.5rem 2.1rem;
+  width: 12rem; min-width: 0;
+  transition: width 0.3s var(--ease), border-color 0.2s;
+}
+.buscador input:focus { width: 16rem; border-color: var(--accent); outline: none; }
+.buscador::before {
+  content: "⌕";
+  position: absolute; left: 0.85rem;
+  color: var(--fg-faint); font-size: 1.05rem;
+  pointer-events: none;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--gap);
+}
+
+.tarjeta {
+  position: relative;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  padding: 1.4rem;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform 0.28s var(--ease), border-color 0.28s, background 0.28s;
+}
+/* El borde de arriba se enciende con el acento al pasar por encima. */
+.tarjeta::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s var(--ease);
+}
+.tarjeta:hover { transform: translateY(-4px); border-color: var(--line-2); background: var(--bg-3); }
+.tarjeta:hover::before { transform: scaleX(1); }
+
+/* Las destacadas se marcan con el borde y un punto, pero NO ocupan dos
+   columnas. Span-2 sobre un auto-fill de tres columnas deja un hueco a la
+   derecha en cada fila de destacadas, que es lo que pasaba. Con 19 proyectos
+   eso se ve enseguida. */
+.tarjeta.destacada { border-color: color-mix(in oklab, var(--accent) 32%, var(--line)); }
+.tarjeta.destacada h3 { display: flex; align-items: center; gap: 0.5rem; }
+.tarjeta.destacada h3::before {
+  content: "";
+  width: 6px; height: 6px; flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+.tarjeta .cabeza { display: flex; align-items: flex-start; gap: 0.8rem; }
+.tarjeta h3 { font-size: var(--step-1); font-family: var(--mono); font-weight: 600; }
+.tarjeta .categoria {
+  font: 500 0.66rem/1 var(--mono);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-faint);
+  display: block; margin-top: 0.35rem;
+}
+.tarjeta .lema { color: var(--fg); font-size: var(--step-0); text-wrap: pretty; }
+.tarjeta .detalle { color: var(--fg-dim); font-size: var(--step--1); text-wrap: pretty; }
+
+.tarjeta .pie {
+  margin-top: auto; padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
+}
+.lenguaje {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font: 500 var(--step--1)/1 var(--mono); color: var(--fg-dim);
+}
+.lenguaje::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--lenguaje, var(--fg-faint));
+}
+.estrella {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem;
+  font: 600 var(--step--1)/1 var(--mono); color: var(--fg-dim);
+}
+.estrella.viva { color: var(--accent); }
+.estrella .nuevo {
+  font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent-2); border: 1px solid currentColor; border-radius: 4px;
+  padding: 0 0.3em;
+}
+
+.tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tag {
+  font: 400 0.72rem/1 var(--mono);
+  color: var(--fg-faint);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.22rem 0.45rem;
+}
+
+/* El enlace cubre toda la tarjeta, para que se pueda pulsar en cualquier
+   sitio. Se queda encima con z-index y sin contenido, y el foco se dibuja en
+   la tarjeta para que el anillo de teclado se vea en el sitio correcto. */
+.tendido {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.tarjeta:has(.tendido:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.vacio-estado {
+  grid-column: 1 / -1;
+  padding: 3rem 1rem; text-align: center; color: var(--fg-dim);
+}
+
+/* ── Escritorio en vivo ───────────────────────────────────────────────────── */
+
+.pizarra {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--gap);
+}
+
+.panel {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex; flex-direction: column; gap: 0.8rem;
+  min-width: 0;
+}
+.panel h3 {
+  font: 500 var(--step--1)/1 var(--mono);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-faint);
+}
+
+.monitor {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;
+}
+.monitor .forma {
+  width: 44px; height: 26px; flex: none;
+  border: 1.5px solid var(--fg-dim); border-radius: 4px;
+  position: relative;
+}
+.monitor .forma::after {
+  content: ""; position: absolute; left: 50%; bottom: -5px;
+  width: 12px; height: 1.5px; background: var(--fg-faint); transform: translateX(-50%);
+}
+.monitor .forma.interna { border-style: dashed; }
+.monitor .info { min-width: 0; }
+.monitor .info b { font: 600 var(--step--1)/1.3 var(--mono); }
+.monitor .info span { display: block; font: 400 0.75rem/1.3 var(--sans); color: var(--fg-dim); }
+
+.barras { display: flex; flex-direction: column; gap: 0.7rem; }
+.barra-fila { display: flex; align-items: center; gap: 0.7rem; font: 500 var(--step--1)/1 var(--mono); }
+.barra-fila .nombre { width: 4.5rem; color: var(--fg-dim); }
+.barra-pista { flex: 1; height: 6px; border-radius: 3px; background: var(--bg-3); overflow: hidden; }
+.barra-relleno {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  width: 0;
+  transition: width 0.9s var(--ease);
+}
+.barra-fila .cifra { width: 3.6rem; text-align: right; color: var(--fg); }
+
+.lista-atajos {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  max-height: 12rem; overflow-y: auto;
+  padding-right: 0.2rem;
+}
+.atajo {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font: 400 0.75rem/1 var(--mono);
+  background: var(--bg-3); border: 1px solid var(--line);
+  border-radius: 6px; padding: 0.32rem 0.5rem; color: var(--fg-dim);
+}
+.atajo b { color: var(--fg); font-weight: 600; }
+
+.centinela {
+  font: 400 var(--step--1)/1.5 var(--sans); color: var(--fg-faint);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.centinela code { color: var(--accent-2); }
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+
+.pie {
+  border-top: 1px solid var(--line);
+  padding: 2.5rem 0 3.5rem;
+  display: flex; flex-wrap: wrap; gap: 1.5rem;
+  align-items: center;
+  font: 400 var(--step--1)/1.5 var(--sans); color: var(--fg-faint);
+}
+.pie .enlace { color: var(--fg-dim); }
+.pie .enlace:hover { color: var(--accent); }
+.pie .derecha { margin-left: auto; display: flex; gap: 1.2rem; flex-wrap: wrap; }
+
+/* ── Capa de atajos ───────────────────────────────────────────────────────── */
+
+.capa {
+  position: fixed; inset: 0; z-index: 90;
+  display: none; place-items: center;
+  background: color-mix(in oklab, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  padding: var(--pad);
+}
+.capa.abierta { display: grid; }
+.capa > div {
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  border-radius: var(--radius); padding: 1.6rem;
+  max-width: 34rem; width: 100%;
+  animation: sube 0.28s var(--ease);
+}
+@keyframes sube { from { opacity: 0; transform: translateY(10px); } }
+.capa h2 { font-size: var(--step-2); margin-bottom: 1rem; }
+.capa dl { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem 1.2rem; margin: 0; align-items: center; }
+.capa dt { display: flex; gap: 0.3rem; }
+.capa dd { margin: 0; color: var(--fg-dim); font-size: var(--step--1); }
+
+/* Aviso al cambiar de tema, para saber que paso */
+.brindis {
+  position: fixed; left: 50%; bottom: 1.4rem; z-index: 95;
+  transform: translate(-50%, 1.5rem);
+  background: var(--fg); color: var(--bg);
+  font: 600 var(--step--1)/1 var(--mono);
+  padding: 0.6rem 1rem; border-radius: 999px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.brindis.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ── Aparicion al hacer scroll ────────────────────────────────────────────── */
+
+.aparece { opacity: 0; transform: translateY(18px); }
+.aparece.visible {
+  opacity: 1; transform: none;
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .aparece { opacity: 1; transform: none; }
+  .punto { animation: none; }
+}
+
+/* ── Buscador en movil ────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .nav { display: none; }
+  .buscador { margin-left: 0; width: 100%; }
+  .buscador input { width: 100%; }
+  .buscador input:focus { width: 100%; }
+  .filtros { flex-direction: column; align-items: stretch; }
+}
