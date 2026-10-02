@@ -180,6 +180,57 @@ La barra en movil solo lleva el nombre y la hora, que es lo que cabe. Por eso
 el menu esta en el pie y no en la barra: en el movil, sin pie, no habia manera
 de llegar a nada.
 
+## Los cuatro bloques de datos vivos
+
+Cuatro piezas de la seccion de Hyprland leen de `data/system.js`, que escribe
+`scripts/collect-system-stats.sh` en la maquina. `tipo` en `assets/hyprland.js`
+elige cual se pinta.
+
+| pieza | de donde sale |
+|---|---|
+| la paleta | `~/.cache/wal/colors.json`, los ocho valores de pywal |
+| el doctor | la salida real de `rhythm-doctor --check`, sin el color, 40 lineas como mucho |
+| el comando | el `curl` del instalador, con boton de copiar |
+| las pantallas | `hyprctl monitors`, con su escala y la principal marcada |
+
+**Si el dato no esta, sale una linea de aviso. Nunca un numero inventado.** Una
+pagina que se inventa un dato es peor que una que no lo tiene.
+
+### El doctor, y por que enseña el fallo
+
+La pagina enseña la salida literal, **incluido lo que sale mal**. Un doctor que
+solo dice `ok` no demuestra nada: demostraria que no se ha comprobado. Ademas,
+`rhythm-doctor` y `rhythm-sddm-deploy` se tradujeron a ingles para esto, y solo
+las cadenas que imprimen — la logica no se toco.
+
+Ahora mismo el bloque enseña un `FAIL` real: el envoltorio del greeter esta
+desplegado pero distinto del repo. Se arregla con
+`sudo ~/.local/bin/rhythm-sddm-deploy`, que es justo lo que dice la linea de abajo.
+
+### Que no se corte nada
+
+Medido, no supuesto: el comando de instalar tenia **876 px de texto en una caja de
+384** y el terminal **584 en 435**. Los dos usaban scroll horizontal, asi que en
+cualquier captura salia una linea partida por la mitad y parecia un fallo de la
+pagina. Ahora los dos envuelven — el comando con sangria francesa y el terminal
+como una terminal de verdad — y el degradado de abajo del terminal solo aparece si
+de verdad hay mas linea, que es el mismo problema en pequeño.
+
+Las banderas tambien estaban descuadradas: con `flex-wrap`, `--preview` se quedaba
+solo en una linea con su explicacion debajo. Ahora son dos columnas de verdad.
+
+### Contraste
+
+El boton `repositories` en tema claro estaba en **3.18:1**, por debajo del 4.5:1
+que pide WCAG AA para texto normal. A `0.66` se mide en **5.07:1** y sigue
+viéndose apagado, que es lo que tiene que ser un boton secundario. El subtitulo
+subio de 4.89:1 a 5.48:1.
+
+## Idioma
+
+Todo el texto visible esta en ingles; los comentarios del codigo se quedan en
+español, como en los otros repos de rhythmcrea.
+
 ## Los datos
 
 La pagina no pide nada a nadie. Dos scripts escriben dos ficheros y la pagina los
