@@ -193,7 +193,10 @@ html.claro .ic-luna { opacity: 0; transform: rotate(70deg) scale(0.6); }
 /* ── Las cuatro capas. La caja (#capas) las mide capa.js ─────────────────── */
 
 .fondo  { background-image: url("fondo-oscuro.webp");
-          filter: brightness(0.78) contrast(1.02); }
+          /* El fondo-oscuro.webp ya viene graduado por el script. Este filtro era
+             una segunda graduacion encima, y se aplicaba tambien en claro, donde
+             ya hacia falta menos todavia. En claro se anula. */
+          filter: brightness(0.82) contrast(1.02); }
 .angel  { background-image: url("angel-oscuro.webp");
           /* Sin luz alrededor: un drop-shadow hielo de 14 px salia como un filo
              claro pegado a las alas, y no era la foto, era mio. */
@@ -245,6 +248,8 @@ html.claro .fondo    { background-image: url("fondo-claro.webp"); }
 html.claro .angel    { background-image: url("angel-claro.webp"); }
 html.claro .frente   { background-image: url("frente-claro.webp"); }
 html.claro .respaldo { background-image: url("fondo-claro.webp"); }
+html.claro .fondo { filter: none; }
+html.claro .respaldo { filter: blur(26px) contrast(0.94); }
 
 /* Y la pagina entera se da la vuelta. Si solo las imagenes cambiaran, el texto
    claro se pondria sobre fondo claro y no se leeria. */
@@ -278,7 +283,30 @@ html.claro .motas { opacity: 0.55; }
 
 /* En claro el velo va con menos presencia: el fondo ya es claro y la niebla
    blanca se perderia. */
-html.claro .velo { opacity: 0.2; }
+
+/* ── Lo que en blanco hay que cambiar de verdad ───────────────────────────
+   Los tres efectos que hacen vivo al campo —la luz que sigue al raton, la
+   niebla y el barrido del clic— estaban hechos con mezclas que solo funcionan
+   sobre fondo oscuro:
+
+     · la luz, con soft-light: sobre blanco, soft-light casi no altera nada, y
+       mover el cursor no se notaba de nada
+     · la niebla, con alpha blanca: blanca sobre blanco, nada
+     · el barrido del clic, un degradado blanco: blanco sobre blanco, nada
+     · el halo, con screen: igual
+
+   No estaban rotos: eran invisibles por construccion. En claro cada uno lleva
+   su mezcla al reves. Con multiply sobre fondo claro, un color gris SI oscurece,
+   y eso es lo que hace falta: no una luz mas brillante, sino una sombra suave
+   que va con el cursor. */
+html.claro .luz { mix-blend-mode: multiply; opacity: 0.55;
+                 background: radial-gradient(closest-side,
+                   rgba(104, 124, 140, 0.8), transparent 76%); }
+html.claro .velo { mix-blend-mode: multiply; opacity: 0.32; }
+html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
+html.claro .brillo {
+  background: linear-gradient(105deg, transparent 42%,
+              rgba(24, 28, 32, 0.18) 50%, transparent 58%); }
 
 /* El halo de la cabeza. Su color es el termometro. */
 .halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;

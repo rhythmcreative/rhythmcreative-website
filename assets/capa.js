@@ -225,10 +225,15 @@
       colocarHalo(geo);
     }
 
-    // Cambiar de version cambia el punto del halo, asi que hay que recolocarlo.
+    // Cambiar de tema cambia el punto del halo, asi que hay que recalcularlo.
+    //
+    // Solo eso. Antes ademas ponia aqui la opacidad de la luz del raton, y como
+    // era en linea se comia la regla del CSS: en claro se quedaba en 0.35, que
+    // es lo que decia el comentario de aqui, y no lo que decia el CSS. Con dos
+    // sitios controlando la misma propiedad, gana el en linea. Ahora lo pone el
+    // CSS y aqui no se toca.
     function avisarCambio() {
       medir();
-      if (luz) luz.style.opacity = document.documentElement.classList.contains("claro") ? "0.35" : "0.7";
     }
     medir();
     addEventListener("resize", medir);

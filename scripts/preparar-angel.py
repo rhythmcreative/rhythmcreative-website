@@ -60,7 +60,7 @@ HALO = {
 
 # Cuanto sube o baja el cementerio. Sin esto los dos temas son el mismo gris con
 # distinta brillantez, y no se nota el cambio.
-SUBIDA_CLARO = 1.62
+SUBIDA_CLARO = 1.40
 BAJADA_OSCURO = 0.46
 
 
@@ -140,8 +140,12 @@ def cemetery(ruta, claro):
     f = grises(abrir(ruta))
     f = f.filter(ImageFilter.GaussianBlur(5.0))          # profundidad de campo
     if claro:
+        # Ni tan lavado ni tan apagado. A 1.62 con contraste 0.86 el cementerio
+        # se iba a casi blanco y se perdian los mausoleos, que es lo unico que
+        # le daba estructura. Aqui se quedan: la pagina es clara, pero la foto
+        # tiene que seguir teniendo fondo.
         f = ImageEnhance.Brightness(f).enhance(SUBIDA_CLARO)
-        f = ImageEnhance.Contrast(f).enhance(0.86)         # las altas se lavan
+        f = ImageEnhance.Contrast(f).enhance(1.04)
     else:
         f = ImageEnhance.Brightness(f).enhance(BAJADA_OSCURO)
         f = ImageEnhance.Contrast(f).enhance(1.12)
