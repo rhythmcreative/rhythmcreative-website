@@ -38,9 +38,19 @@
   // El tamano y donde cae el halo los dice el propio script, que los midio en
   // la imagen. Estaban escritos a mano y al cambiar de foto se quedaron
   // viejos: el halo salia flotando en medio del cielo.
-  var TAM = window.RHYTHM_CAPA_TAM || { w: 2000, h: 1133,
-                                        halo: { x: 0.5035, y: 0.088, r: 0.032 } };
+  var TAM = window.RHYTHM_CAPA_TAM || {
+    w: 2000, h: 1133,
+    halo: { x: 0.5035, y: 0.088, r: 0.032 },
+    haloBn: { x: 0.5200, y: 0.094, r: 0.030 }
+  };
   var FOTO_W = TAM.w, FOTO_H = TAM.h;
+
+  // El halo esta en un punto distinto en cada version: los dos ficheros del
+  // angel son recortes ligeramente distintos y el anillo cae en otro sitio.
+  function haloActual() {
+    var bn = document.documentElement.classList.contains("bn");
+    return bn ? (TAM.haloBn || TAM.halo) : TAM.halo;
+  }
 
   // ── La caja de las capas, a medida.
   //
@@ -89,7 +99,7 @@
     if (!geo) return;
     var halo = $("#halo");
     if (!halo) return;
-    var h = TAM.halo;
+    var h = haloActual();
     var cx = geo.mx + h.x * geo.w;
     var cy = geo.my + h.y * geo.h;
     // El radio sale de la fraccion del ancho de la foto, no de un numero fijo:
@@ -173,6 +183,12 @@
     function medir() {
       geo = encajar(escena, capas, caja);
       colocarHalo(geo);
+    }
+
+    // Cambiar de version cambia el punto del halo, asi que hay que recolocarlo.
+    function avisarCambio() {
+      medir();
+      if (luz) luz.style.opacity = document.documentElement.classList.contains("bn") ? "0.4" : "0.7";
     }
     medir();
     addEventListener("resize", medir);
@@ -267,7 +283,7 @@
     }
 
     escena.setAttribute("tabindex", "-1");
-    return escena;
+    return { avisarCambio: avisarCambio };
   }
 
   window.RHYTHM_CAPA = { montar: montar, paleta: paleta };

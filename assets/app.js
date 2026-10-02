@@ -168,6 +168,51 @@
     return h + dentro;
   }
 
+  // ── El interruptor de color y blanco y negro ────────────────────────────
+  //
+  // Se guarda en localStorage, que funciona tambien desde file://, y si no hay
+  // nada guardado se respeta lo que diga prefers-color-scheme. Lo aplica una
+  // clase en <html>, de la que cuelgan tanto las capas como los colores, para
+  // que cambien las dos cosas a la vez.
+  var CLAVE = "rhythm-crea-bn";
+
+  function leerBN() {
+    try { return localStorage.getItem(CLAVE) === "1"; }
+    catch (e) { return false; }
+  }
+
+  function aplicarBN(activo) {
+    var raiz = document.documentElement;
+    raiz.classList.toggle("bn", activo);
+    var b = $("#interruptor");
+    if (b) {
+      b.setAttribute("aria-pressed", String(activo));
+      b.title = activo ? "Volver al color" : "Pasar a blanco y negro";
+    }
+    var t = $("#interruptor-txt");
+    if (t) t.textContent = activo ? "color" : "bn";
+    // El halo esta en otro punto en cada version, asi que hay que recolocarlo.
+    if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
+  }
+
+  function interruptor() {
+    var b = $("#interruptor");
+    if (!b) return;
+    // Sin eleccion guardada se empieza en color. Seenea preguntar al sistema:
+    // la pagina es oscura de por si, con lo que un tema claro del sistema no
+    // dice nada util aqui, y ademas hacia que la primera captura de esta session
+    // saliera en blanco y negro sin que nadie lo hubiera pedido.
+    var guardado = null;
+    try { guardado = localStorage.getItem(CLAVE); } catch (e) { guardado = null; }
+    aplicarBN(guardado === "1");
+
+    b.addEventListener("click", function () {
+      var activo = document.documentElement.classList.contains("bn");
+      aplicarBN(!activo);
+      try { localStorage.setItem(CLAVE, activo ? "0" : "1"); } catch (e) { /* sin storage */ }
+    });
+  }
+
   // De cuando son los datos. Va en el menu y no en la barra, que ya va bastante
   // cargada. Sin esto, el pie decia "sin datos" aunque los hubiera.
   function sellos() {
@@ -189,7 +234,7 @@
     var temp = S && S.temps ? S.temps.cpu : null;
     punto(temp);
 
-    if (window.RHYTHM_CAPA) window.RHYTHM_CAPA.montar($("#escena"), temp);
+    if (window.RHYTHM_CAPA) window.__capa = window.RHYTHM_CAPA.montar($("#escena"), temp);
 
     tic();
     setInterval(tic, 1000);
@@ -221,8 +266,9 @@
       }
     });
 
-    sellos();
-    pintarHyprland();
+      interruptor();
+      sellos();
+      pintarHyprland();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);

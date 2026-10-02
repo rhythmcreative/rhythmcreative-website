@@ -59,6 +59,39 @@ Los numeros de arriba (estrellas, lenguaje, ultimo push) los anade solo
 `data/github.js`. Los de "vivo" salen de `data/system.js`, asi que si el
 recolector no ha corrido everan en vez de inventarse un numero.
 
+## El interruptor de color y blanco y negro
+
+Un boton en la barra, al final de los enlaces. Cambia las dos cosas a la vez: las
+capas y los colores de la pagina.
+
+No es un filtro. Son **dos juegos de capas**, porque el angel en blanco y negro es
+claro de nacimiento y con un `grayscale()` saldria el mismo angel oscuro que en
+color, que no es lo que hay en la imagen:
+
+    fondo.webp  angel.webp  frente.webp          en color
+    fondo-bn.webp  angel-bn.webp  frente-bn.webp  en blanco y negro
+    velo.webp                                   la misma en las dos
+
+La eleccion se guarda en `localStorage`, que tambien funciona desde `file://`, y
+si no hay nada guardado se empieza en color. No se pregunta a
+`prefers-color-scheme`: la pagina es oscura de por si, con lo que un tema claro
+del sistema no dice nada util, y encima hacia que la primera captura saliera en
+blanco y negro sin que nadie lo hubiera pedido.
+
+El halo del angel sigue siendo del color de la temperatura en los dos modos: es
+un dato, no un adorno.
+
+### Recortar el angel en blanco y negro
+
+Es lo unico que no sale con un umbral. Es marfil de 200 a 245 sobre blanco de 250
+a 255, y entre los dos no hay hueco: con un umbral se le perforaban las plumas
+claras.
+
+Lo que sale bien es **reutilizar la mascara del recorte en color**, que es el
+mismo dibujo y si tiene histograma bimodal. Los dos ficheros no estan exactamente
+alineados —el del halo cae 6 px mas abajo—, asi que antes de nada se busca el
+desplazamiento que menos fondo se cuela por dentro de la mascara, de -40 a +40 px.
+
 ## Como se adapta
 
 El tipo y el ancho del contenido no estan fijos, que es lo que hacia que en un
