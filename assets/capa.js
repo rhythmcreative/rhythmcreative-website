@@ -285,10 +285,18 @@
     function bucle() {
       // Persecucion suave hacia el raton. Sin inercia el parallax da un tiron
       // en cada movimiento y se nota que son cuatro capas sueltas.
-      ahora.x += (raton.x - ahora.x) * 0.06;
-      ahora.y += (raton.y - ahora.y) * 0.06;
+      //
+      // Y cuando ya ha llegado, se para de escribir. La pagina casi siempre esta
+      // quieta con el raton parado, y estar escribiendo cinco transformaciones
+      // por fotograma sin que nada se mueva obliga al compositor a estar
+      // repintando cinco capas de pantalla entera para nada. Con un umbral de un
+      // decimo de pixel, el coste solo existe mientras el raton se mueve.
+      ahora.x += (raton.x - ahora.x) * 0.12;
+      ahora.y += (raton.y - ahora.y) * 0.12;
+      var quieta = Math.abs(raton.x - ahora.x) < 0.002 &&
+                   Math.abs(raton.y - ahora.y) < 0.002;
 
-      if (geo) {
+      if (geo && !quieta) {
         for (var i = 0; i < capas.length; i++) {
           var c = capas[i], d = c.hondo;
           var dx = acotar(ahora.x, geo.mx, 11 * d);

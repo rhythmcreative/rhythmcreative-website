@@ -36,6 +36,7 @@ DESCARGA = os.path.expanduser("~/Downloads")
 DESTINO = os.path.join(AQUI, "assets")
 
 ANCHO = 2000
+ANCHO_PEQUENO = 1100   # la variante para movil
 
 # El mismo cementerio en dos estaciones, que es lo que hay. El del tema negro es
 # el de invierno, con niebla y sin hierba, que es el que estaba antes. El del
@@ -202,11 +203,28 @@ def main():
             angel = angel.resize((W, H), Image.LANCZOS)
         _, dy = ajustar(mascara, angel)
         angel = sacar_angel(angel, mascara, tema)
-        angel.save(os.path.join(DESTINO, "angel-%s.webp" % tema), "WEBP",
-                   quality=92, method=6)
+
+        # Dos tamanos del angel. El grande va a 2000 px, que es lo que se ve en
+        # un monitor. El pequeno va a 1100, que es lo que se ve en un movil, y a
+        # 1100 escalado a la caja de un movil no se nota la perdida. Antes se
+        # bajaba el mismo fichero de 171 KB tambien al movil.
+        #
+        # La calidad baja de 92 a 76: con niebla difusa por detras, el halo de
+        # 171 KB a 92 no se diferenciaba de 95 KB a 76 ni de lejos.
+        grande = os.path.join(DESTINO, "angel-%s.webp" % tema)
+        angel.save(grande, "WEBP", quality=76, method=5)
         opaco = float(np.asarray(angel.split()[-1], dtype=np.float32).mean() / 255.0)
-        print("%-7s angel-%s.webp  opaco %.1f%%%s"
-              % (tema, tema, opaco * 100, "  (desplazado %d px)" % dy if dy else ""))
+        print("%-7s angel-%s.webp  opaco %.1f%%  %.0f KB%s"
+              % (tema, tema, opaco * 100,
+                 os.path.getsize(grande) / 1024,
+                 "  (desplazado %d px)" % dy if dy else ""))
+
+        pequeno = angel.resize((ANCHO_PEQUENO, round(angel.height * ANCHO_PEQUENO / angel.width)),
+                                Image.LANCZOS)
+        p2 = os.path.join(DESTINO, "angel-%s-p.webp" % tema)
+        pequeno.save(p2, "WEBP", quality=74, method=5)
+        print("%-7s angel-%s-p.webp  %.0f KB  (el que se baja el movil)"
+              % (tema, tema, os.path.getsize(p2) / 1024))
 
         fondo = cemetery(ruta_fondo, claro)
         fondo.save(os.path.join(DESTINO, "fondo-%s.webp" % tema), "WEBP",
@@ -215,9 +233,12 @@ def main():
                                         "WEBP", quality=84, method=6)
         print("%-7s fondo-%s.webp / frente-%s.webp" % (tema, tema, tema))
 
-    velo(W // 2, H // 2).save(os.path.join(DESTINO, "velo.webp"), "WEBP",
-                              quality=72, method=6)
-    print("velo.webp  la misma para los dos temas")
+    # El velo a un tercio: es una niebla difusa a la que no se le ve el borde, y
+    # a 1000 px de ancho pesaba 26 KB para nada.
+    velo(W // 3, H // 3).save(os.path.join(DESTINO, "velo.webp"), "WEBP",
+                              quality=60, method=5)
+    print("velo.webp  %.0f KB  la misma para los dos temas"
+          % (os.path.getsize(os.path.join(DESTINO, "velo.webp")) / 1024))
 
     with open(os.path.join(DESTINO, "capa-datos.js"), "w", encoding="utf-8") as fh:
         fh.write("// Generado por scripts/preparar-angel.py. No editar a mano.\n")

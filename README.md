@@ -105,6 +105,55 @@ dibujo y si tiene histograma bimodal. Los dos ficheros no estan exactamente
 alineados —el del halo cae 6 px mas abajo—, asi que antes de nada se busca el
 desplazamiento, de -40 a +40 px, que menos fondo deja dentro de la mascara.
 
+## Rendimiento
+
+Medido con `performance.getEntriesByType("resource")`, no estimado.
+
+| | antes | ahora |
+|---|---|---|
+| escritorio, total | 306 KB | **242 KB** |
+| movil, total | 306 KB | **188 KB** |
+| el angel, escritorio | 171 KB | **113 KB** |
+| el angel, movil | 171 KB | **59 KB** |
+| la niebla | 26 KB | **18 KB** |
+
+**Dos tamanos del angel.** A 2000 px para el monitor y a 1100 para el movil, que
+es lo que se ve ahi. Antes el movil bajaba el mismo fichero de 171 KB para una
+figura que ocupa 430 px de ancho. La calidad baja de 92 a 76: con niebla difusa
+detras, a esa distancia no se nota.
+
+**Que no se mezcla nada por fotograma.** El velo llevaba `mix-blend-mode: screen`,
+que obliga a volver a mezclar una capa del tamaño de la pantalla entera cada vez
+que se mueve, con las capas de debajo. Con alpha normal, la niebla blanca sobre
+fondo oscuro se ve casi igual y no cuesta nada.
+
+**La barra sin `backdrop-filter`.** Debajo hay capas que se mueven en cada
+fotograma, y el desenfoque de fondo hay que recalcularlo cada vez que algo pasa
+por ahi. Con lo que hay debajo —niebla oscura— un cristal algo mas opaco se ve
+igual.
+
+**La luz del raton mas pequena.** Era 62vw con 28 px de desenfoque: 893 px de
+lado en un monitor de 1440, y ademas se movia en cada movimiento del raton. Ahora
+38vw con 16 px. Misma idea, menos de la mitad de coste, que es al cuadrado.
+
+**El parallax se para en reposo.** Escribia cinco transformaciones por fotograma
+aunque el raton no se moviera, obligando al compositor a repintar cinco capas de
+pantalla entera para nada. Con un umbral de un decimo de pixel, el coste solo
+existe mientras el raton se mueve, que es casi nunca.
+
+**Fuera `.brindis`**, que estaba muerta desde que se quitaron los avisos pero
+seguia compositando con su `backdrop-filter`.
+
+**Precarga del angel.** Es el elemento mas grande y el primero que se ve, y
+referenciado solo desde el CSS: sin precarga el navegador no lo descubre hasta
+que ha parseado la hoja, que va detras.
+
+Lo que NO se ha medido: los fotogramas por segundo. En este navegador sin
+ventana `requestAnimationFrame` no corre lo bastante para sacar una muestra
+fiable, y un numero de FPS aqui seria inventado. Lo que si se ha medido son los
+bytes, que son solidos, y los costes por fotograma que se ven en la estructura
+del CSS.
+
 ## Como se adapta
 
 El tipo y el ancho del contenido no estan fijos, que es lo que hacia que en un

@@ -23,6 +23,7 @@
 :root {
   --suelo:    #07090b;
   --cristal:  rgba(16, 21, 25, 0.80);
+  --cristal-opaco: rgba(13, 17, 20, 0.92);
   --hielo:    #99bac9;
   --oxido:    #ba5f44;
   --azul-1:   #304f79;
@@ -83,15 +84,15 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
      margen automatico se descuadra en cuanto uno de los lados crece. */
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   max-width: var(--ancho); margin: 0 auto;
-  background: var(--cristal);
-  /* Sin borde. El filete de 1px era un marco mas sobre el fondo, y con la foto
-     detras se leia como una caja metida dentro de otra caja. El cristal y la
-     sombra ya la separan. */
+  /* Sin backdrop-filter. Debajo de la barra hay capas que se mueven en cada
+     fotograma, y el desenfoque de fondo hay que recalcularlo cada vez que pasa
+     algo por ahi. Con lo que hay debajo —niebla oscura— un cristal algo mas
+     opaco se ve igual. */
+  background: var(--cristal-opaco);
   border: 0;
   border-radius: var(--r-isla);
   padding: 0.4rem 0.55rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -194,15 +195,29 @@ html.claro .ic-luna { opacity: 0; transform: rotate(70deg) scale(0.6); }
 .fondo  { background-image: url("fondo-oscuro.webp");
           filter: brightness(0.78) contrast(1.02); }
 .angel  { background-image: url("angel-oscuro.webp");
-          /* Solo sombra oscura. Con un drop-shadow hielo de 14 px salia un filo
-             claro rodeando las alas, y no era la foto: era mio. */
+          /* Sin luz alrededor: un drop-shadow hielo de 14 px salia como un filo
+             claro pegado a las alas, y no era la foto, era mio. */
           filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)); }
+
+/* En pantallas estrechas se baja el angel de 1100, no el de 2000. El mio
+  Sin esto, un movil se baja 113 KB de una figura que ahi ocupa 430
+   px de ancho. */
+@media (max-width: 900px) {
+  .angel { background-image: url("angel-oscuro-p.webp"); }
+  html.claro .angel { background-image: url("angel-claro-p.webp"); }
+}
 
 /* El velo lleva con screen. Sobre nada, screen no hace nada; y cualquier borde
    de su caja se veria como un rectangulo mas claro. Con los lados desvanecidos
    no hay forma que delate. */
 .velo   { background-image: url("velo.webp");
-          mix-blend-mode: screen; opacity: 0.5;
+          /* SIN mix-blend-mode. Con screen, cada fotograma que el velo se mueve
+             hay que volver a mezclar una capa del tamaño de la pantalla entera,
+             con las capas de debajo: es de lo mas caro que habia aqui, y la
+             pagina iba a 66 ms por fotograma con los efectos puestos. Con
+             alpha normal, la niebla blanca sobre fondo oscuro se ve casi igual y
+             no cuesta nada. */
+          opacity: 0.34;
           -webkit-mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%);
           mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%); }
 
@@ -236,6 +251,7 @@ html.claro .respaldo { background-image: url("fondo-claro.webp"); }
 html.claro {
   --suelo:    #eceae5;
   --cristal:  rgba(255, 255, 255, 0.76);
+  --cristal-opaco: rgba(252, 251, 249, 0.94);
   --hielo:    #1b1d1f;
   --oxido:    #9a5638;
   --azul-1:   #55606a;
@@ -260,9 +276,9 @@ html.claro .b:hover { background: #16181a; color: #f6f5f2; }
 html.claro .nota-menu { color: rgba(30, 32, 34, 0.5) !important; }
 html.claro .motas { opacity: 0.55; }
 
-/* El velo en claro no puede ir con screen: sobre fondo claro, screen no hace
-   casi nada y la niebla no se ve. Con multiply, si. */
-html.claro .velo { mix-blend-mode: multiply; opacity: 0.45; }
+/* En claro el velo va con menos presencia: el fondo ya es claro y la niebla
+   blanca se perderia. */
+html.claro .velo { opacity: 0.2; }
 
 /* El halo de la cabeza. Su color es el termometro. */
 .halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
@@ -283,10 +299,14 @@ html.claro .velo { mix-blend-mode: multiply; opacity: 0.45; }
 /* La luz que sigue al raton. Es un disco con blur y blend, no un degradado:
    por eso de verdad ilumina por un lado. */
 .luz { position: absolute; left: 50%; top: 42%; z-index: 2;
-       width: 62vw; height: 62vw; margin: -31vw 0 0 -31vw;
-       pointer-events: none; mix-blend-mode: soft-light; opacity: 0.7;
-       background: radial-gradient(closest-side, rgba(214, 232, 240, 0.55), transparent 72%);
-       filter: blur(28px); will-change: transform; }
+       /* 38vw y 16 px de desenfoque, no 62vw y 28. A 1440 de ancho eso son 893 px
+          de lado desenfocados por 28, y ademas se mueve en cada movimiento del
+          raton: era lo mas caro de la pagina. Con 547 y 16 se ve igual y el
+          coste baja a menos de la mitad, que es al cuadrado. */
+       width: 38vw; height: 38vw; margin: -19vw 0 0 -19vw;
+       pointer-events: none; mix-blend-mode: soft-light; opacity: 0.8;
+       background: radial-gradient(closest-side, rgba(214, 232, 240, 0.6), transparent 72%);
+       filter: blur(16px); will-change: transform; }
 
 /* El barrido al pinchar. */
 .brillo { position: absolute; inset: 0; z-index: 4; pointer-events: none;
@@ -493,11 +513,3 @@ html.claro .velo { mix-blend-mode: multiply; opacity: 0.45; }
              color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
              line-height: 1.6; }
 
-.brindis { position: fixed; left: 50%; bottom: 1.6rem; z-index: 70;
-           transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
-           background: var(--cristal); border: 1px solid var(--linea-alta);
-           border-radius: 999px; padding: 0.45rem 0.95rem; font-size: 0.64rem;
-           letter-spacing: 0.14em; text-transform: uppercase; color: var(--hielo);
-           backdrop-filter: blur(14px);
-           transition: opacity 0.25s, transform 0.25s; }
-.brindis.visible { opacity: 1; transform: translate(-50%, 0); }
