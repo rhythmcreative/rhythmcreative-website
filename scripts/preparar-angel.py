@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
-"""Prepara las capas del campo. Dos versiones: en color y en blanco y negro.
+"""Prepara las capas del campo. Dos temas: uno blanco y otro negro.
 
-De donde sale cada una
-----------------------
-    A.png                                       el angel en color, con damero
-    Fondo gotico con profundidad claro .png     el cementerio en color
+De donde sale cada imagen
+-------------------------
+    Fondo gotico con profundidad claro .png     el cementerio, a color
     Fondo gotico con profundidad claro 1.png    el angel en blanco y negro
+    A.png                                       el angel a color, con damero
 
-Salen dos juegos de capas en assets/, y la pagina elige uno u otro con el boton:
+Salen DOS juegos de capas, y la pagina elige uno u otro con el boton del sol y
+la luna:
 
-    fondo.webp  angel.webp  frente.webp        en color
-    fondo-bn.webp  angel-bn.webp  frente-bn.webp  en blanco y negro
-    velo.webp                                       la niebla, en las dos
-    capa-datos.js                                   medidas y donde cae el halo
+    fondo-oscuro.webp  angel-oscuro.webp  frente-oscuro.webp   tema negro
+    fondo-claro.webp   angel-claro.webp   frente-claro.webp    tema blanco
 
-Que el angel en color venga con el damero PINTADO en los pixeles no estorba: su
+Los dos temas son MONOCROMOS. La version que habia antes era un gris oscuro que
+no era ni blanco ni negro, con los azules y los verdes todavia dentro.
+
+Que el angel a color venga con el damero PINTADO en los pixeles no estorba: su
 histograma es bimodal con un hueco enorme entre medias, el angel esta por debajo
 de 85 y el damero por encima de 244, sin un pixel en medio. Asi que la mascara es
 un umbral y no una aproximacion.
 
-El de blanco y negro es mas dificil: el fondo es blanco (250-255) y el angel es
-marfil (200-245), con la madera entre los dos, sin hueco. El umbral va en 246, que
-es justo donde acaba el angel y empieza el fondo, y despues se muerde el borde
-dos pixeles para que no se contamine.
+El de blanco y negro es mas dificil: es marfil de 200 a 245 sobre blanco de 250
+a 255, con la madera entre los dos, sin hueco. El angel del tema BLANCO es ese,
+y no se puede recortar por luminancia. Se le pone la mascara del recorte a color,
+que es el mismo dibujo y si la tiene, corrigiendo el desplazamiento vertical.
 """
 import os
 
@@ -35,125 +37,128 @@ DESTINO = os.path.join(AQUI, "assets")
 
 ANCHO = 2000
 
-ORIGEN = {
-    "color": {
-        "angel": os.path.join(DESCARGA, "A.png"),
-        "fondo": os.path.join(DESCARGA, "Fondo gótico con profundidad claro .png"),
-    },
-    "bn": {
-        "angel": os.path.join(DESCARGA, "Fondo gótico con profundidad claro 1.png"),
-        # El cementerio en blanco y negro no viene: se saca desaturando el de
-        # color, que es el mismo sitio con la misma luz.
-        "fondo": os.path.join(DESCARGA, "Fondo gótico con profundidad claro .png"),
-    },
+# El mismo cementerio en dos estaciones, que es lo que hay. El del tema negro es
+# el de invierno, con niebla y sin hierba, que es el que estaba antes. El del
+# tema blanco es el de verano, con la hiedra verde y la luz de la manana.
+CEMENTERIO_OSCURO = os.path.join(DESCARGA, "Angel-Photoroom.png")
+CEMENTERIO_CLARO = os.path.join(DESCARGA, "Fondo gótico con profundidad claro .png")
+
+# Y los dos angeles: el del tema negro es el recorte a color con el damero, y el
+# del tema blanco es el de blanco y negro, que es claro de nacimiento.
+ANGEL_OSCURO = os.path.join(DESCARGA, "A.png")
+ANGEL_CLARO = os.path.join(DESCARGA, "Fondo gótico con profundidad claro 1.png")
+
+# Umbral del fondo que se quita: el damero en el recorte a color.
+UMBRAL_OSCURO = 160
+
+# Donde cae el halo, en fracciones de la foto. Medido en cada fichero.
+HALO = {
+    "oscuro": (0.5035, 0.088, 0.032),   # sobre el recorte a color
+    "claro": (0.5200, 0.094, 0.030),    # sobre el de blanco y negro
 }
 
-# Umbral del fondo que se quita: el damero en color, el blanco en B/N.
-UMBRAL = {"color": 160, "bn": 246}
+# Cuanto sube o baja el cementerio. Sin esto los dos temas son el mismo gris con
+# distinta brillantez, y no se nota el cambio.
+SUBIDA_CLARO = 1.62
+BAJADA_OSCURO = 0.46
 
-# Donde cae el halo, en fracciones de la foto. Medido en cada fichero, no a ojo.
-HALO = {"color": (0.5035, 0.088, 0.032), "bn": (0.5200, 0.094, 0.030)}
 
-
-def abrir(ruta, ancho):
+def abrir(ruta, ancho=ANCHO):
     im = Image.open(ruta).convert("RGB")
     if im.width != ancho:
         im = im.resize((ancho, round(im.height * ancho / im.width)), Image.LANCZOS)
     return im
 
 
-def mascara_de_color(ruta, destino):
-    """La mascara del recorte en color, reutilizable.
-
-    Es la que se usa para el angel en blanco y negro, porque ese NO se puede
-    recortar por luminancia: es marfil de 200 a 245 sobre blanco de 250 a 255, y
-    entre los dos no hay hueco. Con un umbral se le perforan las plumas claras.
-    Los dos ficheros son el mismo dibujo, asi que la mascara del de color sirve.
-
-    Se busca tambien el desplazamiento vertical: los dos ficheros no estan
-    exactamente alineados, y sin corregirlo la mascara se sale unos pixeles por
-    un lado.
-    """
-    color = Image.open(ruta).convert("RGB")
-    Wc, Hc = color.size
-    gris = np.asarray(color.convert("L"), dtype=np.float32)
-    m = Image.fromarray(np.where(gris < UMBRAL["color"], 255.0, 0.0).astype(np.uint8), "L")
+def mascara_del_color(ruta):
+    """La mascara del recorte a color, que sirve para los dos."""
+    gris = np.asarray(Image.open(ruta).convert("L").resize(
+        (ANCHO, round(Image.open(ruta).height * ANCHO / Image.open(ruta).width)),
+        Image.LANCZOS).convert("L"), dtype=np.float32)
+    m = Image.fromarray(np.where(gris < UMBRAL_OSCURO, 255.0, 0.0).astype(np.uint8), "L")
+    # Morder el borde: el ultimo pixel de la silueta es una mezcla de la figura con
+    # el damero. Sin morderlo, al difuminar el alfa la caida mezcla gris claro y
+    # sale un filo luminoso rodeando las alas.
     m = m.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(3))
-    m = m.filter(ImageFilter.GaussianBlur(1.3))
-    return m
+    return m.filter(ImageFilter.GaussianBlur(1.3))
 
 
-def ajustar_mascara(mascara, bn, modo_destino):
-    """Busca el desplazamiento que menos fondo se cuela por dentro."""
-    W = mascara.width
+def ajustar(mascara, destino):
+    """El desplazamiento vertical que menos fondo deja dentro de la mascara."""
     m = np.asarray(mascara, dtype=np.float32) / 255.0
-    bn_gris = np.asarray(bn.convert("L"), dtype=np.float32)
-    if bn_gris.shape != m.shape:
-        bn_gris = np.asarray(bn.convert("L").resize(mascara.size, Image.LANCZOS), dtype=np.float32)
+    gris = np.asarray(destino.convert("L"), dtype=np.float32)
+    if gris.shape != m.shape:
+        gris = np.asarray(destino.convert("L").resize(mascara.size, Image.LANCZOS),
+                          dtype=np.float32)
     dentro = m > 0.5
     if not dentro.any():
-        return mascara
-
-    mejor, mejor_fondo = 0, 1e9
+        return mascara, 0
+    mejor_fondo, mejor_dy = 1e9, 0
     for dy in range(-40, 41):
-        desplazada = np.roll(dentro, dy, axis=0)
+        d = np.roll(dentro, dy, axis=0)
         if dy > 0:
-            desplazada[:dy] = False
+            d[:dy] = False
         elif dy < 0:
-            desplazada[dy:] = False
-        if not desplazada.any():
+            d[dy:] = False
+        if not d.any():
             continue
-        # Cuanto fondo (blanco, 250-255) se queda dentro de la mascara, menos es
-        # mejor: significa que la mascara cae donde toca.
-        fondo = float((bn_gris[desplazada] > 248).mean())
+        fondo = float((gris[d] > 248).mean())
         if fondo < mejor_fondo:
-            mejor, mejor_fondo = dy, fondo
-    if mejor != 0:
-        m = np.roll(m, mejor, axis=0)
-        if mejor > 0:
-            m[:mejor] = 0.0
+            mejor_fondo, mejor_dy = fondo, dy
+    if mejor_dy:
+        m = np.roll(m, mejor_dy, axis=0)
+        if mejor_dy > 0:
+            m[:mejor_dy] = 0.0
         else:
-            m[mejor:] = 0.0
-        print("   mascara desplazada %d px (fueno del fondo dentro: %.2f%%)"
-              % (mejor, mejor_fondo * 100))
-    return Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "L")
+            m[mejor_dy:] = 0.0
+    return Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "L"), mejor_dy
 
 
-def sacar_angel(im, modo, mascara_externa=None):
-    """El angel con canal alfa, fuera el fondo que tenga detras."""
-    gris = np.asarray(im.convert("L"), dtype=np.float32)
-
-    # MORDER el borde antes de nada. En los dos ficheros el ultimo pixel de la
-    # silueta es una mezcla de la figura con el fondo: en color, con el damero;
-    # en B/N, con el blanco. Alrededor de toda la silueta hay una orla de esos
-    # pixeles, y si el alfa se difumina ahi la caida mezcla fondo claro sobre
-    # escena oscura y sale un filo luminoso rodeando las alas.
-    if mascara_externa is not None:
-        a = ajustar_mascara(mascara_externa, im, modo)
-        if a.size != im.size:
-            a = a.resize(im.size, Image.LANCZOS)
-    else:
-        alfa = Image.fromarray(
-            np.where(gris < UMBRAL[modo], 255.0, 0.0).astype(np.uint8), "L")
-        alfa = alfa.filter(ImageFilter.MinFilter(5))
-        alfa = alfa.filter(ImageFilter.MaxFilter(3))
-        a = alfa.filter(ImageFilter.GaussianBlur(1.3))
-
+def sacar_angel(im, mascara, tema):
+    """El angel recortado y con el tono del tema."""
+    a = ajustar(mascara, im)[0]
+    if a.size != im.size:
+        a = a.resize(im.size, Image.LANCZOS)
     rgb = np.asarray(im, dtype=np.float32)
-    if modo == "color":
-        # Se baja un poco y se tira a frio: en color la figura viene mas clara y
-        # mas neutra que el cementerio, y sin esto parece pegada encima.
-        rgb = rgb * 0.90
-        rgb = rgb * (1 - 0.12) + np.array([58.0, 76.0, 88.0]) * 0.12
-    # En B/N no se toca el color: la version en blanco y negro ya viene clara, y
-    # es esa la que hace que resalte contra el fondo oscuro.
+    if tema == "oscuro":
+        # Bajar y tirar a frio: si no, la figura viene mas clara que el fondo y
+        # parece pegada encima.
+        rgb = rgb * 0.92
+        rgb = rgb * (1 - 0.14) + np.array([52.0, 68.0, 80.0]) * 0.14
     salida = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB")
     salida.putalpha(a)
     return salida
 
 
+def grises(im):
+    """Sin color. Los dos temas son monocromos."""
+    return im.convert("L").convert("RGB")
+
+
+def cemetery(ruta, claro):
+    f = grises(abrir(ruta))
+    f = f.filter(ImageFilter.GaussianBlur(5.0))          # profundidad de campo
+    if claro:
+        f = ImageEnhance.Brightness(f).enhance(SUBIDA_CLARO)
+        f = ImageEnhance.Contrast(f).enhance(0.86)         # las altas se lavan
+    else:
+        f = ImageEnhance.Brightness(f).enhance(BAJADA_OSCURO)
+        f = ImageEnhance.Contrast(f).enhance(1.12)
+    return f
+
+
+def primer_plano(fondo, claro):
+    W, H = fondo.size
+    franja = fondo.crop((0, int(H * 0.58), W, H))
+    if claro:
+        franja = ImageEnhance.Brightness(franja).enhance(1.55)
+        return ImageEnhance.Color(franja).enhance(1.0)
+    return ImageEnhance.Brightness(franja).enhance(0.62)
+
+
 def velo(W, H):
-    """Bandas de niebla, en blanco con alfa, para poner entre capas."""
+    """Bandas de niebla. La misma imagen para los dos temas; lo que cambia es
+    como se mezcla, y eso lo decide el CSS."""
     n = np.zeros((H, W), dtype=np.float32)
     rng = np.random.default_rng(7)
     for _ in range(16):
@@ -174,102 +179,51 @@ def velo(W, H):
     return Image.fromarray(rgba, "RGBA")
 
 
-def graded(fondo, modo):
-    """El cementerio, ya sea de fondo."""
-    if modo == "bn":
-        # Sin desaturar sale con los verdes, y una pagina que se llama blanco y
-        # negro con la hierba verde es mentira. El brillo baja bastante: el
-        # angel de B/N es marfil claro, y con un fondo claro no se veria.
-        f = fondo.convert("L").convert("RGB")
-        f = f.filter(ImageFilter.GaussianBlur(5.0))
-        f = ImageEnhance.Brightness(f).enhance(0.52)
-        f = ImageEnhance.Contrast(f).enhance(1.06)
-        return f
-    f = fondo.filter(ImageFilter.GaussianBlur(5.0))
-    f = ImageEnhance.Color(f).enhance(0.80)
-    f = ImageEnhance.Brightness(f).enhance(0.66)
-    f = ImageEnhance.Contrast(f).enhance(0.92)
-    return Image.blend(f, Image.new("RGB", f.size, (26, 42, 54)), 0.24)
-
-
-def frente_de(fondo, modo):
-    """La franja de abajo: el suelo mojado y las lapidas de delante."""
-    W, H = fondo.size
-    franja = fondo.crop((0, int(H * 0.58), W, H))
-    if modo == "bn":
-        franja = ImageEnhance.Brightness(franja).enhance(0.70)
-    else:
-        franja = ImageEnhance.Brightness(franja).enhance(0.60)
-        franja = ImageEnhance.Color(franja).enhance(0.72)
-        franja = Image.blend(franja, Image.new("RGB", franja.size, (18, 30, 40)), 0.26)
-    return franja
-
-
 def main():
     os.makedirs(DESTINO, exist_ok=True)
+    faltan = [r for r in (CEMENTERIO_OSCURO, CEMENTERIO_CLARO,
+                        ANGEL_OSCURO, ANGEL_CLARO) if not os.path.exists(r)]
+    if faltan:
+        print("faltan las imagenes en ~/Downloads:")
+        for f in faltan:
+            print("   " + f)
+        return 1
 
-    # El lienzo se mide en la version de color y se le impone al resto. Los dos
-    # ficheros del angel tienen proporciones un poco distintas —1133 y 1138 de
-    # alto con el mismo ancho— y si cada version midiese la suya, al cambiar de
-    # version se moveria todo el encuadre. Forzado, la diferencia es del 0.5% y no
-    # se ve, pero el encuadre no salta.
-    lienzo = None
-    mascara_color = None
-    for modo in ("color", "bn"):
-        rutas = ORIGEN[modo]
-        faltan = [r for r in rutas.values() if not os.path.exists(r)]
-        if faltan:
-            print("faltan las imagenes de %s:" % modo)
-            for f in faltan:
-                print("   " + f)
-            return 1
+    mascara = mascara_del_color(ANGEL_OSCURO)
+    W = mascara.width
+    ref = Image.open(CEMENTERIO_OSCURO)
+    H = round(ref.height * W / ref.width)
 
-        if modo == "bn":
-            # La mascara sale del fichero en color, al ancho de trabajo.
-            mascara_color = mascara_de_color(ORIGEN["color"]["angel"], None)
-            if mascara_color.width != ANCHO:
-                mascara_color = mascara_color.resize(
-                    (ANCHO, round(mascara_color.height * ANCHO / mascara_color.width)),
-                    Image.LANCZOS)
-
-        angel = abrir(rutas["angel"], ANCHO)
-        fondo = abrir(rutas["fondo"], ANCHO)
-        if fondo.size != angel.size:
-            fondo = fondo.resize(angel.size, Image.LANCZOS)
-        if lienzo is None:
-            lienzo = angel.size
-        elif angel.size != lienzo:
-            angel = angel.resize(lienzo, Image.LANCZOS)
-        sufijo = "" if modo == "color" else "-bn"
-
-        if modo == "bn":
-            print("   recortando con la mascara del fichero en color")
-        angel = sacar_angel(angel, modo, mascara_color)
-        angel.save(os.path.join(DESTINO, "angel%s.webp" % sufijo),
-                   "WEBP", quality=92, method=6)
+    for tema, ruta_angel, ruta_fondo, claro in (
+            ("oscuro", ANGEL_OSCURO, CEMENTERIO_OSCURO, False),
+            ("claro", ANGEL_CLARO, CEMENTERIO_CLARO, True)):
+        angel = abrir(ruta_angel, W)
+        if angel.height != H:
+            angel = angel.resize((W, H), Image.LANCZOS)
+        _, dy = ajustar(mascara, angel)
+        angel = sacar_angel(angel, mascara, tema)
+        angel.save(os.path.join(DESTINO, "angel-%s.webp" % tema), "WEBP",
+                   quality=92, method=6)
         opaco = float(np.asarray(angel.split()[-1], dtype=np.float32).mean() / 255.0)
-        print("%-6s angel%s.webp  %dx%d  opaco %.1f%%"
-              % (modo, sufijo, angel.width, angel.height, opaco * 100))
+        print("%-7s angel-%s.webp  opaco %.1f%%%s"
+              % (tema, tema, opaco * 100, "  (desplazado %d px)" % dy if dy else ""))
 
-        graded(fondo, modo).save(os.path.join(DESTINO, "fondo%s.webp" % sufijo),
-                                 "WEBP", quality=86, method=6)
-        frente_de(fondo, modo).save(os.path.join(DESTINO, "frente%s.webp" % sufijo),
-                                    "WEBP", quality=84, method=6)
-        print("%-6s fondo%s.webp / frente%s.webp" % (modo, sufijo, sufijo))
+        fondo = cemetery(ruta_fondo, claro)
+        fondo.save(os.path.join(DESTINO, "fondo-%s.webp" % tema), "WEBP",
+                   quality=86, method=6)
+        primer_plano(fondo, claro).save(os.path.join(DESTINO, "frente-%s.webp" % tema),
+                                        "WEBP", quality=84, method=6)
+        print("%-7s fondo-%s.webp / frente-%s.webp" % (tema, tema, tema))
 
-        if modo == "color":
-            W, H = angel.size
-            mascara_color = None
-            velo(W // 2, H // 2).save(os.path.join(DESTINO, "velo.webp"),
-                                      "WEBP", quality=72, method=6)
-            print("%-6s velo.webp  la misma en las dos versiones" % modo)
+    velo(W // 2, H // 2).save(os.path.join(DESTINO, "velo.webp"), "WEBP",
+                              quality=72, method=6)
+    print("velo.webp  la misma para los dos temas")
 
     with open(os.path.join(DESTINO, "capa-datos.js"), "w", encoding="utf-8") as fh:
         fh.write("// Generado por scripts/preparar-angel.py. No editar a mano.\n")
-        fh.write("window.RHYTHM_CAPA_TAM = {\n")
-        fh.write("  w: %d,\n  h: %d,\n" % (W, H))
-        fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f },\n" % HALO["color"])
-        fh.write("  haloBn: { x: %.4f, y: %.4f, r: %.4f }\n" % HALO["bn"])
+        fh.write("window.RHYTHM_CAPA_TAM = {\n  w: %d,\n  h: %d,\n" % (W, H))
+        fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f },\n" % HALO["oscuro"])
+        fh.write("  haloClaro: { x: %.4f, y: %.4f, r: %.4f }\n" % HALO["claro"])
         fh.write("};\n")
     print("capa-datos.js con las dos posiciones del halo")
 

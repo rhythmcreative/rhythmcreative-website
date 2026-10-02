@@ -59,38 +59,51 @@ Los numeros de arriba (estrellas, lenguaje, ultimo push) los anade solo
 `data/github.js`. Los de "vivo" salen de `data/system.js`, asi que si el
 recolector no ha corrido everan en vez de inventarse un numero.
 
-## El interruptor de color y blanco y negro
+## Los dos temas: negro y blanco
 
-Un boton en la barra, al final de los enlaces. Cambia las dos cosas a la vez: las
-capas y los colores de la pagina.
+Un boton en la barra, con iconos. En negro se ve la luna —el tema al que vas— y
+en blanco se ve el sol. Cambia las dos cosas a la vez: las capas y los colores de
+la pagina.
 
-No es un filtro. Son **dos juegos de capas**, porque el angel en blanco y negro es
-claro de nacimiento y con un `grayscale()` saldria el mismo angel oscuro que en
-color, que no es lo que hay en la imagen:
+Los dos son MONOCROMOS, y cada uno con su cementerio, que es el mismo sitio en
+distinta estacion:
 
-    fondo.webp  angel.webp  frente.webp          en color
-    fondo-bn.webp  angel-bn.webp  frente-bn.webp  en blanco y negro
-    velo.webp                                   la misma en las dos
+| | cementerio | angel |
+|---|---|---|
+| **negro** | invierno, con niebla y sin hierba (`Angel-Photoroom.png`) | el recorte a color, oscurecido y tirado a frio (`A.png`) |
+| **blanco** | verano, con la hiedra verde y la luz de la manana (`Fondo gotico con profundidad claro .png`) | el de blanco y negro, claro de nacimiento |
 
-La eleccion se guarda en `localStorage`, que tambien funciona desde `file://`, y
-si no hay nada guardado se empieza en color. No se pregunta a
-`prefers-color-scheme`: la pagina es oscura de por si, con lo que un tema claro
-del sistema no dice nada util, y encima hacia que la primera captura saliera en
-blanco y negro sin que nadie lo hubiera pedido.
+    fondo-oscuro.webp  angel-oscuro.webp  frente-oscuro.webp
+    fondo-claro.webp   angel-claro.webp   frente-claro.webp
+    velo.webp                              la misma en los dos
 
-El halo del angel sigue siendo del color de la temperatura en los dos modos: es
+No es un filtro de saturacion, son ficheros aparte: el angel del tema blanco es
+claro de nacimiento, y con un `grayscale()` saldria el mismo angel oscuro que en el
+otro.
+
+La eleccion se guarda en `localStorage`, que funciona tambien desde `file://`, y
+sin nada guardado se empieza en negro. No se pregunta a `prefers-color-scheme`: la
+pagina es oscura de por si, con lo que un tema claro del sistema no dice nada
+util, y ademas hacia que la primera captura de la sesion saliera en blanco sin que
+nadie lo hubiera pedido.
+
+En blanco la pagina entera se da la vuelta: si solo cambiaran las imagenes, el
+texto claro se pondria sobre fondo claro. Y el velo no puede ir con `screen`
+sobre fondo claro, porque `screen` ahi no hace casi nada: con `multiply` si.
+
+El halo del angel sigue siendo del color de la temperatura en los dos temas: es
 un dato, no un adorno.
 
-### Recortar el angel en blanco y negro
+### Recortar el angel del tema blanco
 
 Es lo unico que no sale con un umbral. Es marfil de 200 a 245 sobre blanco de 250
 a 255, y entre los dos no hay hueco: con un umbral se le perforaban las plumas
 claras.
 
-Lo que sale bien es **reutilizar la mascara del recorte en color**, que es el
-mismo dibujo y si tiene histograma bimodal. Los dos ficheros no estan exactamente
+Lo que sale bien es **reutilizar la mascara del recorte a color**, que es el mismo
+dibujo y si tiene histograma bimodal. Los dos ficheros no estan exactamente
 alineados —el del halo cae 6 px mas abajo—, asi que antes de nada se busca el
-desplazamiento que menos fondo se cuela por dentro de la mascara, de -40 a +40 px.
+desplazamiento, de -40 a +40 px, que menos fondo deja dentro de la mascara.
 
 ## Como se adapta
 

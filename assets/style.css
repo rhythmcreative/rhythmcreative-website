@@ -108,24 +108,26 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
              color: var(--gris); padding: 0.34rem 0.58rem; border-radius: var(--r);
              transition: color 0.2s, background 0.2s; white-space: nowrap; }
 .isla nav a:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
-/* El interruptor de color. Es un boton de la barra, no un control escondido en
-   el pie: si esta abajo, nadie lo encuentra, y el cambio tiene que estar a un
-   clic de donde ya se esta mirando la pagina.
+/* El interruptor de tema. Va en la barra y no escondido en el pie: si esta
+   abajo, nadie lo encuentra, y el cambio tiene que estar a un clic de donde ya
+   se esta mirando la pagina.
 
-   Los dos circulos son el estado al que va, no el actual: se ve el destino. */
-.interruptor { display: flex; align-items: center; gap: 0.32rem;
-               font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase;
-               color: var(--gris); padding: 0.3rem 0.55rem 0.3rem 0.45rem;
-               border-left: 1px solid rgba(255, 255, 255, 0.12);
-               margin-left: 0.2rem; border-radius: 0 var(--r) var(--r) 0;
-               cursor: pointer; transition: color 0.18s, background 0.18s; }
+   Se ve el icono del tema al que vas, no del que estas: con la luna pulsada
+   estas en blanco y estas a punto de pasar a negro. */
+.interruptor { display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
+               color: var(--gris); cursor: pointer; border-radius: var(--r);
+               border-left: 1px solid var(--linea);
+               transition: color 0.2s, background 0.2s; }
 .interruptor:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
-.punto-caso, .punto-bn { width: 9px; height: 9px; border-radius: 50%; flex: none;
-             box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18); }
-.punto-caso { background: linear-gradient(135deg, #3b748e 0 50%, #ba5f44 50% 100%); }
-.punto-bn   { background: #d8d8d8; }
-html:not(.bn) .punto-bn { display: none; }
-html.bn .punto-caso { display: none; }
+html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.06); }
+.interruptor .ic { width: 1.05rem; height: 1.05rem; grid-area: 1 / 1;
+                   transition: opacity 0.25s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+html:not(.claro) .ic-sol { opacity: 0; transform: rotate(-70deg) scale(0.6); }
+html.claro .ic-luna { opacity: 0; transform: rotate(70deg) scale(0.6); }
+
+/* Solo para lectores de pantalla: el icono no dice nada por si mismo. */
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .isla .reloj { justify-self: center; font-size: 0.76rem; letter-spacing: 0.06em;
                color: var(--hielo); white-space: nowrap; padding: 0 0.3rem;
@@ -183,75 +185,84 @@ html.bn .punto-caso { display: none; }
    Se estira a proposito, al reves que las capas: aqui no importa que no encaje,
    porque va 26 px desenfocada y nadie puede saber donde esta el borde de la
    foto. Lo que importa es que SIAMPRE haya contenido detras de las franjas. */
-.respaldo { position: absolute; inset: -8%; background-image: url("fondo.webp");
+.respaldo { position: absolute; inset: -8%; background-image: url("fondo-oscuro.webp");
             background-size: cover; background-position: center;
             filter: blur(26px); }
 
-.fondo  { background-image: url("fondo.webp");
-          filter: brightness(0.74) saturate(0.85); }
-.angel  { background-image: url("angel.webp");
-          /* Solo sombra oscura. Antes habia tambien un drop-shadow hielo de
-             14 px, y eso era el filo claro que rodeaba las alas: no era la
-             foto, era mio. Con el borde del recorte ya difuminado en el
-             propio webp, no hace falta luz alrededor. */
-          filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45)); }
+/* ── Las cuatro capas. La caja (#capas) las mide capa.js ─────────────────── */
+
+.fondo  { background-image: url("fondo-oscuro.webp");
+          filter: brightness(0.78) contrast(1.02); }
+.angel  { background-image: url("angel-oscuro.webp");
+          /* Solo sombra oscura. Con un drop-shadow hielo de 14 px salia un filo
+             claro rodeando las alas, y no era la foto: era mio. */
+          filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)); }
+
+/* El velo lleva con screen. Sobre nada, screen no hace nada; y cualquier borde
+   de su caja se veria como un rectangulo mas claro. Con los lados desvanecidos
+   no hay forma que delate. */
 .velo   { background-image: url("velo.webp");
           mix-blend-mode: screen; opacity: 0.5;
-          /* El velo va con screen, y screen sobre nada no es nada: cualquier
-             borde de su caja se ve como un rectangulo mas claro. Con las
-             esquinas y los lados desvanecidos no hay forma que delate. */
           -webkit-mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%);
           mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%); }
 
-/* La capa de delante: la hierba y las cruces de abajo de la foto, que son lo
-   unico que hay de verdad mas cerca.
+/* La capa de delante: el suelo y las lapidas de abajo, que son lo unico que hay
+   de verdad mas cerca.
 
-   La franja ocupa el 42% de abajo de la caja. Antes la mascara iba de 0 a 30% de
-   la CAJA, o sea por encima de donde empieza la franja, con lo que ya iba
-   opaca al aparecer la imagen: se veia un borde recto horizontal a la altura
-   del primer pixel de la franja. La caida tiene que estar DENTRO de la franja,
-   de 58 a 76%. */
-/* En blanco y negro, cada capa carga su version. Son ficheros aparte y no un
-   filtro, porque un filtro desaturaria el ANGEL tambien, y el angel en B/N que
-   nos dieron es claro de nacimiento: con filtro saldria el mismo angel oscuro
-   que en color, que no es lo que hay en la imagen. */
-html.bn .fondo  { background-image: url("fondo-bn.webp"); }
-html.bn .angel  { background-image: url("angel-bn.webp"); }
-html.bn .frente { background-image: url("frente-bn.webp"); }
-html.bn .respaldo { background-image: url("fondo-bn.webp"); }
-
-/* Y la pagina entera se pone gris: si solo las imagenes cambiaran, seguirian
-   saliendo el hielo y el oxido en el texto, y un blanco y negro con color en la
-   barra no es un blanco y negro. */
-html.bn {
-  --suelo:    #0a0a0a;
-  --cristal:  rgba(26, 26, 26, 0.82);
-  --hielo:    #d6d6d6;
-  --oxido:    #9a9a9a;
-  --azul-1:   #5a5a5a;
-  --azul-3:   #7e7e7e;
-  --azul-4:   #9c9c9c;
-  --gris:     #8a8a8a;
-  --linea:      rgba(255, 255, 255, 0.16);
-  --linea-alta: rgba(255, 255, 255, 0.34);
-}
-html.bn .isla { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6); }
-html.bn .nombre { text-shadow: 0 2px 26px rgba(0, 0, 0, 0.95), 0 0 60px rgba(0, 0, 0, 0.85); }
-html.bn .firma, html.bn .bajo, html.bn .pie a,
-html.bn .col-menu h3 { color: rgba(190, 190, 190, 0.6); }
-html.bn .marca-menu p, html.bn .col-menu a, html.bn .pieza .cuerpo i { color: #8a8a8a; }
-html.bn .pieza[aria-expanded="true"] .filo,
-html.bn .cap .der b, html.bn .pieza .mas { color: #c8c8c8; }
-html.bn .nota-menu { color: rgba(150, 150, 150, 0.7) !important; }
-html.bn .b { color: #e8e8e8; border-color: rgba(255, 255, 255, 0.34); }
-html.bn .b:hover { background: #e8e8e8; color: #0a0a0a; }
-html.bn .velo { mix-blend-mode: screen; opacity: 0.28; }
-
-.frente { background-image: url("frente.webp");
+   La franja ocupa el 42% de abajo de la caja. La mascara va de 58 a 76% porque la
+   caida tiene que estar DENTRO de la franja; antes iba de 0 a 30% de la caja, o
+   sea por encima de donde empieza la imagen, y se veia un borde recto a la altura
+   del primer pixel. */
+.frente { background-image: url("frente-oscuro.webp");
           background-size: 100% auto; background-position: center bottom;
           -webkit-mask-image: linear-gradient(180deg, transparent 58%, #000 76%, #000 100%);
-          mask-image: linear-gradient(180deg, transparent 58%, #000 76%, #000 100%);
-          filter: brightness(0.6); }
+          mask-image: linear-gradient(180deg, transparent 58%, #000 76%, #000 100%); }
+
+/* ══ LOS DOS TEMAS ════════════════════════════════════════════════════════
+   Negro y blanco. Cada capa carga su version, y son ficheros aparte y no un
+   filtro: los dos temas son monocromos de verdad, uno con las altas lavadas y
+   otro con las bajas hundidas, y un grayscale() no los distingue.
+
+   El tema CLARO es el que pediste con la imagen del angel en blanco y negro: la
+   pagina entera se pone blanca, con las altas de la foto lavadas. El NEGRO es el
+   de antes, con las bajas hundidas. */
+html.claro .fondo    { background-image: url("fondo-claro.webp"); }
+html.claro .angel    { background-image: url("angel-claro.webp"); }
+html.claro .frente   { background-image: url("frente-claro.webp"); }
+html.claro .respaldo { background-image: url("fondo-claro.webp"); }
+
+/* Y la pagina entera se da la vuelta. Si solo las imagenes cambiaran, el texto
+   claro se pondria sobre fondo claro y no se leeria. */
+html.claro {
+  --suelo:    #eceae5;
+  --cristal:  rgba(255, 255, 255, 0.76);
+  --hielo:    #1b1d1f;
+  --oxido:    #9a5638;
+  --azul-1:   #55606a;
+  --azul-3:   #6f7a83;
+  --azul-4:   #525d66;
+  --gris:     #71767a;
+  --linea:      rgba(20, 22, 24, 0.14);
+  --linea-alta: rgba(20, 22, 24, 0.30);
+}
+html.claro .isla { box-shadow: 0 8px 26px rgba(30, 28, 24, 0.16); }
+html.claro .nombre { color: #16181a; text-shadow: 0 2px 24px rgba(255, 255, 255, 0.92); }
+html.claro .piezas .cuerpo b { color: #16181a; }
+html.claro .bajo, html.claro .col-menu h3,
+html.claro .bajar { color: rgba(30, 32, 34, 0.5); }
+html.claro .marca-menu p, html.claro .col-menu a, html.claro .pieza .cuerpo i,
+html.claro .intro, html.claro .abierta p, html.claro .banderas span,
+html.claro .datos-menu span, html.claro .chip-mini, html.claro .etiquetas span,
+html.claro .vivo span { color: var(--gris); }
+html.claro .pieza:hover { background: rgba(20, 22, 24, 0.04); }
+html.claro .b { color: #16181a; border-color: var(--linea-alta); }
+html.claro .b:hover { background: #16181a; color: #f6f5f2; }
+html.claro .nota-menu { color: rgba(30, 32, 34, 0.5) !important; }
+html.claro .motas { opacity: 0.55; }
+
+/* El velo en claro no puede ir con screen: sobre fondo claro, screen no hace
+   casi nada y la niebla no se ve. Con multiply, si. */
+html.claro .velo { mix-blend-mode: multiply; opacity: 0.45; }
 
 /* El halo de la cabeza. Su color es el termometro. */
 .halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;

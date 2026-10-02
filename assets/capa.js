@@ -41,15 +41,15 @@
   var TAM = window.RHYTHM_CAPA_TAM || {
     w: 2000, h: 1133,
     halo: { x: 0.5035, y: 0.088, r: 0.032 },
-    haloBn: { x: 0.5200, y: 0.094, r: 0.030 }
+    haloClaro: { x: 0.5200, y: 0.094, r: 0.030 }
   };
   var FOTO_W = TAM.w, FOTO_H = TAM.h;
 
   // El halo esta en un punto distinto en cada version: los dos ficheros del
   // angel son recortes ligeramente distintos y el anillo cae en otro sitio.
   function haloActual() {
-    var bn = document.documentElement.classList.contains("bn");
-    return bn ? (TAM.haloBn || TAM.halo) : TAM.halo;
+    var claro = document.documentElement.classList.contains("claro");
+    return claro ? (TAM.haloClaro || TAM.halo) : TAM.halo;
   }
 
   // ── La caja de las capas, a medida.
@@ -188,7 +188,7 @@
     // Cambiar de version cambia el punto del halo, asi que hay que recolocarlo.
     function avisarCambio() {
       medir();
-      if (luz) luz.style.opacity = document.documentElement.classList.contains("bn") ? "0.4" : "0.7";
+      if (luz) luz.style.opacity = document.documentElement.classList.contains("claro") ? "0.35" : "0.7";
     }
     medir();
     addEventListener("resize", medir);

@@ -174,42 +174,33 @@
   // nada guardado se respeta lo que diga prefers-color-scheme. Lo aplica una
   // clase en <html>, de la que cuelgan tanto las capas como los colores, para
   // que cambien las dos cosas a la vez.
-  var CLAVE = "rhythm-crea-bn";
+  var CLAVE = "rhythm-crea-tema";
 
-  function leerBN() {
-    try { return localStorage.getItem(CLAVE) === "1"; }
-    catch (e) { return false; }
-  }
-
-  function aplicarBN(activo) {
-    var raiz = document.documentElement;
-    raiz.classList.toggle("bn", activo);
+  // Dos temas: negro y blanco. No se pregunta al sistema, porque la pagina es
+  // oscura de por si y un tema claro del sistema no dice nada util aqui.
+  // Sin eleccion guardada se empieza en negro.
+  function aplicarClaro(activo) {
+    document.documentElement.classList.toggle("claro", activo);
     var b = $("#interruptor");
     if (b) {
       b.setAttribute("aria-pressed", String(activo));
-      b.title = activo ? "Volver al color" : "Pasar a blanco y negro";
+      b.title = activo ? "Pasar al tema negro" : "Pasar al tema blanco";
     }
-    var t = $("#interruptor-txt");
-    if (t) t.textContent = activo ? "color" : "bn";
-    // El halo esta en otro punto en cada version, asi que hay que recolocarlo.
+    // El halo del angel cae en otro punto en cada tema, asi que hay que recolocarlo.
     if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
   }
 
   function interruptor() {
     var b = $("#interruptor");
     if (!b) return;
-    // Sin eleccion guardada se empieza en color. Seenea preguntar al sistema:
-    // la pagina es oscura de por si, con lo que un tema claro del sistema no
-    // dice nada util aqui, y ademas hacia que la primera captura de esta session
-    // saliera en blanco y negro sin que nadie lo hubiera pedido.
     var guardado = null;
     try { guardado = localStorage.getItem(CLAVE); } catch (e) { guardado = null; }
-    aplicarBN(guardado === "1");
+    aplicarClaro(guardado === "claro");
 
     b.addEventListener("click", function () {
-      var activo = document.documentElement.classList.contains("bn");
-      aplicarBN(!activo);
-      try { localStorage.setItem(CLAVE, activo ? "0" : "1"); } catch (e) { /* sin storage */ }
+      var activo = document.documentElement.classList.contains("claro");
+      aplicarClaro(!activo);
+      try { localStorage.setItem(CLAVE, activo ? "negro" : "claro"); } catch (e) { /* sin storage */ }
     });
   }
 
