@@ -35,7 +35,12 @@
     return { nucleo: "#99bac9", iris: "#3a6080", halo: "rgba(153,186,201,0.35)", b: 0.58, txt: "cpu a " + temp.toFixed(0) + "° · fresca" };
   }
 
-  var FOTO_W = 2000, FOTO_H = 1125;      // lo que dice scripts/preparar-angel.py
+  // El tamano y donde cae el halo los dice el propio script, que los midio en
+  // la imagen. Estaban escritos a mano y al cambiar de foto se quedaron
+  // viejos: el halo salia flotando en medio del cielo.
+  var TAM = window.RHYTHM_CAPA_TAM || { w: 2000, h: 1133,
+                                        halo: { x: 0.5035, y: 0.088, r: 0.032 } };
+  var FOTO_W = TAM.w, FOTO_H = TAM.h;
 
   // ── La caja de las capas, a medida.
   //
@@ -88,9 +93,12 @@
     if (!geo) return;
     var halo = $("#halo");
     if (!halo) return;
-    var cx = geo.mx + 0.505 * geo.w;
-    var cy = geo.my + 0.095 * geo.h;
-    var r = 54 * geo.escala;
+    var h = TAM.halo;
+    var cx = geo.mx + h.x * geo.w;
+    var cy = geo.my + h.y * geo.h;
+    // El radio sale de la fraccion del ancho de la foto, no de un numero fijo:
+    // el anillo es una elipse y con un radio igual en x y en y se salia.
+    var r = h.r * geo.w;
     halo.style.width = halo.style.height = (r * 2).toFixed(1) + "px";
     halo.style.left = (cx - r).toFixed(1) + "px";
     halo.style.top = (cy - r).toFixed(1) + "px";

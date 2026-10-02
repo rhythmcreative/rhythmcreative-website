@@ -1,227 +1,103 @@
 #!/usr/bin/env python3
-"""Prepara la foto del angel en capas, para que la pagina tenga profundidad.
+"""Prepara las capas del campo a partir de las dos imagenes.
 
-De una sola foto sale una imagen plana. Aqui se saca en tres piezas que se
-mueven a distinta velocidad con el raton, que es lo que hace que un fondo se
-sepa de una figura:
+    A.png                 el angel, ya recortado y con el damero PINTADO
+    Angel-Photoroom.png   el cementerio con niebla
 
-    fondo.webp    la escena sin el angel, oscura y desenfocada. Lo de atras
-    angel.webp    la figura con las alas, recortada y con canal alfa. Lo de delante
-    velo.png      las bandas de niebla. Lo de en medio
+Salen cuatro capas en assets/, que se mueven a distinta velocidad con el raton:
 
-Y el recorte lo hace el navegador en dos capas mas, con el raton y con el
-raton-oxigeno.
+    fondo.webp    el cementerio, desenfocado y frio. Lo de atras
+    angel.webp    la figura con las alas, con canal alfa. Lo de delante
+    velo.webp     las bandas de niebla. Lo de en medio
+    frente.webp   la franja de abajo, el primer plano
 
-De donde sale el recorte
------------------------
-El angel es oscuro contra una niebla clara arriba, asi que en la mitad de arriba
-un umbral de gris lo separa bien. Abajo NO: la tumba y la hierba tambien son
-oscuras, y ahi el umbral se comeria el cementerio entero. Por eso el recorte se
-limita a la banda de arriba y la base se queda en el fondo, que es donde de
-verdad esta.
+Y ademas assets/capa-datos.js, con el tamano de la foto y donde cae el halo, que
+es lo unico que el navegador no puede deducir por si solo.
 
-Sin scipy ni rembg, que no estan: la morfologia va con los filtros de PIL, la
-componente conexa con ImageDraw.floodfill, y el relleno de la figura en el
-fondo es una difusion: se va difuminando lo que hay dentro del recorte, dejando
-intacto lo de fuera, hasta que se convierte en niebla suave.
+Que esto sea mucho mas facil que antes
+--------------------------------------
+La foto anterior traia al angel DENTRO, y elannotated trabajo era quitarlo del
+fondo: seis formas de rellenarlo y cinco fallaban. Aqui son dos imagenes
+distintas y no hay nada que rellenar.
+
+Lo unico que hay que quitar es el damero, y sale regalado: el histograma de A.png
+es bimodal y con un hueco enorme entre medias. El angel esta por debajo de 85 y
+el damero por encima de 244, sin un solo pixel en medio, asi que la mascara es
+un umbral y no una aproximacion. No hace falta ni connected components ni
+descontaminacion de color.
 """
 import os
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageEnhance, ImageChops
+from PIL import Image, ImageFilter, ImageEnhance
 
 AQUI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ORIGEN = os.path.expanduser("~/Pictures/Wallpapers/Angel.jpg")
+ORIGEN_ANGEL = os.path.expanduser("~/Downloads/A.png")
+ORIGEN_FONDO = os.path.expanduser("~/Downloads/Angel-Photoroom.png")
 DESTINO = os.path.join(AQUI, "assets")
 
-ANCHO = 2000          # de trabajo
+ANCHO = 2000
+
+# Umbral del damero. A 160 esta en mitad del hueco entre los dos modos, que va
+# de 85 a 244: cualquier valor entre 120 y 200 da el mismo recorte.
+UMBRAL_DAMERO = 160
+
+# Donde cae el halo en la foto, en fracciones. Se midio en el fichero, no a ojo:
+# el anillo de la cabeza ocupa y de 0.070 a 0.106, y de x 0.472 a 0.535.
+HALO_X, HALO_Y, HALO_R = 0.5035, 0.088, 0.032
 
 
-def abrir():
-    im = Image.open(ORIGEN).convert("RGB")
-    if im.width < ANCHO:
-        im = im.resize((ANCHO, round(im.height * ANCHO / im.width)), Image.LANCZOS)
+def abrir(ruta, ancho):
+    im = Image.open(ruta).convert("RGB")
+    if im.width != ancho:
+        im = im.resize((ancho, round(im.height * ancho / im.width)), Image.LANCZOS)
     return im
 
 
-def difuminar(arr):
-    """Box blur 3x3 con numpy, para la difusion del relleno."""
-    a = np.pad(arr, ((1, 1), (1, 1), (0, 0)), mode="edge")
-    s = np.zeros_like(arr, dtype=np.float32)
-    for dy in (0, 1, 2):
-        for dx in (0, 1, 2):
-            s += a[dy:dy + arr.shape[0], dx:dx + arr.shape[1]]
-    return s / 9.0
-
-
-def recorte_angel(im):
-    """Dos mascaras de la figura: el nucleo y el borde.
-
-    Nucleo es donde la figura es solida. Borde es el nucleo 8 px mas ancho, con
-    7 px de caida: la plush que tiene el ala de verdad al deshacerse en la
-    niebla.
-
-    Antes era una sola mascara con 2.4 px de desenfoque, y el ala salia cortada
-    a tijera: el paso de opaco a transparente era tan corto que se leia como un
-    recorte pegado encima. Con las dos separadas, el borde va acompasado con el
-    desenfoque de la foto y no se ve donde esta el corte.
-    """
+def sacar_angel(im):
+    """El angel con canal alfa, sin el damero."""
     W, H = im.size
     gris = np.asarray(im.convert("L"), dtype=np.float32)
 
-    y = np.arange(H, dtype=np.float32)[:, None]
-    banda_alta = y < H * 0.72
-    # El umbral se ensancha al bajar: 118 arriba, donde hay niebla detras, y 62
-    # abajo, donde casi todo lo oscuro ya es parte de la figura o del mausoleo.
-    umbral = 118.0 - (y / H) * 56.0
-    mask = (gris < umbral) & banda_alta
+    # El damero se va con un umbral, pero el umbral solo no basta, y el motivo es
+    # que el BORDE del recorte ya esta sucio. En A.png el ultimo pixel del ala es
+    # una mezcla de pluma oscura y damero claro: un gris claro que se va con el
+    # damero. Alrededor de toda la silueta hay una orla de esos pixeles.
+    #
+    # Si el alfa se difumina ahi, la caida mezcla ese gris claro sobre el fondo
+    # oscuro, y sale un filo luminoso rodeando las alas. Parecia un halo y no lo
+    # era: era la contaminación del recorte.
+    #
+    # Por eso se MUERDE el borde antes de nada: dos pixeles de erosión se comen
+    # la orla y dejan la caida dentro de la figura, donde los pixeles son de
+    # verdad del angel. El recorte queda un pixel mas estrecho, que a este
+    # tamano no se ve, y a cambio el borde se desvanece en el color correcto.
+    alfa = Image.fromarray(
+        np.where(gris < UMBRAL_DAMERO, 255.0, 0.0).astype(np.uint8), "L")
+    alfa = alfa.filter(ImageFilter.MinFilter(5))       # -{2 px} de orla
+    alfa = alfa.filter(ImageFilter.MaxFilter(3))       # +{1 px}, para no comerse
+    a = alfa.filter(ImageFilter.GaussianBlur(1.2))
 
-    m = Image.fromarray((mask * 255).astype(np.uint8), "L")
-    # Cerrar huecos entre plumas: sin esto las alas salen rasgadas.
-    m = m.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9))
-    # Abrir: las ramas mojadas de la izquierda y las cruces de la derecha son
-    # oscuras y tocaban el ala, asi que se colaban en el recorte. Son finas, y
-    # una apertura las corta; el ala es gruesa y no le pasa nada.
-    m = m.filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MaxFilter(9))
-    m = m.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.MinFilter(7))
-
-    # Quedarse con la componente conexa grande: descarta el arbol mojado y las
-    # cruces del fondo, que tambien son oscuros.
-    px = m.load()
-    W2, H2 = m.size
-    semilla = None
-    for intento in range(60):
-        yy = int(H2 * (0.42 + intento * 0.006))
-        xx = int(W2 * 0.50)
-        if 0 <= yy < H2 and px[xx, yy] > 200:
-            semilla = (xx, yy)
-            break
-    if semilla is None:
-        return None
-    ImageDraw.floodfill(m, semilla, 255, thresh=120)
-
-    # Caida vertical: la figura se disuelve hacia abajo en la niebla en vez de
-    # acabar en un corte recto encima del mausoleo.
-    caida = np.ones(H2, dtype=np.float32)
-    ini = int(H2 * 0.58)
-    caida[ini:] = np.linspace(1.0, 0.0, H2 - ini, dtype=np.float32) ** 1.4
-    caida = caida[:, None]
-
-    nucleo = np.asarray(m, dtype=np.float32) / 255.0 * caida
-    nucleo = np.clip(nucleo, 0, 1)
-
-    borde_img = m.filter(ImageFilter.MaxFilter(17)).filter(ImageFilter.MinFilter(17))
-    borde = np.asarray(borde_img, dtype=np.float32) / 255.0 * caida
-    # Suavizar el alfa con smoothstep: el teorema del valor medio. Un desenfoque
-    # gaussiano a secas deja la transicion en S pero con los hombros redondos;
-    # el smoothstep la deja plana en los dos extremos y con caida limpia en medio.
-    t = np.clip(borde, 0, 1)
-    borde = t * t * (3 - 2 * t)
-    borde = np.clip(borde, 0, 1)
-
-    return nucleo, borde
-
-
-def rellenar_niebla(im, mascara):
-    """La escena con la figura borrada, rellena de cielo.
-
-    Se ha probado de cinco formas. Las cinco fallaban por lo mismo, por
-    anclar el relleno a pixeles que NO son cielo:
-
-      · difusion desde la foto: el oscuro del ala entra y la figura no se va
-      · difusion normalizada: aro negro en el borde
-      · filas: la niebla esta arriba, sale rayado horizontal
-      · columnas con los dos extremos: el de ABAJO son arboles y lapidas, y
-        como varia de columna a columna el relleno sale rayado vertical
-      · columnas con los extremos suavizados: menos rayas, pero el mismo
-        problema, porque abajo sigue habiendo edificio
-
-    Asi que aqui no hay ningun anclaje abajo. UN solo anclaje por columna, el
-    pixel de cielo justo encima de la figura, y ademas promediado en 601 px: el
-    cielo de esta foto es un degradado suave, asi que con esa media sale cielo
-    otra vez y todas las columnas parecian la misma. Y de ahi hacia abajo, solo
-    un degradado fijo que lo va espesando.
-
-    El resultado no es una reconstruccion, es niebla. Y es lo que tiene que
-    ser: detras del angel solo hay cielo.
-    """
-    W, H = im.size
-    base = np.asarray(im, dtype=np.float32)
-    hueco = np.asarray(mascara, dtype=np.float32) / 255.0
-    dentro = hueco > 0.5
-    if not dentro.any():
-        return im
-
-    # ── El anclaje: una vez por columna ───────────────────────────────────
-    techo = np.full(W, -1, dtype=np.int64)
-    for x in range(W):
-        ys = np.flatnonzero(dentro[:, x])
-        if ys.size:
-            techo[x] = ys[0]
-
-    # Media movil ancha sobre el color del cielo, canal a canal. Se queda sin
-    # anclaje donde no hay figura, y ahi vale el propio pixel.
-    R = 300
-    suave = base.copy()
-    for ch in range(3):
-        # Acumulado SOBRE COLUMNAS, que es por donde se promedia, y sobre
-        # base[:, :, ch]: en un array (H, W, 3), base[:, ch] coje (W, H), que
-        # es la transpuesta y descoloca todos los indices despues.
-        c = np.concatenate((np.zeros((H, 1), dtype=np.float32),
-                          np.cumsum(base[:, :, ch], axis=1)), axis=1)
-        for x in range(W):
-            t = techo[x]
-            if t <= 0:
-                continue
-            y = min(H - 1, max(0, t - 1))
-            a, b = max(0, x - R), min(W, x + R + 1)
-            # c va por filas y columnas: primero la fila y, luego la
-            # columna. Al reves sale un indice fuera de rango.
-            suave[y, x, ch] = (c[y, b] - c[y, a]) / (b - a)
-
-    # ── Rellenar: desde el cielo suavizado hacia abajo, espesando ─────────
-    relleno = base.copy()
-    ys_grid = np.arange(H, dtype=np.float32)
-    for x in range(W):
-        t = techo[x]
-        if t <= 0:
-            continue
-        color = suave[min(H - 1, t - 1), x]
-        span = float(H - t)
-        u = np.clip((ys_grid - t) / max(1.0, span * 0.85), 0, 1)
-        # 0.46 es cuanto se apaga la niebla al bajar. Poco: si apaga mas, el
-        # relleno se separa del cielo de al lado y se ve la mancha.
-        # u[t:] es (n,), y hay que estirarlo a (n, 1) para multiplicar por el
-        # color, que es (3,): con un eje de mas sale (n, 1, 3).
-        relleno[t:, x] = color[None, :] * (1.0 - 0.46 * u[t:])[:, None]
-
-    # ── Mezclar, con la mascara agrandada y muy suave ─────────────────────
-    # El umbral de gris corta el ala en seco, pero el ala de verdad tiene una
-    # plush de quince o veinte pixeles. Si el relleno se queda en el umbral,
-    # esa plush se queda fuera y aparece un aro oscuro rodeando la niebla.
-    grande = Image.fromarray((dentro * 255).astype(np.uint8), "L")
-    grande = grande.filter(ImageFilter.MaxFilter(25)).filter(ImageFilter.MinFilter(25))
-    grande = grande.filter(ImageFilter.MaxFilter(13)).filter(ImageFilter.MinFilter(13))
-    grande = grande.filter(ImageFilter.GaussianBlur(11.0))
-    a = np.asarray(grande, dtype=np.float32) / 255.0
-    a = a * a * (3 - 2 * a)
-    salida = base * (1 - a[..., None]) + relleno * a[..., None]
-
-    im2 = Image.fromarray(np.clip(salida, 0, 255).astype(np.uint8), "RGB")
-    # La capa de atras tiene que estar desenfocada, o se nota que le falta el
-    # angel. Y el desenfoque se lleva los ultimos pixeles de costura.
-    return im2.filter(ImageFilter.GaussianBlur(7.0))
+    # Tono: la figura viene mas clara y mas neutra que el cementerio, y si se deja
+    # asi parece pegada encima. Se baja un poco y se tira a frio, que es el aire
+    # de la escena. Un 12% hacia el azul de la niebla: lo justo para que se lea
+    # detras del velo y no delante.
+    rgb = np.asarray(im, dtype=np.float32)
+    rgb = rgb * 0.90
+    rgb = rgb * (1 - 0.12) + np.array([58.0, 76.0, 88.0]) * 0.12
+    salida = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB")
+    salida.putalpha(a)
+    return salida
 
 
 def velo(W, H):
-    """Las bandas de niebla, en blanco con alfa, para poner entre capas."""
+    """Bandas de niebla, en blanco con alfa, para poner entre capas."""
     n = np.zeros((H, W), dtype=np.float32)
     rng = np.random.default_rng(7)
     for _ in range(16):
-        y0 = rng.uniform(0.12, 0.94) * H
+        y0 = rng.uniform(0.10, 0.94) * H
         alto = rng.uniform(0.035, 0.13) * H
         amp = rng.uniform(0.10, 0.30)
-        # Cada banda ondula un poco con la x, para que no salga en bandas rectas.
         fase = rng.uniform(0, 6.28)
         frec = rng.uniform(1.2, 3.4) / W
         xs = np.arange(W, dtype=np.float32)
@@ -238,60 +114,64 @@ def velo(W, H):
 
 def main():
     os.makedirs(DESTINO, exist_ok=True)
-    im = abrir()
-    W, H = im.size
-    print("origen:", W, "x", H)
 
-    recortadas = recorte_angel(im)
-    if recortadas is None:
-        print("no se ha podido recortar la figura")
+    if not os.path.exists(ORIGEN_ANGEL) or not os.path.exists(ORIGEN_FONDO):
+        print("faltan las imagenes de origen en ~/Downloads/")
         return 1
-    nucleo, borde = recortadas
-    mascara = Image.fromarray((borde * 255).astype(np.uint8), "L")
 
-    # ── la figura, recortada ────────────────────────────────────────────────
-    # El RGB se oscurece donde el alfa es parcial. Sin esto, la plush del ala se
-    # mezcla con la niebla clara que hay detrás y sale un filo luminoso rodeando
-    # el ala, que es justo lo que hacia que el recorte se viera pegado encima.
-    rgb = np.asarray(im, dtype=np.float32)
-    peso = 0.30 + 0.70 * np.clip(nucleo, 0, 1)[..., None]
-    rgb = rgb * peso
-    angel = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB")
-    angel.putalpha(mascara)
-    angel.save(os.path.join(DESTINO, "angel.webp"), "WEBP", quality=90, method=6)
-    print("angel.webp   recorte solido: %.1f%%  ·  con borde: %.1f%%" %
-          (float(nucleo.mean()) * 100, float(borde.mean()) * 100))
+    angel = abrir(ORIGEN_ANGEL, ANCHO)
+    fondo = abrir(ORIGEN_FONDO, ANCHO)
+    W, H = angel.size
+    print("angel %dx%d   fondo %dx%d" % (angel.width, angel.height,
+                                        fondo.width, fondo.height))
+    if fondo.size != angel.size:
+        fondo = fondo.resize(angel.size, Image.LANCZOS)
 
-    # ── el fondo: la escena sin la figura ──────────────────────────────────
-    fondo = rellenar_niebla(im, mascara)
-    fondo = fondo.filter(ImageFilter.GaussianBlur(2.0))
-    fondo = ImageEnhance.Color(fondo).enhance(0.72)
-    fondo = ImageEnhance.Brightness(fondo).enhance(0.62)
-    fondo = ImageEnhance.Contrast(fondo).enhance(0.88)
+    # ── la figura ────────────────────────────────────────────────────────────
+    angel = sacar_angel(angel)
+    angel.save(os.path.join(DESTINO, "angel.webp"), "WEBP", quality=92, method=6)
+    opaco = float(np.asarray(angel.split()[-1], dtype=np.float32).mean() / 255.0)
+    print("angel.webp    opaco en %.1f%% de la imagen" % (opaco * 100))
+
+    # ── el fondo ─────────────────────────────────────────────────────────────
+    # Desenfoque de fondo. No por estilo: es la profundidad de campo. La figura
+    # va nitida y el cementerio no, y eso ya separa los dos planos aunque las
+    # capas no se muevan.
+    f = fondo.filter(ImageFilter.GaussianBlur(5.0))
+    f = ImageEnhance.Color(f).enhance(0.80)
+    f = ImageEnhance.Brightness(f).enhance(0.66)
+    f = ImageEnhance.Contrast(f).enhance(0.92)
     # Azul de noche, el mismo tono que el pywal de la pagina.
-    azul = Image.new("RGB", fondo.size, (24, 40, 52))
-    fondo = Image.blend(fondo, azul, 0.22)
-    fondo.save(os.path.join(DESTINO, "fondo.webp"), "WEBP", quality=86, method=6)
-    print("fondo.webp   escena sin la figura, nitida y fria")
+    f = Image.blend(f, Image.new("RGB", f.size, (26, 42, 54)), 0.24)
+    f.save(os.path.join(DESTINO, "fondo.webp"), "WEBP", quality=86, method=6)
+    print("fondo.webp    cementerio, desenfocado y frio")
 
-    # ── la niebla de en medio ──────────────────────────────────────────────
-    # A media resolucion y en webp: es una niebla suave, y a 2000 de ancho en
-    # PNGPesaba 145 KB para nada.
+    # ── la niebla de en medio ───────────────────────────────────────────────
+    # A media resolucion: es una niebla suave, y a ancho completo en PNG pesaba
+    # 145 KB para nada.
     velo(W // 2, H // 2).save(os.path.join(DESTINO, "velo.webp"), "WEBP",
-                             quality=72, method=6)
-    print("velo.webp    bandas de niebla %dx%d" % (W // 2, H // 2))
+                              quality=72, method=6)
+    print("velo.webp     bandas de niebla %dx%d" % (W // 2, H // 2))
 
     # ── el primer plano ───────────────────────────────────────────────────
-    # La franja de abajo de la foto: los escalones, la hierba de delante y las
-    # cruces. Ahi no llega el ala, asi que sale entera y de verdad esta mas
-    # cerca que todo lo demas. Sobredimensionada en la pagina, se separa del
-    # fondo al mover el raton, y es la que mas se mueve.
-    franja = im.crop((0, int(H * 0.58), W, H))
-    franja = ImageEnhance.Brightness(franja).enhance(0.62)
-    franja = ImageEnhance.Color(franja).enhance(0.7)
+    # La franja de abajo: el suelo mojado, la hierba y las lapidas de delante.
+    # Sobredimensionada en la pagina, se separa del fondo al mover el raton, y es
+    # la capa que mas se mueve.
+    franja = fondo.crop((0, int(H * 0.58), W, H))
+    franja = ImageEnhance.Brightness(franja).enhance(0.60)
+    franja = ImageEnhance.Color(franja).enhance(0.72)
     franja = Image.blend(franja, Image.new("RGB", franja.size, (18, 30, 40)), 0.26)
     franja.save(os.path.join(DESTINO, "frente.webp"), "WEBP", quality=84, method=6)
-    print("frente.webp  primer plano, %dx%d" % franja.size)
+    print("frente.webp   primer plano, %dx%d" % franja.size)
+
+    # ── los numeros que el navegador no puede saber ────────────────────────
+    with open(os.path.join(DESTINO, "capa-datos.js"), "w", encoding="utf-8") as fh:
+        fh.write("// Generado por scripts/preparar-angel.py. No editar a mano.\n")
+        fh.write("window.RHYTHM_CAPA_TAM = {\n")
+        fh.write("  w: %d,\n  h: %d,\n" % (W, H))
+        fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f }\n" % (HALO_X, HALO_Y, HALO_R))
+        fh.write("};\n")
+    print("capa-datos.js %dx%d, halo en (%.3f, %.3f)" % (W, H, HALO_X, HALO_Y))
 
     return 0
 

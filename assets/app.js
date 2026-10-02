@@ -1,6 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Lo que hace la pagina: arranca el campo con sus capas, pinta el punto de la
-   barra y los repos, y pone en hora el reloj.
+   barra, centraliza el nombre, dibuja la seccion de Hyprland y pone en hora el
+   reloj.
 
    No pide nada a nadie. Todo sale de data/system.js y data/github.js, que
    escriben dos scripts en la maquina (scripts/collect-system-stats.sh y
@@ -12,9 +13,10 @@
   "use strict";
 
   var $ = function (s) { return document.querySelector(s); };
-  var PROYECTOS = window.RHYTHM_PROJECTS || [];
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var S = window.RHYTHM_SYSTEM || null;
   var G = window.RHYTHM_GITHUB || null;
+  var H = window.RHYTHM_HYPRLAND || null;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -33,13 +35,6 @@
     return h < 24 ? "hace " + h + " h" : "hace " + Math.floor(h / 24) + " d";
   }
 
-  // Color estable por nombre: el mismo repo es siempre el mismo punto.
-  function colorDe(nombre) {
-    var h = 0;
-    for (var i = 0; i < nombre.length; i++) h = (h * 31 + nombre.charCodeAt(i)) % 360;
-    return "hsl(" + h + " 34% 52%)";
-  }
-
   // ── El punto de la barra: la temperatura real, no un temporizador ──────────
   function punto(temp) {
     var el = $("#punto");
@@ -51,48 +46,118 @@
     el.title = pal.txt;
   }
 
-  // ── Los proyectos ──────────────────────────────────────────────────────────
+  // La ultima letra del nombre, sin su hueco de letter-spacing. Sin esto el
+  // nombre se va 0.21em a la izquierda al centrarlo, porque el espaciado entre
+  // letras se aplica tambien despues de la ultima. Se hace aqui y no en el HTML
+  // para no partir el nombre en dos trozos a mano.
+  function centrarNombre() {
+    var h = $(".nombre");
+    if (!h || h.dataset.centrado) return;
+    var t = h.textContent.trim();
+    if (t.length < 2) return;
+    h.dataset.centrado = "1";
+    h.innerHTML = esc(t.slice(0, -1)) + '<span class="ultima">' + esc(t.slice(-1)) + "</span>";
+  }
+
+  // ── La seccion de Hyprland ─────────────────────────────────────────────────
 
   var abierto = null;
 
-  function datoDe(repo) { return (G && G.repos && G.repos[repo]) || null; }
-
-  function pintarProyectos() {
-    var caja = $("#rejilla-p");
-    var partes = [];
-    PROYECTOS.forEach(function (p) {
-      var d = datoDe(p.repo);
-      var estrellas = d && typeof d.stars === "number" ? d.stars : (p.stars || 0);
-      partes.push('<button class="cap" type="button" data-nombre="' + esc(p.name) + '"' +
-        ' aria-expanded="' + (abierto === p.name) + '"' +
-        ' style="--color:' + colorDe(p.name) + '">' +
-        '<span class="gota"></span>' +
-        '<span class="nom">' + esc(p.name) + "</span>" +
-        '<span class="der">' + (estrellas > 0 ? "★ " + estrellas : "") +
-        (d && d.lenguaje ? " &nbsp;" + esc(d.lenguaje) : "") + "</span></button>");
-      if (abierto === p.name) partes.push(detalle(p));
-    });
-    caja.innerHTML = partes.join("");
+  function datoDelRepo() {
+    return (G && G.repos && G.repos[H.repo]) || null;
   }
 
-  function detalle(p) {
-    var d = datoDe(p.repo);
-    var estrellas = d && typeof d.stars === "number" ? d.stars : (p.stars || 0);
-    var h = '<div class="abierta">';
-    h += '<div class="cabeza"><h3>' + esc(p.name) + "</h3>" +
-      '<span class="meta">★ ' + estrellas +
-      (d && d.lenguaje ? "  ·  " + esc(d.lenguaje) : "") +
-      (d && d.push ? "  ·  " + esc(hace(d.push)) : "") + "</span></div>";
-    if (p.tagline) h += "<p>" + esc(p.tagline) + "</p>";
-    if (p.blurb) h += "<p>" + esc(p.blurb) + "</p>";
-    h += '<div class="pildoras">' + (p.tags || []).map(function (t) {
-      return "<span>" + esc(t) + "</span>";
-    }).join("") + "</div>";
-    h += '<div class="filas">' +
-      '<a class="b" href="https://github.com/' + esc(p.repo) +
+  // Lo que hay vivo en la sesion. Sin esto la seccion contaria cosas que
+  // podrían no ser ciertas: datos del recolector, no opinion.
+  function valorEnVivo(campo) {
+    if (!S) return null;
+    if (campo === "binds") return (S.binds || []).length || null;
+    if (campo === "monitors") return (S.monitors || []).length || null;
+    return S[campo] === undefined ? null : S[campo];
+  }
+
+  function pintarHyprland() {
+    if (!H) return;
+    var d = datoDelRepo();
+    var izq = [];
+
+    // ── La identidad: lo que dice que es esto ────────────────────────────
+    izq.push('<div class="cabecera-seccion">');
+    izq.push('<span class="punto-mini"></span>');
+    izq.push("<h2>hyprland</h2>");
+    izq.push('<span class="meta">' +
+      (d ? "★ " + esc(d.stars) + (d.lenguaje ? "  ·  " + esc(d.lenguaje) : "") +
+           (d.push ? "  ·  " + esc(hace(d.push)) : "")
+           : "sin datos de github") + "</span>");
+    izq.push("</div>");
+    izq.push('<p class="lema">' + esc(H.lema) + "</p>");
+    izq.push('<p class="intro">' + esc(H.intro) + "</p>");
+
+    // ── Lo que hay vivo ahora mismo ──────────────────────────────────────
+    var vivos = (H.enVivo || []).map(function (v) {
+      var x = valorEnVivo(v.de);
+      return '<div class="vivo"><b>' + (x === null ? "—" : esc(String(x))) +
+             "</b><span>" + esc(v.etiqueta) + "</span></div>";
+    }).join("");
+    if (vivos) izq.push('<div class="vivos">' + vivos + "</div>");
+
+    if ((H.base || []).length) {
+      izq.push('<div class="etiquetas">' + H.base.map(function (b) {
+        return "<span>" + esc(b) + "</span>";
+      }).join("") + "</div>");
+    }
+
+    izq.push('<div class="acciones-seccion">' +
+      '<a class="b" href="https://github.com/' + esc(H.repo) +
       '" target="_blank" rel="noopener">github ↗</a>' +
-      '<button class="b f" type="button" data-cerrar="1">cerrar · esc</button></div>';
-    return h + "</div>";
+      (H.alrededor || []).map(function (a) {
+        return '<a class="b f" href="https://github.com/' + esc(a.repo) +
+               '" target="_blank" rel="noopener">' + esc(a.nombre) + "</a>";
+      }).join("") + "</div>");
+
+    // ── Las piezas, a la derecha ─────────────────────────────────────────
+    var der = ['<div class="piezas">'];
+    (H.piezas || []).forEach(function (p) { der.push(pieza(p)); });
+    der.push("</div>");
+
+    var caja = $("#hyprland-caja");
+    if (caja) {
+      caja.innerHTML = '<div class="rejilla-seccion">' +
+        '<div class="identidad">' + izq.join("") + "</div>" +
+        '<div class="columna">' + der.join("") + "</div></div>";
+    }
+  }
+
+  function pieza(p) {
+    var h = '<button class="pieza" type="button" data-id="' + esc(p.id) +
+            '" aria-expanded="' + (abierto === p.id) + '">' +
+            '<span class="filo"></span>' +
+            '<span class="cuerpo"><b>' + esc(p.titulo) + "</b>" +
+            "<i>" + esc(p.resumen) + "</i></span>" +
+            (p.chips || []).slice(0, 2).map(function (c) {
+              return '<span class="chip-mini">' + esc(c) + "</span>";
+            }).join("") +
+            '<span class="mas" aria-hidden="true">' + (abierto === p.id ? "−" : "+") + "</span>" +
+            "</button>";
+
+    if (abierto !== p.id) return h;
+
+    var dentro = '<div class="abierta">';
+    (p.filas || []).forEach(function (f) {
+      dentro += "<p>" + esc(f) + "</p>";
+    });
+    if ((p.banderas || []).length) {
+      dentro += '<div class="banderas">' + p.banderas.map(function (b) {
+        return "<div><code>" + esc(b[0]) + "</code><span>" + esc(b[1]) + "</span></div>";
+      }).join("") + "</div>";
+    }
+    if ((p.chips || []).length > 2) {
+      dentro += '<div class="etiquetas">' + p.chips.map(function (c) {
+        return "<span>" + esc(c) + "</span>";
+      }).join("") + "</div>";
+    }
+    dentro += "</div>";
+    return h + dentro;
   }
 
   // ── Arranque ───────────────────────────────────────────────────────────────
@@ -104,46 +169,43 @@
   }
 
   function inicio() {
+    centrarNombre();
     var temp = S && S.temps ? S.temps.cpu : null;
     punto(temp);
-    $("#cuenta").textContent = PROYECTOS.length;
 
     if (window.RHYTHM_CAPA) window.RHYTHM_CAPA.montar($("#escena"), temp);
 
     tic();
     setInterval(tic, 1000);
 
-    $("#bajar").addEventListener("click", function () {
-      $("#proyectos").scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    $("#rejilla-p").addEventListener("click", function (ev) {
-      if (ev.target.closest("[data-cerrar]")) { abierto = null; pintarProyectos(); return; }
-      var c = ev.target.closest(".cap");
-      if (c) {
-        var n = c.getAttribute("data-nombre");
-        abierto = abierto === n ? null : n;
-        pintarProyectos();
-      }
-    });
-
-    document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && abierto) { abierto = null; pintarProyectos(); }
-      else if (ev.key === "j") {
-        var p0 = PROYECTOS[0];
-        if (p0) { abierto = abierto === p0.name ? null : p0.name; pintarProyectos(); }
-      }
-    });
-
-    // El sello del pie dice de cuando son los datos, no "en vivo": es una foto.
-    var sello = $("#sello");
-    if (sello) {
-      sello.textContent = S && G
-        ? "foto " + hace(S.generado) + " · repos " + hace(G.recogido)
-        : S ? "foto " + hace(S.generado) : "sin datos";
+    var bajar = $("#bajar");
+    if (bajar) {
+      bajar.addEventListener("click", function () {
+        $("#hyprland").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
 
-    pintarProyectos();
+    var caja = $("#hyprland-caja");
+    if (caja) {
+      caja.addEventListener("click", function (ev) {
+        var b = ev.target.closest(".pieza");
+        if (!b) return;
+        var id = b.getAttribute("data-id");
+        abierto = abierto === id ? null : id;
+        pintarHyprland();
+      });
+    }
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && abierto) { abierto = null; pintarHyprland(); }
+      else if (ev.key === "j" && H && H.piezas && H.piezas.length) {
+        var p0 = H.piezas[0].id;
+        abierto = abierto === p0 ? null : p0;
+        pintarHyprland();
+      }
+    });
+
+    pintarHyprland();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);

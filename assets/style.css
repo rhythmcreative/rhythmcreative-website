@@ -69,7 +69,11 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 
 .isla {
   pointer-events: auto;
-  display: flex; align-items: center; gap: 0.5rem;
+  /* Tres columnas: 1fr · auto · 1fr. El reloj va en la del medio, y las de los
+     lados se reparten el resto, de modo que el reloj queda en el centro de la
+     barra tanto si la izquierda es mas larga como la derecha. Con flex y un
+     margen automatico se descuadra en cuanto uno de los lados crece. */
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   max-width: var(--ancho); margin: 0 auto;
   background: var(--cristal);
   border: 1px solid var(--linea);
@@ -96,18 +100,25 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 }
 @keyframes latir { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.9); opacity: 0; } }
 
+.isla .izq { justify-self: start; display: flex; align-items: center; gap: 0.5rem;
+             min-width: 0; }
 .isla .rotulo { font: 600 0.76rem/1 var(--f); letter-spacing: 0.2em;
-                text-transform: uppercase; color: var(--hielo); padding: 0 0.4rem 0 0.15rem; }
-.isla nav { display: flex; gap: 0.15rem; }
+                text-transform: uppercase; color: var(--hielo); padding-left: 0.15rem; }
+.isla nav { justify-self: end; display: flex; gap: 0.15rem; }
 .isla nav a { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
              color: var(--gris); padding: 0.34rem 0.58rem; border-radius: var(--r);
              transition: color 0.2s, background 0.2s; white-space: nowrap; }
 .isla nav a:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
-.isla .reloj { font-size: 0.73rem; letter-spacing: 0.05em; color: var(--azul-4);
-               padding: 0 0.5rem 0 0.6rem; white-space: nowrap;
-               font-variant-numeric: tabular-nums;
-               border-left: 1px solid var(--linea); }
-@media (max-width: 560px) { .isla nav { display: none; } }
+.isla .reloj { justify-self: center; font-size: 0.76rem; letter-spacing: 0.06em;
+               color: var(--hielo); white-space: nowrap; padding: 0 0.3rem;
+               font-variant-numeric: tabular-nums; }
+
+@media (max-width: 620px) {
+  .isla nav { display: none; }
+  /* Sin enlaces a la derecha, la tercera columna se vacia y el reloj se va con
+     ella. Con grid 1fr auto 1fr sigue quedando centrado porque las columnas
+     siguen siendo iguales. */
+}
 
 /* ══ EL CAMPO ═══════════════════════════════════════════════════════════════ */
 
@@ -230,10 +241,19 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
           display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
           text-align: center; width: 100%; padding: 0 1rem; }
 .nombre { font: 700 clamp(1.6rem, 6.4vw, 3.4rem)/1 var(--f);
-          letter-spacing: 0.42em; text-indent: 0.42em;   /* el espaciado deja
-             el nombre descentrado; el text-indent lo vuelve a centrar */
+          /* El hueco entre letras se aplica TAMBIEN despues de la ultima, con
+             lo que la caja queda 0.42em mas ancha que los glifos y el nombre se
+             va a la izquierda al centrarlo.
+
+             text-indent no lo arregla: medido, la caja se ajusta al texto y el
+             indent solo la ensancha, dejando la tinta donde estaba. Lo que
+             funciona es quitarle el espaciado a la ultima letra, y eso lo hace
+             app.js metiendola en un <span>. */
+          letter-spacing: 0.42em;
           text-transform: uppercase; color: var(--hielo);
           text-shadow: 0 2px 26px rgba(7, 9, 11, 0.95), 0 0 60px rgba(7, 9, 11, 0.8); }
+.nombre .ultima { letter-spacing: 0; }   /* ver arriba */
+
 .bajo { font-size: 0.6rem; letter-spacing: 0.26em; text-transform: uppercase;
         color: rgba(153, 186, 201, 0.5); }
 
@@ -250,52 +270,111 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
                    50% { opacity: 1; transform: scaleY(1); } }
 @media (max-width: 560px) { .bajar { display: none; } }
 
-/* ══ LOS PROYECTOS ═════════════════════════════════════════════════════════
-   Capsulas sueltas en la oscuridad. Se abren en su sitio, como tu isla. */
+/* ══ LA SECCION DE HYPRLAND ═══════════════════════════════════════════════
+   El mismo lenguaje que el resto: fila que se abre en su sitio, sin recuadros.
 
-#proyectos { padding-top: clamp(3rem, 8vh, 6rem); padding-bottom: 2.5rem; }
-.rejilla { display: grid; gap: 0.55rem 0.6rem;
-           grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+   Lo que cambia aqui es la estructura. Antes era todo una columna con el texto
+   medido a 74ch, con lo que la mitad derecha de la pagina se quedaba vacia y
+   seemed un documento al que le sobra pagina. Ahora son dos columnas: la
+   identidad a la izquierda, que se queda pegada al leer, y las piezas a la
+   derecha, que son largas y narrow. */
 
-.cap { display: flex; align-items: center; gap: 0.55rem;
-       border: 1px solid var(--linea); border-radius: var(--r);
-       padding: 0.52rem 0.7rem; cursor: pointer; text-align: left; width: 100%;
-       transition: border-color 0.2s, background 0.2s, transform 0.2s; }
-.cap:hover { border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.04);
-             transform: translateY(-1px); }
-.cap[aria-expanded="true"] { border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.06); }
-.cap .gota { width: 7px; height: 7px; border-radius: 50%; flex: none;
-             background: var(--color, var(--azul-3)); }
-.cap .nom { font-size: 0.76rem; color: var(--hielo); overflow: hidden;
-            text-overflow: ellipsis; white-space: nowrap; }
-.cap .der { margin-left: auto; font-size: 0.62rem; color: var(--gris); white-space: nowrap; }
-.cap .der b { color: var(--oxido); font-weight: 500; }
+.seccion { padding-top: clamp(3.5rem, 9vh, 7rem); padding-bottom: 1rem;
+           scroll-margin-top: 4rem; }
 
-/* La ficha abierta, justo debajo de la capsula que se ha pinchado. */
-.abierta { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0.55rem;
-           border: 1px solid var(--linea-alta); border-radius: var(--r-isla);
-           background: var(--cristal); backdrop-filter: blur(14px);
-           padding: 1.1rem 1.2rem; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
-           animation: surgir 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes surgir { from { opacity: 0; transform: translateY(-6px); } }
-.abierta .cabeza { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
-.abierta h3 { font-size: 0.95rem; font-weight: 500; }
-.abierta .meta { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gris); }
-.abierta .meta b { color: var(--oxido); font-weight: 500; }
-.abierta p { font-size: 0.78rem; color: var(--gris); max-width: 70ch; }
-.abierta .pildoras { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-.abierta .pildoras span { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
-                          color: var(--gris); border: 1px solid var(--linea);
-                          border-radius: 999px; padding: 0.16rem 0.55rem; }
-.abierta .filas { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.15rem; }
+.seccion .rejilla-seccion {
+  display: grid; gap: 0 clamp(2rem, 4vw, 4rem);
+  grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 940px) {
+  .seccion .rejilla-seccion { grid-template-columns: 1fr; gap: 2.2rem; }
+}
 
-.b { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.66rem;
-      letter-spacing: 0.14em; text-transform: uppercase; border-radius: 999px;
-      padding: 0.45rem 0.9rem; border: 1px solid var(--linea-alta);
-      color: var(--hielo); transition: all 0.18s; }
-.b:hover { background: var(--hielo); color: var(--suelo); border-color: var(--hielo); }
-.b.f { color: var(--gris); }
-.b.f:hover { color: var(--suelo); background: var(--hielo); }
+/* ── La identidad ─────────────────────────────────────────────────────────── */
+
+.identidad { display: flex; flex-direction: column; }
+@media (min-width: 941px) { .identidad { position: sticky; top: 5rem; } }
+
+.cabecera-seccion { display: flex; align-items: baseline; gap: 0.6rem;
+                    padding-bottom: 0.55rem; border-bottom: 1px solid var(--linea); }
+.cabecera-seccion .punto-mini { width: 8px; height: 8px; border-radius: 50%;
+                    background: var(--azul-4); flex: none; align-self: center; }
+.cabecera-seccion h2 { font: 600 0.86rem/1 var(--f); letter-spacing: 0.3em;
+                    text-transform: uppercase; color: var(--hielo); }
+.cabecera-seccion .meta { margin-left: auto; font-size: 0.6rem; letter-spacing: 0.12em;
+                    text-transform: uppercase; color: var(--gris); white-space: nowrap; }
+
+.lema { margin-top: 1.4rem; font-size: clamp(1.15rem, 2.1vw, 1.5rem); line-height: 1.35;
+        color: var(--hielo); letter-spacing: -0.015em; text-wrap: balance; }
+.intro { margin-top: 0.9rem; font-size: 0.8rem; color: var(--gris); }
+
+/* Lo que hay vivo en la sesion. Sin caja: tres numeros y sus etiquetas, con un
+   filete encima, porque un dato de ahora mismo tiene que distinguirse de una
+   frase escrita. */
+.vivos { display: flex; flex-direction: column; gap: 0.55rem;
+         margin-top: 1.5rem; padding-top: 1.1rem; border-top: 1px solid var(--linea); }
+.vivo { display: flex; align-items: baseline; gap: 0.6rem; }
+.vivo b { font-size: 1.35rem; font-weight: 500; color: var(--hielo);
+          font-variant-numeric: tabular-nums; min-width: 3.2rem; }
+.vivo span { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+             color: var(--gris); }
+
+.etiquetas { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 1.3rem; }
+.etiquetas span { font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+                  color: var(--gris); border: 1px solid var(--linea);
+                  border-radius: 999px; padding: 0.18rem 0.6rem; }
+
+.acciones-seccion { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+
+/* ── Las piezas ─────────────────────────────────────────────────────────────
+   Una fila, con un filo a la izquierda que se enciende al abrirla. Sin caja:
+   son muchas, y veinte recuadros serían veinte cajas. */
+.piezas { display: flex; flex-direction: column; }
+
+.pieza { display: flex; align-items: center; gap: 0.8rem; width: 100%;
+         text-align: left; cursor: pointer; padding: 0.85rem 0.2rem;
+         border-bottom: 1px solid var(--linea);
+         transition: background 0.18s, padding 0.18s; }
+.pieza:first-child { border-top: 1px solid var(--linea); }
+.pieza:hover { background: rgba(153, 186, 201, 0.04); padding-left: 0.7rem;
+               padding-right: 0.7rem; }
+.pieza .filo { width: 2px; height: 1.6rem; flex: none; border-radius: 1px;
+               background: var(--linea-alta); transition: background 0.22s, height 0.22s; }
+.pieza[aria-expanded="true"] .filo { background: var(--oxido); height: 2.6rem; }
+
+.pieza .cuerpo { display: flex; flex-direction: column; gap: 0.12rem; min-width: 0; }
+.pieza .cuerpo b { font-size: 0.9rem; font-weight: 500; color: var(--hielo); }
+.pieza .cuerpo i { font-style: normal; font-size: 0.73rem; color: var(--gris); }
+
+/* Los chips se van a la derecha de su fila. Sin el margen automatico se
+   quedaban pegados al titulo y la fila parecia un bloque de texto. */
+.chip-mini { margin-left: auto; font-size: 0.56rem; letter-spacing: 0.12em;
+             text-transform: uppercase; color: var(--gris); border: 1px solid var(--linea);
+             border-radius: 999px; padding: 0.14rem 0.55rem; white-space: nowrap; }
+.chip-mini + .chip-mini { margin-left: 0.3rem; }
+@media (max-width: 700px) { .chip-mini { display: none; } }
+
+.pieza .mas { width: 1.4rem; text-align: right; flex: none; font-size: 0.95rem;
+              color: var(--gris); }
+
+/* La abierta: el detalle debajo de su propia fila, con una sangria que se nota. */
+.abierta { padding: 0.4rem 0 1.2rem 1rem; display: flex; flex-direction: column;
+           gap: 0.55rem; border-bottom: 1px solid var(--linea);
+           animation: surgir 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes surgir { from { opacity: 0; transform: translateY(-5px); } }
+.abierta p { font-size: 0.78rem; color: var(--gris); max-width: 68ch;
+             padding-left: 0.7rem; border-left: 1px solid var(--linea); }
+
+/* Las banderas del instalador, en monoespaciada, que es como se escriben. */
+.banderas { display: flex; flex-direction: column; gap: 0.32rem; margin-top: 0.35rem;
+            padding-left: 1.4rem; }
+.banderas > div { display: flex; gap: 0.7rem; align-items: baseline; flex-wrap: wrap; }
+.banderas code { font: 0.72rem/1.5 var(--f); color: var(--azul-4);
+                 border: 1px solid var(--linea); border-radius: 6px;
+                 padding: 0.05rem 0.4rem; white-space: nowrap; }
+.banderas span { font-size: 0.74rem; color: var(--gris); }
+.abierta .etiquetas { margin-top: 0.5rem; padding-left: 1.4rem; }
 
 /* ══ PIE ════════════════════════════════════════════════════════════════════ */
 

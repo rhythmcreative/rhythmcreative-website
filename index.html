@@ -14,14 +14,20 @@
 
 <!-- La barra. -->
 <div class="barra-z">
+  <!-- Tres zonas: el nombre a la izquierda y solo, el reloj en el medio, los
+       enlaces a la derecha. El reloj va en una columna propia del grid para que
+       quede centrado de verdad, y no "mas o menos" centrado depending de lo que
+       mida cada lado. -->
   <div class="isla" tabindex="0" aria-label="Navegacion">
-    <span class="punto" id="punto" title="temperatura de la cpu" aria-hidden="true"></span>
-    <span class="rotulo">Rhythmcrea</span>
+    <div class="izq">
+      <span class="punto" id="punto" title="temperatura de la cpu" aria-hidden="true"></span>
+      <span class="rotulo">Rhythmcrea</span>
+    </div>
+    <span class="reloj" id="reloj">--:--:--</span>
     <nav>
-      <a href="#proyectos">proyectos</a>
+      <a href="#hyprland">hyprland</a>
       <a href="#fuera">fuera</a>
     </nav>
-    <span class="reloj" id="reloj">--:--:--</span>
   </div>
 </div>
 
@@ -41,19 +47,19 @@
 
   <div class="cartel">
     <h1 class="nombre">RHYTHMCREA</h1>
-    <p class="bajo">hyprland · arch · <span id="cuenta">19</span> repos</p>
-    <button class="bajar" id="bajar" type="button">proyectos <i></i></button>
+    <p class="bajo">hyprland · arch · quickshell · rust</p>
+    <button class="bajar" id="bajar" type="button">hyprland <i></i></button>
   </div>
 </section>
 
-<section class="cola" id="proyectos">
-  <div class="rejilla" id="rejilla-p"></div>
+<!-- Hyprland. Lo unico que hay, con su seccion entera. -->
+<section class="cola seccion" id="hyprland">
+  <div id="hyprland-caja"></div>
 </section>
 
 <footer class="cola" id="fuera">
   <div class="pie">
     <a href="https://github.com/rhythmcreative" target="_blank" rel="noopener">github</a>
-    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">hyprland</a>
     <a href="https://github.com/rhythmcreative/rust-dock" target="_blank" rel="noopener">rust-dock</a>
     <span class="der" id="sello">&nbsp;</span>
   </div>
@@ -63,7 +69,8 @@
 
 <script src="data/system.js"></script>
 <script src="data/github.js"></script>
-<script src="assets/projects.js"></script>
+<script src="assets/hyprland.js"></script>
+<script src="assets/capa-datos.js"></script>
 <script src="assets/capa.js"></script>
 <script src="assets/app.js"></script>
 </body>

@@ -6,17 +6,9 @@ tambien se sirve tal cual desde GitHub Pages.
 
 ## Que es la pagina
 
-La barra y una foto deshecha en capas.
-
 **La barra.** Una capsula de cristal con un punto que brilla a la izquierda, el
-nombre, dos enlaces y la hora. Ese punto no es decoracion: su color lo pone la
-temperatura real de la CPU, leida de `data/system.js`. Con la maquina fria esta
-apagado, con la maquina caliente brilla en oxido.
-
-Se probó a fazerla una Dynamic Island con las medidas reales de k4 (`baseHeight:34`,
-`cuerpoRadio:20`, `wing:16`, fondo negro, 176 px en reposo, y las esquinas de arriba
-mordidas con `mask-composite`). Quedaba bien pero no era esta. Se ha vuelto a la
-capsula.
+nombre, un enlace y la hora. El punto no es decoracion: su color lo pone la
+temperatura real de la CPU, leida de `data/system.js`.
 
 **El campo.** La foto del angel partida en cuatro capas que se mueven a distinta
 velocidad con el raton. Eso es la profundidad: no un filtro, sino el nearer y el
@@ -24,43 +16,43 @@ farther separados de verdad.
 
 | Capa | Que es | Cuanto se mueve |
 |---|---|---|
-| `frente` | la hierba y las cruces de abajo de la foto | x5.2 |
+| `frente` | el suelo mojado y las lapidas de delante | x5.2 |
 | `velo` | las bandas de niebla | x3.4 |
 | `angel` | la figura con las alas, recortada con canal alfa | x1.5 |
-| `fondo` | la escena sin la figura, desenfocada y fria | x0.6 |
+| `fondo` | el cementerio, desenfocado y frio | x0.6 |
 
 Encima, el halo de la cabeza, que es el otro motivo que comparte con la pagina:
-el de la barra. Ahi va el termometro, con el mismo color que el punto.
+el de la barra. Ahi va el termometro real, con el mismo color que el punto. Y el
+raton mueve una luz que no es un degradado sino un disco con `soft-light`: por
+eso ilumina las alas por un lado y las deja en sombra por el otro. Al pinchar,
+las alas se abren un poco y pasa un barrido.
 
-Y el raton mueve tambien una luz, que no es un degradado sino un disco con
-`mix-blend-mode: soft-light`: por eso ilumina las alas por un lado y las deja en
-sombra por el otro. Al pinchar, las alas se abren un poco y pasa un barrido.
+**La seccion de Hyprland.** Debajo, y solo eso. Un lema, lo que hay vivo en la
+sesion ahora mismo (atajos, pantallas, paquetes), y las piezas del escritorio
+como filas que se abren en su sitio.
 
-Debajo, los repos como capsulas sueltas. Pincha una y se abre ahi mismo, encima
-de su sitio en la rejilla, como se abre tu isla.
+No hay lista de repositorios. Se pidio quitar.
 
-No hay lluvia. Se cambio por muy poca ceniza a la deriva, que es lo que hace
-falta para que el aire parezca vivo sin estorbar.
+## Anadir una pieza a la seccion
 
-## Anadir un proyecto
-
-Editar `assets/projects.js` y anadir un objeto al array:
+Editar `assets/hyprland.js`. Todo lo que se ve ahi sale de ese fichero, y sale
+del repo de verdad: los scripts son los de `~/.local/bin`, las banderas son las
+que imprime `install.sh --help`.
 
 ```js
 {
-  name: "lo-que-sea",
-  repo: "rhythmcreative/lo-que-sea",
-  stars: 0,                 // solo si no hay dato recogido de GitHub
-  category: "desktop",      // desktop | android | home | tools
-  tagline: "Una frase.",
-  blurb: "Dos lineas explicando que es.",
-  tags: ["hyprland", "rust"]
+  id: "instalador",
+  titulo: "El instalador",
+  resumen: "Una linea, y funciona.",
+  chips: ["install.sh", "arch"],
+  filas: ["Un parrafo por idea. Uno por parrafo."],
+  banderas: [["--preview", "que hace"]]
 }
 ```
 
-Los datos de GitHub (estrellas, lenguaje, ultimo push) se anaden solos desde
-`data/github.js`, que los deja el recolector. `stars` es el valor de respaldo
-para cuando aun no se ha recogido nada.
+Los numeros de arriba (estrellas, lenguaje, ultimo push) los anade solo
+`data/github.js`. Los de "vivo" salen de `data/system.js`, asi que si el
+recolector no ha corrido everan en vez de inventarse un numero.
 
 ## Los datos
 
@@ -171,38 +163,27 @@ falde red, ni modelos, ni scipy.
 
 ### Como sale el recorte
 
-El angel es oscuro contra niebla clara arriba, asi que en la mitad de arriba un
-umbral de gris lo separa bien. Abajo no: la tumba y la hierba tambien son
-oscuras, y ahi el umbral se come el cementerio entero. Por eso el recorte se
-limita a la banda de arriba y la base se queda en el fondo.
+`A.png` llega con el angel ya recortado y con el damero PINTADO en los pixeles
+(es RGB, no tiene canal alfa). Se quita con un umbral, y sale regalado porque el
+histograma es bimodal con un hueco enorme entre medias: el angel esta por debajo
+de 85 y el damero por encima de 244, sin un solo pixel en medio. Asi que la
+mascara es exacta y no hace falta ni componente conexa ni descontaminacion de
+color.
 
-Del recorte se saca la componente conexa grande, para tirar el arbol mojado de la
-izquierda y las cruces de la derecha. Antes de eso hay una apertura, que es lo
-que corta esas ramas: son finas, y el ala es gruesa.
+Lo que si costaba era el BORDE. El ultimo pixel del ala es una mezcla de pluma
+oscura y damero claro, y alrededor de toda la silueta hay una orla de esos
+pixeles. Si el alfa se difumina ahi, la caida mezcla gris claro sobre fondo
+oscuro y sale un filo luminoso rodeando las alas. Por eso el borde se MUERDE dos
+pixeles antes de difuminar: la caida cae dentro de la figura, donde los pixeles
+si son del angel.
 
-### Como se borra la figura del fondo
+### El fondo ya no hay que rellenar
 
-Se ha probado de seis formas y cinco fallaban por lo mismo: **anclar el relleno a
-pixels que no son cielo.** Se queda aqui para que no se repitan.
-
-1. **Difusion desde la foto.** El oscuro del ala se arrastra hacia dentro y la
-   figura no desaparece: solo se emborrona. Mancha con forma de angel.
-2. **Difusion normalizada** (difunden imagen y mascara y dividen). Sale un aro
-   negro en el borde: poner a cero lo de fuera y normalizar al final da cero en
-   el borde. El correcto es que lo de fuera conserve su valor real.
-3. **Interpolacion por filas.** La niebla esta ARRIBA, no a los lados. Donde el
-   ala llega al borde no hay nada que poner a la izquierda y sale rayado
-   horizontal.
-4. **Interpolacion por columnas.** El de ABAJO son arboles y lapidas, y como
-   cambia de columna a columna el relleno sale rayado vertical.
-5. **Columnas con los extremos suavizados en 401 px.** Menos rayas, pero el
-   mismo problema, porque abajo sigue habiendo edificio.
-6. **Un solo anclaje.** Esta. Por columna, el pixel de cielo justo encima de la
-   figura, promediado en 601 px —el cielo de esta foto es un degradado suave, asi
-   que con esa media sale cielo otra vez y todas las columnas se parecian—. Y de
-   ahi hacia abajo un degradado fijo que lo espesa, sin ningun anclaje mas. El
-   resultado no es una reconstruccion, es niebla, que es lo que tiene que ser:
-   detras del angel solo hay cielo.
+La foto anterior traia al angel DENTRO, y el trabajo era quitarlo del fondo: seis
+formas de rellenarlo y cinco fallaban por lo mismo, anclar el relleno a pixels que
+no eran cielo (abajo son arboles y lapidas, y como cambia de columna salia
+rayado vertical). Con estas dos imagenes, que son distintas, no hay nada que
+rellenar. Se queda el metodo por si algun dia vuelve a hacer falta.
 
 ### El respaldo y las costuras
 
@@ -232,10 +213,11 @@ sobra alrededor, para que ninguna capa enseñe un borde al moverse.
 index.html
 assets/style.css        los colores de pywal, en variables CSS
 assets/capa.js          las capas, el parallax, la luz y la ceniza
-assets/app.js           la barra y los repos
-assets/projects.js      los proyectos  <- se edita
+assets/app.js           la barra y la seccion
+assets/hyprland.js      la seccion de Hyprland  <- se edita
 assets/fuentes/         JetBrains Mono, autoalojada
 assets/{angel,fondo,frente,velo}.webp   <- se generan
+assets/capa-datos.js    el tamaño de la foto y donde cae el halo  <- se genera
 data/system.js          el estado de la maquina  <- se genera, no se sube
 data/github.js          repos y commits          <- se genera
 scripts/preparar-angel.py
