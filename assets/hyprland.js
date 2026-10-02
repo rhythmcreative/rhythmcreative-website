@@ -88,6 +88,22 @@ window.RHYTHM_HYPRLAND = {
       tipo: "paleta"
     },
     {
+      id: "atajos",
+      titulo: "The keybindings",
+      resumen: "Every one of them, parsed out of the config.",
+      chips: ["78", "hyprland.lua", "searchable"],
+      filas: [
+        "Every shortcut on the machine, with what it actually does. Read out of " +
+        "the config file rather than the compositor: the API hands them over as " +
+        "internal call ids that mean nothing to anyone.",
+        "SUPER and SHIFT as keys, the way you press them. The ones marked locked " +
+        "also work on the lock screen.",
+        "The file is the source. The installer ships it and the update puts it " +
+        "back, so this is what a fresh install actually gets."
+      ],
+      tipo: "atajos"
+    },
+    {
       id: "isla",
       titulo: "The island",
       resumen: "Quickshell. Folds away, opens by itself.",

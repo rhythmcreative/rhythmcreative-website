@@ -21,6 +21,10 @@
 }
 
 :root {
+  /* Lo que le dice al navegador de que color pintar las barras de scroll, los
+     controles nativos y el fondo del canvas. Sin esto se quedan en oscuro con el
+     tema claro, que es justo cuando mas canta. Va con el cambio de tema. */
+  color-scheme: dark;
   --suelo:    #07090b;
   --cristal:  rgba(16, 21, 25, 0.80);
   --cristal-opaco: rgba(13, 17, 20, 0.92);
@@ -267,6 +271,7 @@ html.claro .respaldo { filter: blur(26px) contrast(0.94); }
 /* Y la pagina entera se da la vuelta. Si solo las imagenes cambiaran, el texto
    claro se pondria sobre fondo claro y no se leeria. */
 html.claro {
+  color-scheme: light;
   --suelo:    #eceae5;
   --cristal:  rgba(255, 255, 255, 0.76);
   --cristal-opaco: rgba(252, 251, 249, 0.94);
@@ -554,6 +559,11 @@ html.claro .brillo {
 .col-menu a:hover { color: var(--hielo); }
 
 .datos-menu span { font-size: 0.74rem; color: var(--gris); }
+/* La ficha de la maquina. Mas pequena y mas apagada que los dos sellos, porque es
+   el dato de relleno y no la headline. Y con max-width para que no se coma media
+   columna si los valores se alargan. */
+.datos-menu .ficha { display: block; margin-top: 0.35rem; font-size: 0.62rem;
+                     line-height: 1.65; opacity: 0.72; max-width: 34ch; }
 .nota-menu { margin-top: 0.5rem !important; font-size: 0.66rem !important;
              color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
              line-height: 1.6; }
@@ -807,3 +817,86 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
 .isla a:focus-visible, .isla button:focus-visible,
 .muestras .chip:focus-visible, .copiar:focus-visible {
   outline: 2px solid var(--hielo); outline-offset: 2px; border-radius: var(--r); }
+/* ══ EL MAPA DE ATAJOS ═══════════════════════════════════════════════════
+   78 atajos en 10 grupos. Las teclas van como <kbd>, en monoespaciada, que es
+   como se leen: el dedo tiene que saber donde cae cada una. Los grupos son
+   <details>, asi que solo el primero viene abierto y la pagina no sale con una
+   pared de 78 lineas encima. */
+.atajos { margin-top: 0.5rem; padding-left: 1.4rem;
+          display: flex; flex-direction: column; gap: 0.1rem; }
+
+.grupo-atajos > summary { display: flex; align-items: baseline; gap: 0.6rem;
+  cursor: pointer; padding: 0.4rem 0.2rem; list-style: none;
+  font: 0.68rem/1.4 var(--f); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gris); border-bottom: 1px solid var(--linea);
+  transition: color 0.18s; }
+.grupo-atajos > summary::-webkit-details-marker { display: none; }
+/* El marcador propio, porque el del navegador es una flechita que no encaja. */
+.grupo-atajos > summary::before { content: "+"; color: var(--azul-4);
+  font-size: 0.8rem; width: 0.7rem; flex: none; }
+.grupo-atajos[open] > summary::before { content: "−"; }
+.grupo-atajos > summary:hover { color: var(--hielo); }
+.grupo-atajos > summary span { margin-left: auto; font-size: 0.6rem; opacity: 0.7;
+  letter-spacing: 0.08em; }
+.grupo-atajos > summary:focus-visible { outline: 2px solid var(--hielo);
+  outline-offset: 2px; border-radius: var(--r); }
+
+.filas-atajos { display: grid; grid-template-columns: 1fr;
+  gap: 0.06rem; padding: 0.3rem 0 0.45rem; }
+
+/* Tres columnas, no flex: con flex-wrap, una descripcion larga se caia debajo
+   de las teclas y cada fila empezaba a una altura distinta. Con grid, la
+   descripcion se enrolla en su propia columna y todas alinean. */
+.atajo { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline;
+         gap: 0.7rem; padding: 0.14rem 0.2rem; }
+/* El raton pasa por encima de la fila entera, que es lo que se busca cuando se
+   esta leyendo una lista larga. */
+@media (hover: hover) {
+  .atajo:hover { background: rgba(153, 186, 201, 0.06); }
+}
+html.claro .atajo:hover { background: rgba(20, 22, 24, 0.04); }
+
+.atajo .combo { display: inline-flex; align-items: baseline; gap: 0.2rem; flex: none; }
+.atajo .combo kbd { font: 0.62rem/1.5 var(--f); color: var(--azul-4);
+  border: 1px solid var(--linea); border-bottom-width: 2px; border-radius: 4px;
+  padding: 0.05rem 0.28rem; background: var(--cristal-opaco); white-space: nowrap; }
+.atajo .combo kbd.tecla { color: var(--hielo); }
+.atajo .combo i { font-style: normal; font-size: 0.58rem; color: var(--gris);
+  opacity: 0.6; }
+.atajo .que { font-size: 0.71rem; color: var(--gris); min-width: 0; }
+/* Los que tambien funcionan con la pantalla de bloqueo, marcados de otra manera
+   que con un asterisco suelto. */
+.atajo .candado { margin-left: auto; font: 0.55rem/1 var(--f); letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--gris); opacity: 0.55; flex: none; }
+html.claro .atajo .candado { color: rgba(30, 32, 34, 0.5); }
+
+@media (max-width: 620px) {
+  .atajos { padding-left: 0; }
+  .atajo { gap: 0.5rem; }
+  .atajo .que { font-size: 0.7rem; }
+}
+/* Dos columnas, pero decididas por el ANCHO DEL CONTENEDOR y no por el de la
+   pantalla. La seccion tiene una columna fija a la izquierda y las piezas a la
+   derecha, asi que el sitio disponible no tiene nada que ver con la ventana.
+   Medido:
+
+     pantalla 1180 -> la pieza mide  429 px  -> descripcion de  57 px
+     pantalla 1440 -> la pieza mide  578 px  -> descripcion de 119 px
+     pantalla 1920 -> la pieza mide  854 px  -> descripcion de 234 px
+
+   Con una media query a 760 de pantalla salia a dos columnas con 57 px de
+   descripcion a 1180: una palabra por linea. Hace falta que el hueco llegue a
+   unos 330 px por atajo, y para eso el contenedor tiene que medir 700. */
+.abierta { container-type: inline-size; container-name: pieza; }
+@container pieza (min-width: 700px) {
+  .filas-atajos { grid-template-columns: 1fr 1fr; column-gap: 1.6rem; }
+}
+
+/* Y al reves: en un movil la caja mide 284 px, y el combo mas largo
+   ("SUPER + SHIFT + Return") se come 150. Con las tres columnas en linea la
+   descripcion se queda en nada y cada atajo ocupa tres renglones. Ahi la
+   descripcion baja a su propia fila, debajo de las teclas. */
+@container pieza (max-width: 400px) {
+  .atajo { grid-template-columns: 1fr auto; row-gap: 0.1rem; }
+  .atajo .que { grid-column: 1 / -1; }
+}

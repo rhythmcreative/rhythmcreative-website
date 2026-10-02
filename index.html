@@ -5,8 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RHYTHMCREA</title>
 <meta name="description" content="RHYTHMCREA. A Hyprland desktop and everything that came out around it.">
-<meta name="color-scheme" content="dark">
+<!-- color-scheme "dark light" no dice cual de los dos se esta usando, solo que
+     los dos valen. El que vale es la propiedad CSS de mas abajo: --suelo ya lo
+     lleva el cambio de tema. Con esto el navegador pinta las barras de scroll y
+     los controles nativos del color que toca, que antes se quedaban oscuros con
+     la pagina en blanco. -->
+<meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#0b0d0f">
+<link rel="canonical" href="https://TU-DOMINIO/">
+
+<!-- Para compartir el enlace. Sin esto, al mandar el enlace a Discord, Mastodon,
+     Slack, Twitter o un correo no se ve NADA: ni titulo, ni texto, ni imagen.
+
+     La URL tiene que ser ABSOLUTA. Una relativa no la resuelven, y aqui no hay
+     ningunayet porque el sitio no esta publicado todavia: hay que cambiar
+     TU-DOMINIO por el de verdad, una vez, al publicar. Esta en el README.
+
+     La imagen la hace scripts/preparar-og.py con las capas de la portada, a
+     1200x630, que es lo que piden los protocolos de compartir. No se descarga al
+     abrir la pagina: los <meta> no son recursos, asi que no cuesta bytes. -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="RHYTHMCREA">
+<meta property="og:title"       content="RHYTHMCREA">
+<meta property="og:description" content="A Hyprland desktop that doesn't break, and everything that came out around it.">
+<meta property="og:url"         content="https://TU-DOMINIO/">
+<meta property="og:image"       content="https://TU-DOMINIO/assets/og.jpg">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt"   content="A winged statue in a foggy cemetery, with the name RHYTHMCREA across it.">
+<meta property="og:locale"      content="en">
+<meta name="twitter:card"       content="summary_large_image">
+<meta name="twitter:title"       content="RHYTHMCREA">
+<meta name="twitter:description" content="A Hyprland desktop that doesn't break, and everything that came out around it.">
+<meta name="twitter:image"      content="https://TU-DOMINIO/assets/og.jpg">
 <!-- El angel es el elemento mas grande y el primero que se ve, y esta solo
      en el CSS: el navegador no lo descubre hasta que ha parseado la hoja, que
      va detras. Con la precarga empieza a bajar en cuanto ve la cabecera. -->
@@ -134,7 +165,18 @@
     <h3>The data</h3>
     <span id="sello-datos">&nbsp;</span>
     <span id="sello-repos">&nbsp;</span>
-    <span class="nota-menu">This page asks the network for nothing. The two figures
+    <!-- La ficha de la maquina. Son valores que el recolector ya recogia y que no
+         se enseñaban en ninguna parte: se recogian en cada ejecucion y se tiraban.
+         Una sola linea y pequeña, porque esta columna ya es la que habla de los
+         datos; meterlos en otra parte seria mas ruido.
+
+         Aviso, porque esto va a estar en una pagina publica: el kernel con su
+         version exacta y las horas de uptime son huella digital de la maquina. No
+         es grave —el usuario ya sale en la ruta que enseña el doctor, y las dos
+         pantallas con su resolucion ya estaban— pero quien quiera quitarlo borra
+         de la lista FICHA en app.js lo que no quiera. -->
+    <span class="ficha" id="ficha">&nbsp;</span>
+    <span class="nota-menu">This page asks the network for nothing. The figures
       above are from whenever the collector last ran.</span>
   </div>
 </footer>

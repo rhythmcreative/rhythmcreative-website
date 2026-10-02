@@ -255,6 +255,21 @@ PY
 fi
 
 
+# ── atajos legibles ───────────────────────────────────────────────────────────
+#
+# hyprctl binds da la lista por dentro: 78 entradas con "__lua(6)" y una mascara
+# de modificadores en numero, sin decir que hace ninguna. Para enseñarlo se lee
+# el fichero de configuracion, que si esta escrito en humano.
+#
+# Se queda con hyprctl para el numero, que es el que da la verdad, y con el
+# fichero para el texto. Si los dos no cuadran, se avisa en la pagina en vez de
+# enseñar un numero que no es el real.
+ATAJOS_LEGIBLES="null"
+REPO_HYPR="${RHYTHM_REPO:-$HOME/hyprland}"
+if [ -f "$REPO_HYPR/hyprland.lua" ] && command -v python3 >/dev/null 2>&1; then
+    ATAJOS_LEGIBLES=$(python3 "$(dirname "$0")/parse-binds.py" "$REPO_HYPR" 2>/dev/null || echo "null")
+fi
+
 # ── doctor ─────────────────────────────────────────────────────────────────────────────
 #
 # La salida REAL de rhythm-doctor, para que la pagina enseñe el diagnostico en vez de
@@ -299,7 +314,8 @@ fi
     printf '  temps: %s,\n' "$TEMP_JSON"
     printf '  servicios: %s,\n' "$SERV_JSON"
     printf '  pywal: %s,\n' "$PYWAL_JSON"
-    printf '  doctor: %s\n' "$DOCTOR_JSON"
+    printf '  doctor: %s,\n' "$DOCTOR_JSON"
+    printf '  atajos: %s\n' "$ATAJOS_LEGIBLES"
     printf '};\n'
 } > "$DESTINO"
 

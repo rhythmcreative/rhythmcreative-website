@@ -229,6 +229,104 @@ partida y parece un fallo. Esto se ha llevao por delante dos veces en esta pagin
 el enlace de salto "no aparecia" y las lineas del terminal "no tenian color" (esa
 era la animacion `sur gir` de la pieza, que empieza en `opacity: 0`).
 
+## Los atajos: por que se leen del fichero y no de la API
+
+`hyprctl binds` devuelve los 78 por dentro:
+
+```js
+{ key: 'Return', mod: 64, d: '__lua', arg: '6' }
+```
+
+`SUPER + Return -> __lua(6)` no le dice nada a nadie, y `desc` viene vacio en
+los 78. La API no sabe que hace un atajo: solo que hay que llamar a la sexta
+funcion del dispatcher de lua.
+
+En el fichero de configuracion, en cambio, esta escrito en humano:
+
+```lua
+hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
+```
+
+Asi que `scripts/parse-binds.py` lee `hyprland.lua` y saca de ahi el mapa. El
+numero se sigue sacando de `hyprctl`, que es quien sabe la verdad, y la pagina
+**compara los dos y avisa si no cuadran** en vez de enseñar un numero que no es
+el real.
+
+Que salgan los 78 exactos no es casualidad: el fichero tiene 60 llamadas a
+`hl.bind`, pero dos estan dentro de `for i = 1, 10` y cada una genera diez.
+60 − 2 + 20 = 78.
+
+Lo que hace el parser, y por que:
+
+- **Trocea por parentesis, no por regex.** Una regex se comia el parentesis final
+  y la accion llegaba como `hl.dsp.exec_cmd("~/.local/bin/toggle-island"` — sin
+  cerrar — y ninguna etiqueta casaba.
+- **Resuelve las variables**: `mainMod` → SUPER, `terminal` → kitty,
+  `fileManager` → thunar. Si no, salen cosas como `hl.dsp.exec_cmd(terminal)`.
+- **Se queda con la cabeza de una tuberia**: `grim -g "$(slurp)" - | swappy -f -`
+  es una captura, no "captura | swappy".
+- **Traduce `wpctl`**: `set-volume @DEFAULT_AUDIO_SINK@ 5%-` es "volume down 5%",
+  no "wpctl set volume DEFAULT AUDIO SINK 5%".
+- **Quita el lanzador del nombre**, no de la frase: "rofi wifi menu" → "wifi
+  menu". Si se quita despues con una regex sobre la frase entera,
+  `adaptive rofi window` se queda en `window` y se pierde el "adaptive".
+
+### Las columnas, decididas por container query y no por media query
+
+La seccion tiene una columna fija a la izquierda y las piezas a la derecha, asi
+que el sitio disponible no tiene nada que ver con el ancho de la ventana. Medido:
+
+| pantalla | ancho de la pieza | sitio para la descripción |
+|---|---|---|
+| 1180 | 429 px | 57 px |
+| 1440 | 578 px | 119 px |
+| 1920 | 854 px | 234 px |
+
+Con una media query a 760 de pantalla salían dos columnas con **57 px** de
+descripción a 1180: una palabra por línea. Con `@container pieza (min-width:
+700px)` la pregunta es "cuanto hay aqui", y sale una columna hasta 700 y dos a
+partir de ahi. Por debajo de 400 de contenedor la descripción baja a su propia
+fila, porque el combo mas largo se come 150 de 284.
+
+## Los datos que se recogian y se tiraban
+
+Ocho valores se recogian en cada ejecucion del recolector y no se enseban en
+ninguna parte. Cinco van ahora en una linea de la columna "The data" del pie:
+
+```
+kernel 7.2.7-arch1-1  ·  uptime 1 h 27 min  ·  load 3.85  ·  disk 428G free  ·  services 22 up
+```
+
+**Aviso, porque esto va a estar en una pagina publica:** el kernel con su version
+exacta y las horas de uptime son huella digital de la maquina. No es grave —el
+usuario ya sale en la ruta que enseña el doctor, y las dos pantallas con su
+resolucion ya estaban— pero quien quiera quitarlo borra de la lista `FICHA` en
+`app.js` lo que no quiera, y es una linea.
+
+`hostname` y `servicios` se siguen recogiendo pero **no** salen en la pagina: el
+nombre del equipo no aporta nada a quien lo ve y publica una cosa de mas.
+
+## Compartir el enlace
+
+Antes no habia ni una etiqueta Open Graph: al mandar el enlace a Discord,
+Mastodon, Slack, Twitter o un correo no se veia nada.
+
+`scripts/preparar-og.py` compone `assets/og.jpg` a 1200x630 — fondo + angel,
+que es lo que se ve en la portada, no la figura suelta — con el nombre encima en
+la misma tipografia y la misma separacion de letras. JPEG y no PNG porque los
+clientes de social y de correo no saben leer webp, y PNG a ese tamano pesaba mas
+del doble.
+
+**La imagen no se descarga al abrir la pagina**, comprobado con el registro de
+red: los `<meta>` no son recursos. Cuesta 0 KB de la carga.
+
+### Al publicar hay que cambiar una cosa
+
+Las URL de las etiquetas tienen que ser **absolutas** — una relativa no la
+resuelve nadie — y aqui no hay ninguna todavia porque el sitio no esta publicado.
+Hay que cambiar `TU-DOMINIO` en `index.html` (5 veces, todas en el mismo bloque)
+por el dominio de verdad. Es lo unico pendiente.
+
 ## Como se adapta
 
 El tipo y el ancho del contenido no estan fijos, que es lo que hacia que en un

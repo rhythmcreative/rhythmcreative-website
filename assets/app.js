@@ -181,6 +181,7 @@
       if (p.tipo === "terminal") return terminal();
       if (p.tipo === "comando") return comando(p);
       if (p.tipo === "pantallas") return pantallas();
+      if (p.tipo === "atajos") return atajos();
       return "";
     }
 
@@ -243,6 +244,48 @@
       return '<div class="comando"><code>' + esc(p.comando) + "</code>" +
         '<button class="copiar" type="button" data-copiar="' + esc(p.comando) +
         '">copy</button></div>';
+    }
+
+    // El mapa de atajos. Viene de scripts/parse-binds.py leyendo hyprland.lua,
+    // no de hyprctl: por la API salen como __lua(6), que no dice nada.
+    //
+    // El numero de hyprctl se queda como referencia. Si no coinciden, se dice en
+    // pagina: es mejor que enseña un numero que no es el real.
+    function atajos() {
+      var lista = (S && S.atajos) || null;
+      if (!lista || !lista.length) return '<p class="sin-datos">No keybindings parsed.</p>';
+      var porGrupo = {};
+      var orden = [];
+      lista.forEach(function (a) {
+        if (!porGrupo[a.grupo]) { porGrupo[a.grupo] = []; orden.push(a.grupo); }
+        porGrupo[a.grupo].push(a);
+      });
+      var html = '<div class="atajos">' + orden.map(function (g) {
+        return '<details class="grupo-atajos"' + (g === orden[0] ? " open" : "") + ">" +
+          "<summary>" + esc(g) + "<span>" + porGrupo[g].length + "</span></summary>" +
+          '<div class="filas-atajos">' + porGrupo[g].map(function (a) {
+            var mods = a.tecla.split(" + ");
+            var tecla = mods.pop();
+            return '<div class="atajo"><span class="combo">' +
+              mods.map(function (m) {
+                return '<kbd>' + esc(m) + "</kbd>";
+              }).join("<i>+</i>") +
+              (mods.length ? "<i>+</i>" : "") +
+              '<kbd class="tecla">' + esc(tecla) + "</kbd></span>" +
+              '<span class="que">' + esc(a.que) + "</span>" +
+              (a.bloqueado ? '<span class="candado" title="works while the screen is locked">locked</span>' : "") +
+              "</div>";
+          }).join("") + "</div></details>";
+      }).join("") + "</div>";
+
+      var porApi = S && S.binds ? S.binds.length : null;
+      html += '<p class="nota-dato">' + lista.length + " keybindings, parsed from " +
+        "<code>hyprland.lua</code>." +
+        (porApi !== null ? " Hyprland itself reports " + porApi +
+          (porApi === lista.length ? ", which matches."
+                                    : ", which does <b>not</b> match — the config and the compositor disagree.") : "") +
+        "</p>";
+      return html;
     }
 
     // Las pantallas, leidas de Hyprland.
@@ -345,6 +388,30 @@
 
   // De cuando son los datos. Va en el menu y no en la barra, que ya va bastante
   // cargada. Sin esto, el pie decia "sin datos" aunque los hubiera.
+  // Que datos de la maquina salen en la pagina, y en que orden. Para quitar uno,
+  // se borra de aqui. Ver el aviso del README.
+  var FICHA = [
+    ["kernel",   function (d) { return d.kernel; }],
+    ["uptime",   function (d) { return d.uptime; }],
+    ["load",     function (d) { return String(d.loadavg).split(",")[0]; }],
+    ["disk",     function (d) { return d.disco_libre + " free"; }],
+    ["services", function (d) {
+      var v = d.servicios;
+      if (!v) return null;
+      return v.fallidos ? v.activos + " up, " + v.fallidos + " failed" : v.activos + " up";
+    }]
+  ];
+
+  function ficha() {
+    var el = $("#ficha");
+    if (!el) return;
+    if (!S) { el.textContent = ""; return; }
+    el.textContent = FICHA.map(function (f) {
+      var v = f[1](S);
+      return v ? f[0] + " " + v : null;
+    }).filter(Boolean).join("  ·  ");
+  }
+
   function sellos() {
     var a1 = $("#sello-datos"), a2 = $("#sello-repos");
     if (a1) a1.textContent = S ? "this machine, " + hace(S.generado) : "no data from this machine";
@@ -398,6 +465,7 @@
 
       interruptor();
       sellos();
+      ficha();
       pintarHyprland();
   }
 
