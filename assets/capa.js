@@ -35,22 +35,65 @@
     return { nucleo: "#99bac9", iris: "#3a6080", halo: "rgba(153,186,201,0.35)", b: 0.58, txt: "cpu a " + temp.toFixed(0) + "° · fresca" };
   }
 
-  // ── El halo va justo encima de la cabeza, en la foto. Para no tener que
-  //    calcular a ojo donde cae con cada medida de pantalla, se mide: se sabe
-  //    el tamaño de la imagen y el del marco, y se aplica el mismo encaje que
-  //    hace background-size: cover.
-  function colocarHalo(escena, halo, fotoW, fotoH) {
-    var w = escena.clientWidth, h = escena.clientHeight;
-    if (!w || !h) return;
-    var escala = Math.max(w / fotoW, h / fotoH);          // cover
-    var ancho = fotoW * escala, alto = fotoH * escala;
-    var ox = (w - ancho) / 2, oy = (h - alto) / 2;
-    // En la foto el centro del halo cae hacia x 0.505, y 0.095.
-    var cx = 0.505 * ancho + ox, cy = 0.095 * alto + oy;
-    var r = 54 * escala;
-    halo.style.width = halo.style.height = (r * 2) + "px";
-    halo.style.left = (cx - r) + "px";
-    halo.style.top = (cy - r) + "px";
+  var FOTO_W = 2000, FOTO_H = 1125;      // lo que dice scripts/preparar-angel.py
+
+  // ── La caja de las capas, a medida.
+  //
+  // Con background-size: cover, en un monitor 16:10 las dos puntas de las alas
+  // se salen por los lados y la figura parece recortada. Con cover en un movil
+  // alto pasaria lo contrario: la figura saldria diminuta.
+  //
+  // Asi que la escala sale de las dos cosas a la vez: que entre la foto
+  // ENTERA (contain), pero que la figura llene al menos el 90% del alto. En
+  // horizontal manda contain y se ve el angel completo, con franjas de niebla
+  // arriba y abajo; en vertical manda el 90% y se recorta por lo alto, que es
+  // lo unico que se puede recortar sin perder la figura.
+  function encajar(escena, capas, respaldo) {
+    var vw = escena.clientWidth, vh = escena.clientHeight;
+    if (!vw || !vh) return null;
+    var contiene = Math.min(vw / FOTO_W, vh / FOTO_H);
+    var escala = Math.max(contiene, (vh * 0.9) / FOTO_H);
+    var w = FOTO_W * escala, h = FOTO_H * escala;
+    var mx = (vw - w) / 2, my = (vh - h) / 2;
+
+    for (var i = 0; i < capas.length; i++) {
+      var e = capas[i].el;
+      e.style.left = mx.toFixed(1) + "px";
+      e.style.top = my.toFixed(1) + "px";
+      e.style.width = w.toFixed(1) + "px";
+      e.style.height = h.toFixed(1) + "px";
+    }
+
+    // El respaldo: la misma foto, a la MISMA escala y en la MISMA posicion que
+    // las capas. Solo se le da el tamano exacto, sin sangrado por ningun lado,
+    // y lo que sobra de pantalla lo cubre el color plano de niebla.
+    //
+    // Lo de antes, estirar la foto a una caja mayor con 60 px de sangrado, era
+    // un error de cuenta: al anadir el mismo numero de pixeles en ancho y en
+    // alto la caja deja de tener la proporcion de la foto, la foto sale
+    // estirada y en la union su contenido no coincide con el de las capas.
+    // Medido en pantalla: una linea de TODO el ancho, con la escena passando de
+    // 92 a 69 de brillo justo ahi.
+    if (respaldo) {
+      respaldo.style.backgroundSize = w.toFixed(1) + "px " + h.toFixed(1) + "px";
+      respaldo.style.backgroundPosition = mx.toFixed(1) + "px " + my.toFixed(1) + "px";
+    }
+
+    return { vw: vw, vh: vh, w: w, h: h, mx: mx, my: my, escala: escala };
+  }
+
+  // El halo va justo encima de la cabeza, que esta en un punto concreto de la
+  // foto. Con la caja ya medida, sale de multiplicar.
+  function colocarHalo(geo) {
+    if (!geo) return;
+    var halo = $("#halo");
+    if (!halo) return;
+    var cx = geo.mx + 0.505 * geo.w;
+    var cy = geo.my + 0.095 * geo.h;
+    var r = 54 * geo.escala;
+    halo.style.width = halo.style.height = (r * 2).toFixed(1) + "px";
+    halo.style.left = (cx - r).toFixed(1) + "px";
+    halo.style.top = (cy - r).toFixed(1) + "px";
   }
 
   function motas(canvas) {
@@ -106,32 +149,36 @@
     var capas = $$(".capa", escena).map(function (el) {
       return { el: el, hondo: parseFloat(el.getAttribute("data-hondo")) || 1 };
     });
+    var frente = $(".frente", escena);
+    var respaldo = $(".respaldo", escena);
     var halo = $("#halo"), luz = $("#luz"), brillo = $("#brillo");
-    var angel = $(".angel", escena), frente = $(".frente", escena);
+    var angel = $(".angel", escena);
     var pal = paleta(temp);
-    var FOTO_W = 2000, FOTO_H = 1125;
+    var geo = null;
 
-    // El punto y el halo, con el mismo color que sale de la temperatura.
     if (halo) {
       halo.style.setProperty("--halo", pal.halo);
       halo.style.setProperty("--nucleo", pal.nucleo);
     }
 
     var quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var raton = { x: 0.5, y: 0.5, dentro: false };
+    var raton = { x: 0, y: 0, dentro: false };
     var ahora = { x: 0, y: 0 };
-    var pulido = 0;            // el barrido de luz al pinchar
 
-    function colocar() { colocarHalo(escena, halo, FOTO_W, FOTO_H); }
-    colocar();
-    addEventListener("resize", colocar);
-    // Las imagenes tardan en cargar: al cargarse, el marco ya no tiene el
-    // tamaño de la foto y el halo caeria donde no es.
+    function medir() {
+      geo = encajar(escena, capas, respaldo);
+      colocarHalo(geo);
+    }
+    medir();
+    addEventListener("resize", medir);
+    // Las imagenes tardan en cargar, y hasta que no cargan el marco no tiene
+    // el tamaño de la foto: sin esto el halo cae en otro sitio y las capas se
+    // descuadran al entrar.
     $$(".capa", escena).forEach(function (c) {
       var fondo = getComputedStyle(c).backgroundImage.match(/url\(["']?([^"')]+)/);
       if (!fondo) return;
       var img = new Image();
-      img.onload = colocar;
+      img.onload = medir;
       img.src = fondo[1];
     });
 
@@ -139,25 +186,22 @@
       raton.x = (e.clientX / innerWidth - 0.5) * 2;
       raton.y = (e.clientY / innerHeight - 0.5) * 2;
       raton.dentro = true;
-      // La luz va con el raton. Sin esto el brillo estatico y el parallax
-      // cuentan dos cosas distintas y la escena parece dos imagenes pegadas.
+      // La luz va con el raton. Sin esto el brillo se queda quieto y el
+      // parallax corre, y la escena parece un montaje de dos imagenes.
       if (luz) luz.style.transform = "translate(" + (e.clientX - innerWidth / 2) + "px," +
         (e.clientY - innerHeight * 0.42) + "px)";
     }
     function salir() { raton.dentro = false; }
-
     document.addEventListener("mousemove", seguir);
     document.addEventListener("mouseleave", salir);
 
     // Pinchar: las alas se abren un poco y pasa un barrido de luz.
     function golpear(e) {
-      if (quieto) return;
-      pulido = 1;
+      if (quieto || !angel) return;
       angel.classList.remove("abriendo");
       void angel.offsetWidth;              // reinicia la animacion
       angel.classList.add("abriendo");
       if (brillo) {
-        brillo.style.setProperty("--x", ((e.clientX / innerWidth) * 100) + "%");
         brillo.classList.remove("pasando");
         void brillo.offsetWidth;
         brillo.classList.add("pasando");
@@ -165,37 +209,53 @@
     }
     escena.addEventListener("click", golpear);
     escena.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); golpear({ clientX: innerWidth * 0.5 }); }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); golpear(); }
     });
 
+    function acotar(valor, margen, tope) {
+      // El desplazamiento no puede pasar del margen que sobra alrededor de la
+      // foto, o la capa enseña el borde del lienzo. En un monitor ancho ese
+      // margen es de unos 40 px y se nota enseguida.
+      var m = Math.max(0, margen - 6);
+      var v = valor * tope;
+      return Math.max(-m, Math.min(m, v));
+    }
+
     function bucle() {
-      // Persecucion suave hacia el raton. Sin inercia el parallax da un tirón
+      // Persecucion suave hacia el raton. Sin inercia el parallax da un tiron
       // en cada movimiento y se nota que son cuatro capas sueltas.
       ahora.x += (raton.x - ahora.x) * 0.06;
       ahora.y += (raton.y - ahora.y) * 0.06;
-      if (pulido > 0) pulido = Math.max(0, pulido - 0.012);
 
-      for (var i = 0; i < capas.length; i++) {
-        var c = capas[i], d = c.hondo;
-        var dx = ahora.x * 11 * d, dy = ahora.y * 7 * d;
-        // Un pelin de zoom con el raton. Muy poco: el recorte ya roza los
-        // bordes de la foto y con mas las alas se salen del encuadre.
-        var z = 1 + (raton.dentro ? 0.008 * (1 + d * 0.1) : 0);
-        c.el.style.transform = "translate3d(" + dx.toFixed(2) + "px," + dy.toFixed(2) + "px,0) scale(" + z.toFixed(4) + ")";
-      }
-      if (frente) {
-        frente.style.transform = "translate3d(" + (ahora.x * 34).toFixed(2) + "px," +
-          (ahora.y * 12).toFixed(2) + "px,0) scale(1.13)";
+      if (geo) {
+        for (var i = 0; i < capas.length; i++) {
+          var c = capas[i], d = c.hondo;
+          var dx = acotar(ahora.x, geo.mx, 11 * d);
+          var dy = acotar(ahora.y, geo.my, 7 * d);
+          // Un pelin de zoom. Muy poco: el recorte ya llega a los bordes de la
+          // foto y con mas se salen las puntas de las alas.
+          var z = 1 + (raton.dentro ? 0.006 * (1 + d * 0.1) : 0);
+          c.el.style.transform = "translate3d(" + dx.toFixed(2) + "px," + dy.toFixed(2) +
+            "px,0) scale(" + z.toFixed(4) + ")";
+        }
+        if (frente) {
+          var fx = acotar(ahora.x, geo.mx, 30);
+          var fy = acotar(ahora.y, geo.my, 11);
+          frente.style.transform = "translate3d(" + fx.toFixed(2) + "px," +
+            fy.toFixed(2) + "px,0) scale(1.12)";
+        }
       }
       requestAnimationFrame(bucle);
     }
 
     if (quieto) {
-      // Sin movimiento: se deja una foto, y el raton ya no mueve nada.
+      // Sin movimiento: una foto. El parallax va con el raton, que es
+      // respuesta directa a lo que hace la persona y no movimiento por su cuenta,
+      // pero con prefers-reduced-motion no se arrastra nada.
       document.removeEventListener("mousemove", seguir);
       if (luz) luz.style.transform = "translate(0,-10%)";
       capas.forEach(function (c) { c.el.style.transform = "scale(1)"; });
-      if (frente) frente.style.transform = "scale(1.14)";
+      if (frente) frente.style.transform = "scale(1.12)";
     } else {
       bucle();
       motas($("#motas"));

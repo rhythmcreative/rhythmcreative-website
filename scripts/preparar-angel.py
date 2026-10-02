@@ -55,7 +55,17 @@ def difuminar(arr):
 
 
 def recorte_angel(im):
-    """Mascara de la figura: alas, cuerpo y la coronacion del mausoleo."""
+    """Dos mascaras de la figura: el nucleo y el borde.
+
+    Nucleo es donde la figura es solida. Borde es el nucleo 8 px mas ancho, con
+    7 px de caida: la plush que tiene el ala de verdad al deshacerse en la
+    niebla.
+
+    Antes era una sola mascara con 2.4 px de desenfoque, y el ala salia cortada
+    a tijera: el paso de opaco a transparente era tan corto que se leia como un
+    recorte pegado encima. Con las dos separadas, el borde va acompasado con el
+    desenfoque de la foto y no se ve donde esta el corte.
+    """
     W, H = im.size
     gris = np.asarray(im.convert("L"), dtype=np.float32)
 
@@ -75,8 +85,8 @@ def recorte_angel(im):
     m = m.filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MaxFilter(9))
     m = m.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.MinFilter(7))
 
-    # Quedarse con la componente conexa grande: descarta el arbol mojado de la
-    # izquierda y los cruces del fondo, que tambien son oscuros.
+    # Quedarse con la componente conexa grande: descarta el arbol mojado y las
+    # cruces del fondo, que tambien son oscuros.
     px = m.load()
     W2, H2 = m.size
     semilla = None
@@ -90,114 +100,117 @@ def recorte_angel(im):
         return None
     ImageDraw.floodfill(m, semilla, 255, thresh=120)
 
-    # Difuminar: un borde de 2 px es lo que hace que no se vea el recorte.
-    m = m.filter(ImageFilter.GaussianBlur(2.4))
-
-    # Caida vertical: el angel se disuelve hacia abajo en la niebla en vez de
+    # Caida vertical: la figura se disuelve hacia abajo en la niebla en vez de
     # acabar en un corte recto encima del mausoleo.
-    arr = np.asarray(m, dtype=np.float32) / 255.0
     caida = np.ones(H2, dtype=np.float32)
     ini = int(H2 * 0.58)
     caida[ini:] = np.linspace(1.0, 0.0, H2 - ini, dtype=np.float32) ** 1.4
-    arr *= caida[:, None]
-    return Image.fromarray((arr * 255).astype(np.uint8), "L")
+    caida = caida[:, None]
+
+    nucleo = np.asarray(m, dtype=np.float32) / 255.0 * caida
+    nucleo = np.clip(nucleo, 0, 1)
+
+    borde_img = m.filter(ImageFilter.MaxFilter(17)).filter(ImageFilter.MinFilter(17))
+    borde = np.asarray(borde_img, dtype=np.float32) / 255.0 * caida
+    # Suavizar el alfa con smoothstep: el teorema del valor medio. Un desenfoque
+    # gaussiano a secas deja la transicion en S pero con los hombros redondos;
+    # el smoothstep la deja plana en los dos extremos y con caida limpia en medio.
+    t = np.clip(borde, 0, 1)
+    borde = t * t * (3 - 2 * t)
+    borde = np.clip(borde, 0, 1)
+
+    return nucleo, borde
 
 
 def rellenar_niebla(im, mascara):
-    """La escena con la figura borrada, rellena de niebla.
+    """La escena con la figura borrada, rellena de cielo.
 
-    Esto se ha probado de tres formas y solo una sale bien:
+    Se ha probado de cinco formas. Las cinco fallaban por lo mismo, por
+    anclar el relleno a pixeles que NO son cielo:
 
-    1. Difusion desde la foto. Las alas son oscuras, el oscuro se arrastra
-       hacia dentro, y la figura no desaparece: solo se emborrona.
-    2. Interpolacion por filas. La niebla esta arriba, no a los lados, asi que
-       en las filas donde el ala llega al borde no hay nada que poner a la
-       izquierda y sale un rayado horizontal de kilometros.
-    3. Interpolacion por columnas. Lo mismo al reves: el borde del ala es
-       irregular, y cada columna sale con un brillo distinto. Rayado vertical.
+      · difusion desde la foto: el oscuro del ala entra y la figura no se va
+      · difusion normalizada: aro negro en el borde
+      · filas: la niebla esta arriba, sale rayado horizontal
+      · columnas con los dos extremos: el de ABAJO son arboles y lapidas, y
+        como varia de columna a columna el relleno sale rayado vertical
+      · columnas con los extremos suavizados: menos rayas, pero el mismo
+        problema, porque abajo sigue habiendo edificio
 
-    La que funciona es la primera, pero disgando el relleno. La clave esta en
-    la inicializacion: en vez de partir de la foto, que dentro de la mascara es
-    la figura oscura, se parte del color DEL CIELO, medido justo encima de las
-    alas. Ahi lo que hay dentro es niebla clara, y al difundir sale una niebla suave
-    que encaja con el borde. Es literalmente lo que haria un mate de niebla.
+    Asi que aqui no hay ningun anclaje abajo. UN solo anclaje por columna, el
+    pixel de cielo justo encima de la figura, y ademas promediado en 601 px: el
+    cielo de esta foto es un degradado suave, asi que con esa media sale cielo
+    otra vez y todas las columnas parecian la misma. Y de ahi hacia abajo, solo
+    un degradado fijo que lo va espesando.
+
+    El resultado no es una reconstruccion, es niebla. Y es lo que tiene que
+    ser: detras del angel solo hay cielo.
     """
     W, H = im.size
     base = np.asarray(im, dtype=np.float32)
     hueco = np.asarray(mascara, dtype=np.float32) / 255.0
     dentro = hueco > 0.5
-
     if not dentro.any():
         return im
 
-    # El color con el que se empieza a rellenar NO es uno solo para toda la
-    # imagen: es, en cada columna, el pixel de niebla que hay justo por encima
-    # de la figura. Con un gris medio la niebla salia demasiado clara y se leia
-    # como un agujero recortado; con el color de cada columna, el relleno se
-    # parece a la niebla que hay detras de las alas en ese punto.
-    techo = np.flatnonzero(dentro.any(axis=1))[0]
-    techo = max(1, int(techo) - 4)
-    color = np.empty((H, W, 3), dtype=np.float32)
+    # ── El anclaje: una vez por columna ───────────────────────────────────
+    techo = np.full(W, -1, dtype=np.int64)
     for x in range(W):
-        col = np.flatnonzero(dentro[:, x])
-        arriba = int(col[0]) - 1 if col.size else 0
-        color[:, x] = base[max(0, arriba), x]
+        ys = np.flatnonzero(dentro[:, x])
+        if ys.size:
+            techo[x] = ys[0]
 
-    # A media resolucion: la niebla es suave, no se gana nada con 2000 de ancho.
-    f = 2
-    w2, h2 = W // f, H // f
-    dentro_s = dentro[::f, ::f][:h2, :w2]
-    conocido = ~dentro_s
-    if not dentro_s.any() or not conocido.any():
-        return im
+    # Media movil ancha sobre el color del cielo, canal a canal. Se queda sin
+    # anclaje donde no hay figura, y ahi vale el propio pixel.
+    R = 300
+    suave = base.copy()
+    for ch in range(3):
+        # Acumulado SOBRE COLUMNAS, que es por donde se promedia, y sobre
+        # base[:, :, ch]: en un array (H, W, 3), base[:, ch] coje (W, H), que
+        # es la transpuesta y descoloca todos los indices despues.
+        c = np.concatenate((np.zeros((H, 1), dtype=np.float32),
+                          np.cumsum(base[:, :, ch], axis=1)), axis=1)
+        for x in range(W):
+            t = techo[x]
+            if t <= 0:
+                continue
+            y = min(H - 1, max(0, t - 1))
+            a, b = max(0, x - R), min(W, x + R + 1)
+            # c va por filas y columnas: primero la fila y, luego la
+            # columna. Al reves sale un indice fuera de rango.
+            suave[y, x, ch] = (c[y, b] - c[y, a]) / (b - a)
 
-    base_s = base[::f, ::f][:h2, :w2]
-    color_s = color[::f, ::f][:h2, :w2]
+    # ── Rellenar: desde el cielo suavizado hacia abajo, espesando ─────────
+    relleno = base.copy()
+    ys_grid = np.arange(H, dtype=np.float32)
+    for x in range(W):
+        t = techo[x]
+        if t <= 0:
+            continue
+        color = suave[min(H - 1, t - 1), x]
+        span = float(H - t)
+        u = np.clip((ys_grid - t) / max(1.0, span * 0.85), 0, 1)
+        # 0.46 es cuanto se apaga la niebla al bajar. Poco: si apaga mas, el
+        # relleno se separa del cielo de al lado y se ve la mancha.
+        # u[t:] es (n,), y hay que estirarlo a (n, 1) para multiplicar por el
+        # color, que es (3,): con un eje de mas sale (n, 1, 3).
+        relleno[t:, x] = color[None, :] * (1.0 - 0.46 * u[t:])[:, None]
 
-    # Convolution normalizada: se difunden a la vez la imagen y una mascara
-    # (1 fuera de la figura, 0 dentro), y se divide una por otra.
-    #
-    # El truco esta en lo que se devuelve en cada paso. Se 曾 puede poner a cero
-    # lo de fuera y dividir al final: sale un aro negro justo en el borde, que
-    # es el fallo que hacia antes. Lo de fuera tiene que conservar su valor
-    # real, porque es el dato que manda; lo de dentro es lo que se interpola.
-    cur = base_s.copy()
-    cur[dentro_s] = color_s[dentro_s]
-    peso = conocido.astype(np.float32)
-
-    for _ in range(500):
-        cur = difuminar(cur)
-        cur[conocido] = base_s[conocido]
-        peso = difuminar(peso[..., None])[..., 0]
-        peso[conocido] = 1.0
-
-    niebla = cur / np.clip(peso, 1e-4, None)[..., None]
-
-    # La niebla de relleno sale con el brillo del cielo, que es lo mas claro de
-    # la foto, y por eso se leia como un agujero. Se baja un poco y se le mete un
-    # degradado vertical: la niebla se espesa y se oscurece al bajar.
-    # Se aplica al tamano de la malla pequena, que es donde se ha calculado.
-    vertical = np.linspace(0.86, 0.62, niebla.shape[0], dtype=np.float32)[:, None, None]
-    niebla = niebla * vertical
-    rell = Image.fromarray(
-        np.clip(niebla, 0, 255).astype(np.uint8), "RGB").resize((W, H), Image.BICUBIC)
-
-    # El relleno se come bastante mas alla del recorte. El umbral de gris corta
-    # el ala en seco, pero el ala de verdad tiene una plush de quince o veinte
-    # pixels que se va deshaciendo en la niebla. Si el relleno se queda en el
-    # umbral, esa plush se queda fuera y sale un aro oscuro rodeando la niebla
-    # clara, que es justo lo que se veia.
+    # ── Mezclar, con la mascara agrandada y muy suave ─────────────────────
+    # El umbral de gris corta el ala en seco, pero el ala de verdad tiene una
+    # plush de quince o veinte pixeles. Si el relleno se queda en el umbral,
+    # esa plush se queda fuera y aparece un aro oscuro rodeando la niebla.
     grande = Image.fromarray((dentro * 255).astype(np.uint8), "L")
-    grande = grande.filter(ImageFilter.MaxFilter(31)).filter(ImageFilter.MinFilter(31))
-    grande = grande.filter(ImageFilter.MaxFilter(15)).filter(ImageFilter.MinFilter(15))
-    grande = grande.filter(ImageFilter.GaussianBlur(9.0))
-    a = (np.asarray(grande, dtype=np.float32) / 255.0)[..., None]
-    a = a * a * (3 - 2 * a)          # suave, para que no haya costura
-    salida = base * (1 - a) + np.asarray(rell, dtype=np.float32) * a
+    grande = grande.filter(ImageFilter.MaxFilter(25)).filter(ImageFilter.MinFilter(25))
+    grande = grande.filter(ImageFilter.MaxFilter(13)).filter(ImageFilter.MinFilter(13))
+    grande = grande.filter(ImageFilter.GaussianBlur(11.0))
+    a = np.asarray(grande, dtype=np.float32) / 255.0
+    a = a * a * (3 - 2 * a)
+    salida = base * (1 - a[..., None]) + relleno * a[..., None]
+
     im2 = Image.fromarray(np.clip(salida, 0, 255).astype(np.uint8), "RGB")
-    # Desenfoque de fondo: la capa de atras tiene que estar desenfocada, o se
-    # nota que le falta el angel.
-    return im2.filter(ImageFilter.GaussianBlur(6.0))
+    # La capa de atras tiene que estar desenfocada, o se nota que le falta el
+    # angel. Y el desenfoque se lleva los ultimos pixeles de costura.
+    return im2.filter(ImageFilter.GaussianBlur(7.0))
 
 
 def velo(W, H):
@@ -229,17 +242,25 @@ def main():
     W, H = im.size
     print("origen:", W, "x", H)
 
-    mascara = recorte_angel(im)
-    if mascara is None:
+    recortadas = recorte_angel(im)
+    if recortadas is None:
         print("no se ha podido recortar la figura")
         return 1
+    nucleo, borde = recortadas
+    mascara = Image.fromarray((borde * 255).astype(np.uint8), "L")
 
     # ── la figura, recortada ────────────────────────────────────────────────
-    angel = im.copy()
+    # El RGB se oscurece donde el alfa es parcial. Sin esto, la plush del ala se
+    # mezcla con la niebla clara que hay detrás y sale un filo luminoso rodeando
+    # el ala, que es justo lo que hacia que el recorte se viera pegado encima.
+    rgb = np.asarray(im, dtype=np.float32)
+    peso = 0.30 + 0.70 * np.clip(nucleo, 0, 1)[..., None]
+    rgb = rgb * peso
+    angel = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB")
     angel.putalpha(mascara)
     angel.save(os.path.join(DESTINO, "angel.webp"), "WEBP", quality=90, method=6)
-    print("angel.webp   recorte: %.1f%% de la imagen" %
-          (float(np.asarray(mascara).mean() / 255.0) * 100))
+    print("angel.webp   recorte solido: %.1f%%  ·  con borde: %.1f%%" %
+          (float(nucleo.mean()) * 100, float(borde.mean()) * 100))
 
     # ── el fondo: la escena sin la figura ──────────────────────────────────
     fondo = rellenar_niebla(im, mascara)
@@ -265,7 +286,7 @@ def main():
     # cruces. Ahi no llega el ala, asi que sale entera y de verdad esta mas
     # cerca que todo lo demas. Sobredimensionada en la pagina, se separa del
     # fondo al mover el raton, y es la que mas se mueve.
-    franja = im.crop((0, int(H * 0.66), W, H))
+    franja = im.crop((0, int(H * 0.58), W, H))
     franja = ImageEnhance.Brightness(franja).enhance(0.62)
     franja = ImageEnhance.Color(franja).enhance(0.7)
     franja = Image.blend(franja, Image.new("RGB", franja.size, (18, 30, 40)), 0.26)

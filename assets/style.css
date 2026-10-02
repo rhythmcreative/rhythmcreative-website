@@ -35,6 +35,9 @@
   --r: 10px;
   --r-isla: 16px;
   --ancho: 1120px;
+  /* Niebla de los bordes de fondo.webp, medida en preparar-angel.py. Es lo que
+     rellena las franjas cuando la figura no llena la pantalla. */
+  --niebla: #545c64;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -63,7 +66,9 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 
 .barra-z { position: fixed; top: 0; left: 0; right: 0; z-index: 40;
            padding: 0.8rem 1rem 0; pointer-events: none; }
+
 .isla {
+  pointer-events: auto;
   display: flex; align-items: center; gap: 0.5rem;
   max-width: var(--ancho); margin: 0 auto;
   background: var(--cristal);
@@ -72,8 +77,7 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
   padding: 0.38rem 0.4rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  pointer-events: auto;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .isla:hover, .isla:focus-within { border-color: var(--linea-alta); }
 
@@ -101,6 +105,7 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .isla nav a:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
 .isla .reloj { font-size: 0.73rem; letter-spacing: 0.05em; color: var(--azul-4);
                padding: 0 0.5rem 0 0.6rem; white-space: nowrap;
+               font-variant-numeric: tabular-nums;
                border-left: 1px solid var(--linea); }
 @media (max-width: 560px) { .isla nav { display: none; } }
 
@@ -118,36 +123,75 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .escena { position: absolute; inset: 0; overflow: hidden;
           cursor: crosshair; background: #0a0e12; }
 
-/* Cada capa es la foto entera, encajada como cover, y se mueve distinto.
-   Todas llevan un poco de escala de mas: si la capa se desplaza, sin eso
-   se ve el borde del lienzo en un extremo. */
-.capa { position: absolute; inset: -4%; background-repeat: no-repeat;
-        background-position: center; background-size: cover;
+/* Cada capa es la foto entera, y su caja la mide capa.js con numeros exactos.
+   Antes era inset fijo y background-size: cover, que en un monitor 16:10
+   recortaba las dos puntas de las alas: la figura se salia por los lados y por
+   eso parecia un recorte mal hecho. */
+.capa { position: absolute; background-repeat: no-repeat;
+        background-position: center; background-size: 100% 100%;
         will-change: transform; }
+
+/* El respaldo: la MISMA foto, a la MISMA escala, solo desplazada. Rellena las
+   franjas que quedan cuando la figura deja la pantalla mas alta que la foto.
+
+   Antes se resolvia estirando la foto a una caja mas grande con `sangrado` de
+   60 px por lado.Eso parte el problema: al anadir el mismo numero de pixeles en
+   ancho y en alto, la caja deja de tener la proporcion de la foto, la foto sale
+   estirada y su contenido no coincide con el de las capas en la union. Medido:
+   una linea recta de todo el ancho con la escena passandode 92 a 69 de
+   brillo justo ahi.
+
+   Ahora el respaldo es la foto a su tamanho real, colocada donde toca, y las
+   franjas van en color plano. El plano es el color de la niebla de los bordes
+   de la foto, medido en preparar-angel.py, asi que donde se junta con la foto
+   no se ve. */
+.respaldo { position: absolute; inset: 0;
+            background-image: url("fondo.webp");
+            background-repeat: no-repeat;
+            background-color: var(--niebla);
+            will-change: background-position; }
 
 .fondo  { background-image: url("fondo.webp");
           filter: brightness(0.74) saturate(0.85); }
 .angel  { background-image: url("angel.webp");
-          filter: drop-shadow(0 0 14px rgba(153, 186, 201, 0.16))
-                  drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55)); }
+          /* Solo sombra oscura. Antes habia tambien un drop-shadow hielo de
+             14 px, y eso era el filo claro que rodeaba las alas: no era la
+             foto, era mio. Con el borde del recorte ya difuminado en el
+             propio webp, no hace falta luz alrededor. */
+          filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45)); }
 .velo   { background-image: url("velo.webp");
-          mix-blend-mode: screen; opacity: 0.5; }
+          mix-blend-mode: screen; opacity: 0.5;
+          /* El velo va con screen, y screen sobre nada no es nada: cualquier
+             borde de su caja se ve como un rectangulo mas claro. Con las
+             esquinas y los lados desvanecidos no hay forma que delate. */
+          -webkit-mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%);
+          mask-image: radial-gradient(115% 100% at 50% 50%, #000 58%, transparent 100%); }
 
-/* La capa de delante es una franja: la hierba y las cruces de abajo de la foto.
-   Va anclada abajo y sobredimensionada, que es como se ve el primer plano. */
-.frente { inset: auto 0 0 0; height: 42%; margin: 0;
-           background-image: url("frente.webp");
-           background-size: cover; background-position: center bottom;
-           -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 100%);
-           mask-image: linear-gradient(180deg, transparent, #000 30%, #000 100%);
-           filter: brightness(0.62); }
+/* La capa de delante: la hierba y las cruces de abajo de la foto, que son lo
+   unico que hay de verdad mas cerca.
+
+   La franja ocupa el 42% de abajo de la caja. Antes la mascara iba de 0 a 30% de
+   la CAJA, o sea por encima de donde empieza la franja, con lo que ya iba
+   opaca al aparecer la imagen: se veia un borde recto horizontal a la altura
+   del primer pixel de la franja. La caida tiene que estar DENTRO de la franja,
+   de 58 a 76%. */
+.frente { background-image: url("frente.webp");
+          background-size: 100% auto; background-position: center bottom;
+          -webkit-mask-image: linear-gradient(180deg, transparent 58%, #000 76%, #000 100%);
+          mask-image: linear-gradient(180deg, transparent 58%, #000 76%, #000 100%);
+          filter: brightness(0.6); }
 
 /* El halo de la cabeza. Su color es el termometro. */
 .halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
-        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent 70%);
-        box-shadow: 0 0 24px 6px var(--halo, transparent),
-                    inset 0 0 12px var(--halo, transparent);
-        opacity: 0.55; mix-blend-mode: screen; }
+        /* Sin nucleo blanco: la foto YA trae su halo, y al poner encima una
+           esfera clara sale un bulto oscuro en vez de una luz. Aqui solo se
+           aporta el resplandor del termometro. */
+        /* Ni anillo ni esfera: la foto YA trae su halo, y lo que hacia falta
+           era un resplandor, no un aro. Con box-shadow salia un donut naranja
+           macizo; esto es un bloom difuso y se suma a lo que ya hay dibujado. */
+        background: radial-gradient(closest-side, var(--halo, transparent) 0%, transparent 72%);
+        filter: blur(9px);
+        opacity: 0.5; mix-blend-mode: screen; }
 @media (prefers-reduced-motion: no-preference) {
   .halo { animation: respirar 5.5s ease-in-out infinite; }
 }

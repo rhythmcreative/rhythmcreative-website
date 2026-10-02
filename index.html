@@ -14,7 +14,7 @@
 
 <!-- La barra. -->
 <div class="barra-z">
-  <div class="isla">
+  <div class="isla" tabindex="0" aria-label="Navegacion">
     <span class="punto" id="punto" title="temperatura de la cpu" aria-hidden="true"></span>
     <span class="rotulo">Rhythmcrea</span>
     <nav>
@@ -28,8 +28,9 @@
 <!-- El campo: la foto deshecha en capas que se mueven a distinta velocidad. -->
 <section class="campo" id="campo">
   <div class="escena" id="escena">
+    <div class="respaldo" aria-hidden="true"></div>
     <div class="capa fondo"    data-hondo="0.6"></div>
-    <div class="capa angel"    data-hondo="1.5"><div class="aura"></div></div>
+    <div class="capa angel"    data-hondo="1.5"></div>
     <div class="capa velo"     data-hondo="3.4"></div>
     <div class="capa frente"   data-hondo="5.2"></div>
     <div class="halo" id="halo" aria-hidden="true"></div>

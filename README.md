@@ -13,6 +13,11 @@ nombre, dos enlaces y la hora. Ese punto no es decoracion: su color lo pone la
 temperatura real de la CPU, leida de `data/system.js`. Con la maquina fria esta
 apagado, con la maquina caliente brilla en oxido.
 
+Se probó a fazerla una Dynamic Island con las medidas reales de k4 (`baseHeight:34`,
+`cuerpoRadio:20`, `wing:16`, fondo negro, 176 px en reposo, y las esquinas de arriba
+mordidas con `mask-composite`). Quedaba bien pero no era esta. Se ha vuelto a la
+capsula.
+
 **El campo.** La foto del angel partida en cuatro capas que se mueven a distinta
 velocidad con el raton. Eso es la profundidad: no un filtro, sino el nearer y el
 farther separados de verdad.
@@ -177,27 +182,49 @@ que corta esas ramas: son finas, y el ala es gruesa.
 
 ### Como se borra la figura del fondo
 
-Esto se probo de cuatro formas y solo una sirvio, que queda aqui para que nadie
-la repita por curiosity:
+Se ha probado de seis formas y cinco fallaban por lo mismo: **anclar el relleno a
+pixels que no son cielo.** Se queda aqui para que no se repitan.
 
-1. **Difusion desde la foto.** Las alas son oscuras, el oscuro se arrastra hacia
-   dentro, y la figura no desaparece: solo se emborrona. Sale una mancha con
-   forma de angel.
-2. **Interpolacion por filas.** La niebla esta ARRIBA, no a los lados. En las
-   filas donde el ala llega al borde no hay nada que poner a la izquierda, se
-   coge el pixel de la derecha, que es oscuro, y sale un rayado horizontal de
-   kilometros.
-3. **Interpolacion por columnas.** Lo mismo al reves: el borde del ala es
-   irregular, cada columna sale con un brillo distinto, y sale rayado vertical.
-4. **Difusion pero disgando el relleno.** Esta. Se difunden a la vez la imagen y
-   una mascara (1 fuera de la figura, 0 dentro), y se divide una por otra:
-   convolution normalizada. La clave es que lo de fuera conserva su valor real,
-   porque es el dato que manda; lo de dentro se interpola. Y lo de dentro
-   arranca del color DEL CIELO de cada columna, no de la foto, que ahi dentro
-   esta la figura oscura.
+1. **Difusion desde la foto.** El oscuro del ala se arrastra hacia dentro y la
+   figura no desaparece: solo se emborrona. Mancha con forma de angel.
+2. **Difusion normalizada** (difunden imagen y mascara y dividen). Sale un aro
+   negro en el borde: poner a cero lo de fuera y normalizar al final da cero en
+   el borde. El correcto es que lo de fuera conserve su valor real.
+3. **Interpolacion por filas.** La niebla esta ARRIBA, no a los lados. Donde el
+   ala llega al borde no hay nada que poner a la izquierda y sale rayado
+   horizontal.
+4. **Interpolacion por columnas.** El de ABAJO son arboles y lapidas, y como
+   cambia de columna a columna el relleno sale rayado vertical.
+5. **Columnas con los extremos suavizados en 401 px.** Menos rayas, pero el
+   mismo problema, porque abajo sigue habiendo edificio.
+6. **Un solo anclaje.** Esta. Por columna, el pixel de cielo justo encima de la
+   figura, promediado en 601 px —el cielo de esta foto es un degradado suave, asi
+   que con esa media sale cielo otra vez y todas las columnas se parecian—. Y de
+   ahi hacia abajo un degradado fijo que lo espesa, sin ningun anclaje mas. El
+   resultado no es una reconstruccion, es niebla, que es lo que tiene que ser:
+   detras del angel solo hay cielo.
 
-El error clasico aqui es poner a cero lo de fuera y normalizar al final: sale un
-aro negro justo en el borde, y parece que el recorte esta mal.
+### El respaldo y las costuras
+
+El respaldo es la misma foto, a la misma escala y en la misma posicion que las
+capas. Antes se resolvia estirandola a una caja mayor con 60 px de sangrado por
+lado, y eso es un error de cuenta: al anadir el mismo numero de pixeles en ancho
+y en alto la caja deja de tener la proporcion de la foto, la foto sale estirada
+y en la union su contenido no coincide con el de las capas. Medido en pantalla,
+saltaba una linea de TODO el ancho con la escena pasando de 92 a 69 de brillo.
+
+Las franjas que quedan cuando la figura no llena la pantalla van en color plano,
+con el color de la niebla de los bordes de la foto medido aqui.
+
+### El encuadre
+
+La caja de las capas la calcula capa.js. Con `background-size: cover` en un
+monitor 16:10 las dos puntas de las alas se salian por los lados. La escala sale
+de las dos cosas a la vez: que entre la foto entera, pero que la figura llene al
+menos el 90% del alto. En horizontal manda la foto entera y se ve el angel
+completo; en vertical manda el 90% y se recorta por lo alto, que es lo unico
+que se puede recortar sin perder la figura. El parallax se acota al margen que
+sobra alrededor, para que ninguna capa enseñe un borde al moverse.
 
 ## Estructura
 
