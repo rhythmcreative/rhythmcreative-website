@@ -78,11 +78,34 @@
     // El recorte lateral solo se acepta en pantallas estrechas, que es donde
     // la figura llena la pantalla y las alas quedan en los bordes, que es lo
     // que ya se vio bien en el movil.
+    //
+    // En pantalla ANCHA la foto se escala SIEMPRE al ancho, aunque con eso haya
+    // que recortar por arriba y por abajo. Con "que entre entera" salia al reves:
+    // en un monitor mas ancho que 16:9 sobraban franjas a los lados, y esas
+    // franjas eran el respaldo difuminado, con un corte vertical durísimo entre
+    // la foto nítida y la niebla. La foto no se recorta de lado, que es justo lo
+    // que no puede ser.
+    //
+    // En pantalla ESTRECHA se hace al reves, y se recorta por los lados: la
+    // figura llena la pantalla y las alas quedan en los bordes, que es lo que ya
+    // se vio bien en el movil.
     var escala = vw < 900
       ? Math.max(contiene, (vh * 0.92) / FOTO_H)
-      : contiene;
+      : Math.max(contiene, vw / FOTO_W);
     var w = FOTO_W * escala, h = FOTO_H * escala;
-    var mx = (vw - w) / 2, my = (vh - h) / 2;
+    var mx = (vw - w) / 2;
+
+    // Si sobra alto, se recorta casi todo por ABAJO: abajo esta la hierba y el
+    // nombre. Por arriba solo se recorta un 3.5% de la foto como mucho, que es lo
+    // justo para no comerse el halo ni las puntas de las alas, que estan al 6% y
+    // al 9% de la altura. Recortando arriba en proporcion al exceso, en un
+    // monitor 21:9 el recorte de arriba era del 18% y el halo desaparecia.
+    var my;
+    if (h <= vh) {
+      my = (vh - h) / 2;
+    } else {
+      my = -Math.min((h - vh) * 0.3, h * 0.035);
+    }
 
     // Las cuatro capas van al 100% dentro de la caja, asi que basta con medir
     // LA CAJA. Se miden aqui y no en un bucle por capa porque la mascara que
