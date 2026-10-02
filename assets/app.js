@@ -314,6 +314,17 @@
       b.setAttribute("aria-pressed", String(activo));
       b.title = activo ? "Switch to the dark theme" : "Switch to the light theme";
     }
+    // theme-color es lo que pinta la barra del navegador en los moviles. Estaba
+    // fija en el negro del tema oscuro, asi que con la pagina en blanco la barra
+    // del navegador seguia siendo negra: la unica parte de la pagina que no
+    // cambie con el tema. Se toma el --suelo de verdad, no un color inventado
+    // aqui, para que si un dia se toca la paleta no haya que tocar dos sitios.
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      var suelo = getComputedStyle(document.documentElement)
+        .getPropertyValue("--suelo").trim();
+      if (suelo) meta.setAttribute("content", suelo);
+    }
     // El halo del angel cae en otro punto en cada tema, asi que hay que recolocarlo.
     if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
   }

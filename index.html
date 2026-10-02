@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RHYTHMCREA</title>
 <meta name="description" content="RHYTHMCREA. A Hyprland desktop and everything that came out around it.">
 <meta name="color-scheme" content="dark">
@@ -16,20 +16,37 @@
 </head>
 <body>
 
+<!-- Enlace de salto. Es lo primero que hay en el DOM y esta oculto hasta que le
+     llega el foco por el teclado, que es justo cuando hace falta: saltar la barra
+     y el angel entero para llegar al contenido. En un movil con barra fija encima
+     del todo, el tabulador se para en cuatro cosas que no llevan a ninguna parte
+     antes de llegar a nada util. -->
+<a class="saltar" href="#contenido">Skip to content</a>
+
 <!-- La barra. -->
 <div class="barra-z">
   <!-- Tres zonas: el nombre a la izquierda y solo, el reloj en el medio, los
        enlaces a la derecha. El reloj va en una columna propia del grid para que
        quede centrado de verdad, y no "mas o menos" centrado depending de lo que
        mida cada lado. -->
-  <div class="isla" tabindex="0" aria-label="Navegacion">
+  <div class="isla" tabindex="0" aria-label="Navigation">
     <div class="izq">
       <span class="rotulo">Rhythmcrea</span>
     </div>
     <span class="reloj" id="reloj">--:--:--</span>
-    <nav>
-      <a href="#hyprland">hyprland</a>
-      <a href="#fuera">elsewhere</a>
+    <!-- La zona derecha: los enlaces y el interruptor. Van en un div porque el
+         grid de la barra es de tres columnas (1fr auto 1fr) y el reloj tiene que
+         seguir cayendo en la del medio. Con el boton como cuarto hijo suelto, el
+         reloj se desplazaba de sitio.
+
+         Y el boto va FUERA del nav a proposito: dentro, el display:none que el nav
+         recibe por debajo de 620 px se lo llevaba por delante, y en un movil no
+         habia forma de cambiar de tema. -->
+    <div class="der">
+      <nav>
+        <a href="#hyprland">hyprland</a>
+        <a href="#fuera">elsewhere</a>
+      </nav>
       <button class="interruptor" id="interruptor" type="button"
               aria-pressed="false" title="Switch to the light theme">
         <!-- Iconos del mismo set, para que pesen lo mismo. El de la luna que
@@ -48,11 +65,13 @@
           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
                    M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
         </svg>
-        <span class="sr">Cambiar de tema</span>
+        <span class="sr">Switch theme</span>
       </button>
-    </nav>
+    </div>
   </div>
 </div>
+
+<main id="contenido">
 
 <!-- El campo: la foto deshecha en capas que se mueven a distinta velocidad. -->
 <section class="campo" id="campo">
@@ -85,6 +104,8 @@
 <section class="cola seccion" id="hyprland">
   <div id="hyprland-caja"></div>
 </section>
+
+</main>
 
 <!-- El pie es el menu. En la barra solo caben cuatro cosas, y en un movil
      caben dos: sin esto, en el movil no habia ninguna manera de llegar a

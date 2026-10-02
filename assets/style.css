@@ -78,11 +78,23 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 
 .isla {
   pointer-events: auto;
-  /* Tres columnas: 1fr · auto · 1fr. El reloj va en la del medio, y las de los
-     lados se reparten el resto, de modo que el reloj queda en el centro de la
-     barra tanto si la izquierda es mas larga como la derecha. Con flex y un
-     margen automatico se descuadra en cuanto uno de los lados crece. */
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  /* Tres columnas: minmax(0, 1fr) · auto · minmax(0, 1fr). El reloj va en la del
+     medio y las de los lados se reparten el resto, de modo que el reloj queda en
+     el centro tanto si la izquierda es mas larga como la derecha. Con flex y un
+     margen automatico se descuadra en cuanto uno de los lados crece.
+
+     Y con minmax(0, 1fr) y no con 1fr a secas, que es lo que hace que la promesa
+     se cumpla SIEMPRE. Un 1fr tiene como minimo automatico su min-content: si el
+     contenido de la derecha no cabe en la mitad que le toca, la pista se hincha
+     hasta que quepa, las dos dejan de medir igual y el reloj se desplaza. Medido
+     a 360 px: pistas de 117.39 y 122.47, con el reloj 3 px fuera de sitio. Con
+     minmax(0, ...) las dos pistas miden siempre lo mismo, y si algo no cabe se
+     sale en vez de descuadrar el reloj.
+
+     Para que eso no llegue a pasar, los breakpoints quitan enlaces antes de que
+     la zona derecha se pase de su mitad. */
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+           align-items: center;
   max-width: var(--ancho); margin: 0 auto;
   /* Sin backdrop-filter. Debajo de la barra hay capas que se mueven en cada
      fotograma, y el desenfoque de fondo hay que recalcularlo cada vez que pasa
@@ -103,7 +115,8 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .isla .izq { justify-self: start; display: flex; align-items: center; gap: 0.5rem;
              min-width: 0; }
 .isla .rotulo { font: 600 0.76rem/1 var(--f); letter-spacing: 0.2em;
-                text-transform: uppercase; color: var(--hielo); padding-left: 0.15rem; }
+                text-transform: uppercase; color: var(--hielo); padding-left: 0.15rem;
+                white-space: nowrap; }
 .isla nav { justify-self: end; display: flex; gap: 0.15rem; }
 .isla nav a { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
              color: var(--gris); padding: 0.34rem 0.58rem; border-radius: var(--r);
@@ -646,3 +659,151 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
   .muestras { gap: 0.5rem 0.7rem; }
   .terminal pre { font-size: 0.6rem; max-height: 17rem; }
 }
+
+/* ══ LA BARRA EN MOVIL ═══════════════════════════════════════════════════
+   Antes medido a 390 px de verdad (dentro de un iframe de ancho fijo, que es
+   la unica forma fiable: --window-size se ignora en modo dump-dom):
+
+     la barra        31 px de alto
+     el rotulo       11.4 px de texto
+     el reloj        11.4 px
+     el interruptor  28.5 x 28.5 px, y ademas OCULTO
+
+   Tres cosas iban mal, y la tercera es la grave:
+
+     · 31 px de alto no se apuntan con el dedo. El minimo recomendado son 44.
+     · 11.4 px no se leen de un vistazo, y en la barra es lo primero que se mira.
+     · el interruptor estaba DENTRO del nav, y el nav recibe display:none por
+       debajo de 620 px. O sea que en un movil no habia forma de cambiar de tema.
+       Ahora esta fuera del nav, en su propia zona derecha.
+
+   Y faltaba una cosa que no se ve en una captura de escritorio: el notch del
+   iPhone. Sin safe-area la barra fija queda debajo del status bar, justo donde
+   no se puede pulsar nada. Tambien hace falta viewport-fit=cover en el meta, que
+   es lo que hace que los Insets valgan algo.                                     */
+
+.barra-z { padding-top: max(0.8rem, env(safe-area-inset-top, 0px));
+           padding-left: max(1rem, env(safe-area-inset-left, 0px));
+           padding-right: max(1rem, env(safe-area-inset-right, 0px)); }
+
+/* La zona derecha: los enlaces y el interruptor. Se agrupan en un div para que el
+   grid de la barra siga siendo de tres columnas y el reloj no se mueva. */
+.isla .der { justify-self: end; display: flex; align-items: center; gap: 0.1rem; }
+
+@media (max-width: 620px) {
+  /* 44 px es el objetivo tactil minimo (WCAG 2.5.5 y las guias de Apple y
+     Android). Todo lo que se pueda pulsar llega a esa altura. */
+  .barra-z { padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+             padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+             padding-right: max(0.5rem, env(safe-area-inset-right, 0px)); }
+
+  /* En movil la barra ocupa todo el ancho disponible, como la de una app. Antes
+     se quedaba en los 330 px del clamp de --ancho, que a 390 de pantalla la
+     dejaban con 30 px de margen a cada lado. Con el hueco que sobra, las columnas
+     de los lados miden lo mismo y el reloj vuelve a caer en el centro: medido,
+     de 3 px de desvio a cero.
+
+     El ancho lo pone el padding de .barra-z, que ya lleva los safe-area. */
+  .isla { min-height: 44px; padding: 0.3rem 0.4rem;
+          max-width: none; width: 100%; }
+
+  /* El nombre se queda: es lo unico que sobrevive cuando se baja, y sin el no se
+     sabe donde estas. */
+  .isla .rotulo { font-size: 0.84rem; letter-spacing: 0.16em; padding-left: 0.25rem; }
+
+  /* El reloj es lo que mas se mira en una barra: sube mas que el nombre, para
+     que sea el elemento legible de un vistazo. */
+  .isla .reloj { font-size: 0.92rem; letter-spacing: 0.04em; padding: 0 0.25rem; }
+
+  /* Los enlaces tambien se quedan si caben, y con 44 px de alto. Antes se
+     ocultaban enteros y no quedaba nada pulsable a la derecha. */
+  .isla nav { display: flex; gap: 0.1rem; }
+  .isla nav a { font-size: 0.72rem; padding: 0 0.5rem; min-height: 44px;
+                display: grid; place-items: center; }
+
+  .interruptor { width: 44px; height: 44px; border-left-color: var(--linea); }
+  .interruptor .ic { width: 1.2rem; height: 1.2rem; }
+}
+
+/* La zona derecha no cabe en su columna de 1fr, y cuando no cabe la columna se
+   hincha hasta su min-content. Las dos de los lados dejan de medir lo mismo, y el
+   reloj, que esta en la del medio, se va de sitio: medido, 86 px de desvio a 430
+   de ancho. El grid no lo arregla; lo que lo arregla es que la derecha quepa.
+
+   Medida de la derecha: "hyprland" 75 + "elsewhere" 83 + el interruptor 44 = 202.
+   De la izquierda, el nombre, 99. Del reloj, 78. Con los dos enlaces hacen falta
+   99 + 78 + 202 = 379 de barra como minimo, y el padding se come 14 mas.
+
+   Asi que "elsewhere" se cae por debajo de 700 px de pantalla. Se queda en el pie,
+   que esta siempre. El interruptor no se cae nunca: es lo unico que no se puede
+   llegar a hacer de otra manera. */
+@media (max-width: 700px) {
+  .isla nav a[href="#fuera"] { display: none; }
+}
+
+/* Y en el mas estrecho de todos, tampoco cabe "hyprland" al lado. */
+@media (max-width: 330px) {
+  .isla nav { display: none; }
+  .isla .rotulo { font-size: 0.78rem; letter-spacing: 0.12em; }
+}
+
+/* ── 44 px tambien en tableta ──────────────────────────────────────────────
+   El corte de los 620 px es de LAYOUT. El del objetivo tactil es otro: depende de
+   como se esta usando la cosa, no de lo ancha que sea. Una tableta de 768 se
+   toca con el dedo igual que un movil de 390, y sin esto su barra seguia en 41 px
+   con botones de 28.
+
+   (hover: none) es lo que distingue un dedo de un raton. */
+@media (hover: none) {
+  .isla { min-height: 44px; }
+  .interruptor { width: 44px; height: 44px; }
+  .interruptor .ic { width: 1.2rem; height: 1.2rem; }
+  .isla nav a { min-height: 44px; display: grid; place-items: center;
+                padding: 0 0.55rem; }
+}
+
+/* ── El dedo no tiene :hover ───────────────────────────────────────────────
+   En un dedo no existe hover: no hay a donde apuntar y se queda en el estado
+   hover hasta que tocas otra parte de la pantalla. Lo que hace falta es el
+   instante de la pulsacion, que es lo unico que el dedo puede ver.
+
+   Este es el fallo tipico de un sitio en movil: todo se ve Dead al tocarlo. */
+@media (hover: none) {
+  .isla nav a:active,
+  .interruptor:active { background: rgba(153, 186, 201, 0.16); color: var(--hielo); }
+  html.claro .isla nav a:active,
+  html.claro .interruptor:active { background: rgba(0, 0, 0, 0.08); }
+
+  /* Una pulsacion que encoge un pelo dice "te he entendido" sin salirse del
+     diseno. 0.25 s: lo suficiente para verse, tan corto que no da sensación de
+     lentitud. */
+  .isla nav a, .interruptor { transition: transform 0.14s ease-out; }
+  .isla nav a:active, .interruptor:active { transform: scale(0.9); }
+}
+
+/* ── El enlace de salto ──────────────────────────────────────────────────
+   Oculto de verdad (no solo transparente), pero cuando le llega el foco desde el
+   teclado aparece. Por eso va con :focus y no con un JS que lo ensee. */
+.saltar { position: absolute; left: 0.6rem; top: 0.6rem; z-index: 60;
+          transform: translateY(-160%); transition: transform 0.18s;
+          padding: 0.55rem 0.9rem; border-radius: var(--r);
+          background: var(--cristal-opaco); border: 1px solid var(--linea-alta);
+          color: var(--hielo); text-decoration: none;
+          font: 0.72rem/1 var(--f); letter-spacing: 0.12em; text-transform: uppercase; }
+/* :focus Y :focus-visible, los dos. Los dos casan, comprobado, asi que aqui no
+   hace falta uno; lo que se ha puesto el otro es que con :focus el enlace
+   aparece tambien si algo lo enfoca por script, que es justo lo que se ha
+   hecho al medirlo. Un enlace de salto no tiene nada que perder por salir con
+   un poco mas de margen.
+
+   Aviso para quien mida esto otra vez: en headless esto NO se ve. La transicion
+   de 0.18 s la lleva el reloj del compositor y aqui requestAnimationFrame corre a
+   dos fotogramas por segundo, asi que el transform se queda en el valor de
+   partida y el enlace parece roto. Anulando la transition sale bien: top 10. */
+.saltar:focus, .saltar:focus-visible { transform: translateY(0); }
+
+/* El foco tiene que verse tambien en el movil, que es donde se navega con un
+   teclado bluetooth o con la switch. */
+.isla a:focus-visible, .isla button:focus-visible,
+.muestras .chip:focus-visible, .copiar:focus-visible {
+  outline: 2px solid var(--hielo); outline-offset: 2px; border-radius: var(--r); }

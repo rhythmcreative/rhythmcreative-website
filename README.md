@@ -154,6 +154,81 @@ fiable, y un numero de FPS aqui seria inventado. Lo que si se ha medido son los
 bytes, que son solidos, y los costes por fotograma que se ven en la estructura
 del CSS.
 
+## La barra, y lo que estaba roto en movil
+
+Medido a 390 px de verdad, dentro de un iframe de ancho fijo (que es la unica
+forma fiable: `--window-size` se ignora en modo `--dump-dom`, y en modo captura
+el viewport sale 60 px mas estrecho de lo pedido):
+
+| | antes | ahora |
+|---|---|---|
+| alto de la barra | 31 px | 53 px |
+| interruptor de tema | 28x28 px, **y oculto** | 44x44 px, siempre visible |
+| rotulo | 11.4 px | 12.6 px |
+| reloj | 11.4 px | 13.8 px |
+| enlaces | ocultos, 28 px de alto | 44 px de alto |
+
+**Lo grave no era el tamano: era que en un movil no se podia cambiar de tema.**
+El interruptor estaba *dentro* del `<nav>`, y el `<nav>` recibe `display: none`
+por debajo de 620 px. El boton se iba con el. Ahora vive en su propia zona
+derecha, y el nav puede seguir ocultandose porque el nav no lo manda.
+
+### Lo que faltaba de mas
+
+- **`safe-area`.** No habia ni una mencion. En un iPhone con notch, la barra fija
+  queda debajo del status bar, justo donde no se pulsa nada. Ahora
+  `.barra-z` usa `env(safe-area-inset-*)`, y el meta lleva `viewport-fit=cover`,
+  que es lo que hace que esos valores valgan algo: sin el, son siempre 0.
+- **`<html lang="es">`** con la pagina entera en ingles. Los lectores de pantalla
+  pronunciaban el ingles con las reglas del espanol.
+- **`aria-label="Navegacion"`**, en espanol, en una pagina inglesa.
+- **`theme-color` fijo** en el negro del tema oscuro. Era la unica parte de la
+  pagina que no cambiaba con el tema: en movil la barra del navegador se quedaba
+  negra con la pagina en blanco. Ahora se toma de `--suelo`.
+- **`<main>` y enlace de salto.** No habia|region principal ni forma de saltarse
+  la barra con el teclado: el tabulador se paraba en cuatro cosas in utiles.
+- **`:active` en los botones.** En un dedo no hay `:hover`: no hay a donde
+  apuntar, y se queda en hover hasta que tocas otra parte. Todo se ve Dead al
+  tocarlo. Con `(hover: none)` hay estado de pulsacion real.
+
+### El reloj sigue en el centro, y ahora por estructura
+
+Con `1fr auto 1fr` las dos pistas de los lados **no siempre miden lo mismo**: un
+`1fr` tiene como minimo automatico su `min-content`, asi que si el contenido de la
+derecha no cabe en la mitad que le toca, esa pista se hincha y el reloj se
+desplaza. Medido a 360 px: pistas de `117.39` y `122.47`, con el reloj 3 px fuera.
+
+`minmax(0, 1fr)` hace que las dos pistas midan siempre lo mismo. Para que no
+llegue a pasar, los breakpoints quitan enlaces antes de que la zona derecha se
+pase de su mitad: la zona derecha mide 202 px con los dos enlaces, la izquierda 99
+y el reloj 78, asi que hacen falta 379 px de barra como minimo. "Elsewhere" se cae
+por debajo de 700 px (esta en el pie); el interruptor no se cae nunca.
+
+Comprobado de 320 a 1920: **desvio del reloj 0 px en todos los anchos**, sin
+desborde horizontal en ninguno.
+
+### 44 px tambien en tableta
+
+El corte de los 620 px es de *layout*; el del objetivo tactil es otro, porque
+depende de como se usa la cosa y no de lo ancha que sea. Una tableta de 768 se
+toca con el dedo igual que un movil de 390. Con `(hover: none)` los 44 px se
+aplican a cualquier tamano que se toque, y con raton la barra conserva sus
+proporciones de siempre.
+
+## Medir en movil: dos trampas
+
+**`--window-size` no sirve para medir.** En modo `--dump-dom` se ignora
+enteramente: el viewport sale siempre en 500 px, pidas lo que pidas. En modo
+captura el PNG sale al tamano pedido, pero el viewport es 60 px mas estrecho. Lo
+que funciona es un `<iframe>` con el ancho en CSS: su viewport es exactamente ese,
+porque no depende de nada del navegador.
+
+**Las transiciones no avanzan en headless.** `requestAnimationFrame` corre a dos
+fotogramas por segundo, asi que cualquier `transition` se queda en su valor de
+partida y parece un fallo. Esto se ha llevao por delante dos veces en esta pagina:
+el enlace de salto "no aparecia" y las lineas del terminal "no tenian color" (esa
+era la animacion `sur gir` de la pieza, que empieza en `opacity: 0`).
+
 ## Como se adapta
 
 El tipo y el ancho del contenido no estan fijos, que es lo que hacia que en un
