@@ -6,9 +6,13 @@ tambien se sirve tal cual desde GitHub Pages.
 
 ## Que es la pagina
 
-**La barra.** Una capsula de cristal con un punto que brilla a la izquierda, el
-nombre, un enlace y la hora. El punto no es decoracion: su color lo pone la
-temperatura real de la CPU, leida de `data/system.js`.
+**La barra.** Una capsula de cristal, sin borde: el nombre a la izquierda, el
+reloj en el medio y los enlaces a la derecha. El reloj va en una columna propia
+de un grid `1fr auto 1fr`, para que quede centricado tanto si un lado crece como
+si crece el otro; con flex y un margen automatico se descuadra.
+
+El punto de la temperatura se fue de la barra: sobraba a la izquierda del todo.
+Ahora la temperatura solo se ense�na en el halo del campo.
 
 **El campo.** La foto del angel partida en cuatro capas que se mueven a distinta
 velocidad con el raton. Eso es la profundidad: no un filtro, sino el nearer y el
@@ -21,11 +25,12 @@ farther separados de verdad.
 | `angel` | la figura con las alas, recortada con canal alfa | x1.5 |
 | `fondo` | el cementerio, desenfocado y frio | x0.6 |
 
-Encima, el halo de la cabeza, que es el otro motivo que comparte con la pagina:
-el de la barra. Ahi va el termometro real, con el mismo color que el punto. Y el
-raton mueve una luz que no es un degradado sino un disco con `soft-light`: por
-eso ilumina las alas por un lado y las deja en sombra por el otro. Al pinchar,
-las alas se abren un poco y pasa un barrido.
+Encima, el halo de la cabeza, que es el motivo que la pagina comparte con tu
+barra. Ahi va el termometro real de la CPU: con la maquina fria esta apagado y
+con la caliente brilla en oxido. Y el raton mueve una luz que no es un
+degradado sino un disco con `soft-light`, por eso ilumina las alas por un lado y
+las deja en sombra por el otro. Al pinchar, las alas se abren un poco y pasa un
+barrido.
 
 **La seccion de Hyprland.** Debajo, y solo eso. Un lema, lo que hay vivo en la
 sesion ahora mismo (atajos, pantallas, paquetes), y las piezas del escritorio

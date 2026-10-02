@@ -76,29 +76,20 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   max-width: var(--ancho); margin: 0 auto;
   background: var(--cristal);
-  border: 1px solid var(--linea);
+  /* Sin borde. El filete de 1px era un marco mas sobre el fondo, y con la foto
+     detras se leia como una caja metida dentro de otra caja. El cristal y la
+     sombra ya la separan. */
+  border: 0;
   border-radius: var(--r-isla);
-  padding: 0.38rem 0.4rem;
+  padding: 0.4rem 0.55rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.3s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.isla:hover, .isla:focus-within { border-color: var(--linea-alta); }
 
-/* El punto. Su color lo pone la temperatura real de la CPU. */
-.punto {
-  width: 24px; height: 24px; flex: none; border-radius: 50%;
-  position: relative; cursor: help;
-  background: radial-gradient(circle at 50% 42%, var(--o, var(--gris)) 0 26%, transparent 27%),
-              radial-gradient(circle at 50% 50%, var(--i, var(--azul-1)) 0 55%, var(--suelo) 100%);
-  box-shadow: 0 0 0 1px var(--linea-alta), 0 0 14px var(--halo, transparent);
-  transition: box-shadow 0.8s, background 0.8s;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .punto::after { content: ""; position: absolute; inset: -3px; border-radius: 50%;
-                  border: 1px solid var(--halo, transparent); animation: latir 4.5s ease-out infinite; }
-}
-@keyframes latir { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.9); opacity: 0; } }
+/* El punto de la temperatura se fue de la barra: sobra a la izquierda del todo,
+   con su aro, y la temperatura ya se enseña en el halo, que es donde el color
+   significa algo. Queda en capa.js, que lo pinta en el halo. */
 
 .isla .izq { justify-self: start; display: flex; align-items: center; gap: 0.5rem;
              min-width: 0; }
@@ -320,10 +311,12 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .vivo span { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
              color: var(--gris); }
 
-.etiquetas { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 1.3rem; }
-.etiquetas span { font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
-                  color: var(--gris); border: 1px solid var(--linea);
-                  border-radius: 999px; padding: 0.18rem 0.6rem; }
+.etiquetas { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.75rem;
+              margin-top: 1.3rem; }
+.etiquetas span { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+                  color: var(--gris); }
+.etiquetas span + span::before { content: "·"; margin-right: 0.75rem;
+                                color: rgba(107, 130, 140, 0.45); }
 
 .acciones-seccion { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
 
@@ -347,12 +340,15 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .pieza .cuerpo b { font-size: 0.9rem; font-weight: 500; color: var(--hielo); }
 .pieza .cuerpo i { font-style: normal; font-size: 0.73rem; color: var(--gris); }
 
-/* Los chips se van a la derecha de su fila. Sin el margen automatico se
-   quedaban pegados al titulo y la fila parecia un bloque de texto. */
-.chip-mini { margin-left: auto; font-size: 0.56rem; letter-spacing: 0.12em;
-             text-transform: uppercase; color: var(--gris); border: 1px solid var(--linea);
-             border-radius: 999px; padding: 0.14rem 0.55rem; white-space: nowrap; }
-.chip-mini + .chip-mini { margin-left: 0.3rem; }
+/* Los chips de cada pieza. Antes eran capsulas con borde, y veinte filas con
+   dos o tres cajas cada una salian como un panel de botones. Ahora son texto
+   pelado a la derecha de la fila, separado por un punto. */
+.chips-fila { margin-left: auto; display: flex; align-items: center; gap: 0.45rem;
+              white-space: nowrap; }
+.chips-fila::before { content: "·"; color: var(--gris); margin-right: 0.15rem; }
+.chip-mini { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--gris); }
+.chip-mini + .chip-mini::before { content: "·"; margin: 0 0.4rem 0 -0.1rem;
+                                 color: rgba(107, 130, 140, 0.5); }
 @media (max-width: 700px) { .chip-mini { display: none; } }
 
 .pieza .mas { width: 1.4rem; text-align: right; flex: none; font-size: 0.95rem;

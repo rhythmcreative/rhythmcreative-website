@@ -35,7 +35,9 @@
     return h < 24 ? "hace " + h + " h" : "hace " + Math.floor(h / 24) + " d";
   }
 
-  // ── El punto de la barra: la temperatura real, no un temporizador ──────────
+  // ── La temperatura. Ya no hay punto en la barra: el termometro vive en el
+  //    halo, y lo pinta capa.js. Esto se queda por si vuelve a hacer falta un
+  //    readout, y no hace nada si el elemento no esta.
   function punto(temp) {
     var el = $("#punto");
     if (!el) return;
@@ -134,9 +136,17 @@
             '<span class="filo"></span>' +
             '<span class="cuerpo"><b>' + esc(p.titulo) + "</b>" +
             "<i>" + esc(p.resumen) + "</i></span>" +
-            (p.chips || []).slice(0, 2).map(function (c) {
-              return '<span class="chip-mini">' + esc(c) + "</span>";
-            }).join("") +
+            // Ojo con los parentesis: el ternario se come lo que venga detras
+            // mientras no esten entre parentesis. Sin ellos, la rama false se
+            // comia el "+" del resto de la concatenacion, con lo que el boton,
+            // su contenido y el </button> desaparecian de la fila y solo
+            // quedaban los chips sueltos.
+            ((p.chips || []).slice(0, 2).length
+              ? '<span class="chips-fila">' +
+                (p.chips || []).slice(0, 2).map(function (c) {
+                  return '<span class="chip-mini">' + esc(c) + "</span>";
+                }).join("") + "</span>"
+              : "") +
             '<span class="mas" aria-hidden="true">' + (abierto === p.id ? "−" : "+") + "</span>" +
             "</button>";
 
