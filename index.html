@@ -34,10 +34,16 @@
 <section class="campo" id="campo">
   <div class="escena" id="escena">
     <div class="respaldo" aria-hidden="true"></div>
-    <div class="capa fondo"    data-hondo="0.6"></div>
-    <div class="capa angel"    data-hondo="1.5"></div>
-    <div class="capa velo"     data-hondo="3.4"></div>
-    <div class="capa frente"   data-hondo="5.2"></div>
+    <!-- Las cuatro capas dentro de una caja. La caja es JUSTO el rectangulo de
+         la foto, y su mascara se lleva los doce pixeles de arriba y de abajo, con
+         lo que la foto no corta en seco contra el respaldo, que esta
+         desenfocado y va mas claro. -->
+    <div class="capas" id="capas">
+      <div class="capa fondo"    data-hondo="0.6"></div>
+      <div class="capa angel"    data-hondo="1.5"></div>
+      <div class="capa velo"     data-hondo="3.4"></div>
+      <div class="capa frente"   data-hondo="5.2"></div>
+    </div>
     <div class="halo" id="halo" aria-hidden="true"></div>
     <div class="luz"   id="luz"  aria-hidden="true"></div>
     <canvas class="motas" id="motas" aria-hidden="true"></canvas>

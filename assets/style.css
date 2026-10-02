@@ -125,33 +125,33 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .escena { position: absolute; inset: 0; overflow: hidden;
           cursor: crosshair; background: #0a0e12; }
 
-/* Cada capa es la foto entera, y su caja la mide capa.js con numeros exactos.
-   Antes era inset fijo y background-size: cover, que en un monitor 16:10
-   recortaba las dos puntas de las alas: la figura se salia por los lados y por
-   eso parecia un recorte mal hecho. */
-.capa { position: absolute; background-repeat: no-repeat;
+/* Cada capa es la foto entera, y ocupa su caja (#capas) entera. Esa caja la
+   mide capa.js con numeros exactos: antes era inset fijo y background-size:
+   cover, que en un monitor 16:10 recortaba las dos puntas de las alas. */
+.capa { position: absolute; inset: 0; background-repeat: no-repeat;
         background-position: center; background-size: 100% 100%;
         will-change: transform; }
 
-/* El respaldo: la MISMA foto, a la MISMA escala, solo desplazada. Rellena las
-   franjas que quedan cuando la figura deja la pantalla mas alta que la foto.
+/* La caja de las cuatro capas. Su rectangulo lo mide capa.js, y coincide
+   con el de la foto; la mascara se come doce pixeles de arriba y de abajo para
+   que el paso a la zona sin foto no sea un corte recto. */
+.capas { position: absolute;
+         -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12px,
+                                             #000 calc(100% - 12px), transparent 100%);
+         mask-image: linear-gradient(180deg, transparent 0, #000 12px,
+                                     #000 calc(100% - 12px), transparent 100%); }
 
-   Antes se resolvia estirando la foto a una caja mas grande con `sangrado` de
-   60 px por lado.Eso parte el problema: al anadir el mismo numero de pixeles en
-   ancho y en alto, la caja deja de tener la proporcion de la foto, la foto sale
-   estirada y su contenido no coincide con el de las capas en la union. Medido:
-   una linea recta de todo el ancho con la escena passandode 92 a 69 de
-   brillo justo ahi.
+/* El respaldo: la misma foto, estirada a cubrir la pantalla y muy difuminada,
+   detras de todo. Cubre las franjas que quedan cuando la figura no llena la
+   pantalla, que antes iban en color plano y dejaban un escalon recto muy
+   visible contra el cielo.
 
-   Ahora el respaldo es la foto a su tamanho real, colocada donde toca, y las
-   franjas van en color plano. El plano es el color de la niebla de los bordes
-   de la foto, medido en preparar-angel.py, asi que donde se junta con la foto
-   no se ve. */
-.respaldo { position: absolute; inset: 0;
-            background-image: url("fondo.webp");
-            background-repeat: no-repeat;
-            background-color: var(--niebla);
-            will-change: background-position; }
+   Se estira a proposito, al reves que las capas: aqui no importa que no encaje,
+   porque va 26 px desenfocada y nadie puede saber donde esta el borde de la
+   foto. Lo que importa es que SIAMPRE haya contenido detras de las franjas. */
+.respaldo { position: absolute; inset: -8%; background-image: url("fondo.webp");
+            background-size: cover; background-position: center;
+            filter: blur(26px); }
 
 .fondo  { background-image: url("fondo.webp");
           filter: brightness(0.74) saturate(0.85); }

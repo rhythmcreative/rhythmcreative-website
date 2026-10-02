@@ -53,7 +53,7 @@
   // horizontal manda contain y se ve el angel completo, con franjas de niebla
   // arriba y abajo; en vertical manda el 90% y se recorta por lo alto, que es
   // lo unico que se puede recortar sin perder la figura.
-  function encajar(escena, capas, respaldo) {
+  function encajar(escena, capas, caja) {
     var vw = escena.clientWidth, vh = escena.clientHeight;
     if (!vw || !vh) return null;
     var contiene = Math.min(vw / FOTO_W, vh / FOTO_H);
@@ -61,28 +61,18 @@
     var w = FOTO_W * escala, h = FOTO_H * escala;
     var mx = (vw - w) / 2, my = (vh - h) / 2;
 
-    for (var i = 0; i < capas.length; i++) {
-      var e = capas[i].el;
-      e.style.left = mx.toFixed(1) + "px";
-      e.style.top = my.toFixed(1) + "px";
-      e.style.width = w.toFixed(1) + "px";
-      e.style.height = h.toFixed(1) + "px";
+    // Las cuatro capas van al 100% dentro de la caja, asi que basta con medir
+    // LA CAJA. Se miden aqui y no en un bucle por capa porque la mascara que
+    // difumina el borde va en la caja: si la caja se queda en 0 x 0, la mascara
+    // de un elemento sin altura se come el elemento entero y no se ve ni el
+    // angel. Ya paso.
+    if (caja) {
+      caja.style.left = mx.toFixed(1) + "px";
+      caja.style.top = my.toFixed(1) + "px";
+      caja.style.width = w.toFixed(1) + "px";
+      caja.style.height = h.toFixed(1) + "px";
     }
-
-    // El respaldo: la misma foto, a la MISMA escala y en la MISMA posicion que
-    // las capas. Solo se le da el tamano exacto, sin sangrado por ningun lado,
-    // y lo que sobra de pantalla lo cubre el color plano de niebla.
-    //
-    // Lo de antes, estirar la foto a una caja mayor con 60 px de sangrado, era
-    // un error de cuenta: al anadir el mismo numero de pixeles en ancho y en
-    // alto la caja deja de tener la proporcion de la foto, la foto sale
-    // estirada y en la union su contenido no coincide con el de las capas.
-    // Medido en pantalla: una linea de TODO el ancho, con la escena passando de
-    // 92 a 69 de brillo justo ahi.
-    if (respaldo) {
-      respaldo.style.backgroundSize = w.toFixed(1) + "px " + h.toFixed(1) + "px";
-      respaldo.style.backgroundPosition = mx.toFixed(1) + "px " + my.toFixed(1) + "px";
-    }
+    void capas;
 
     return { vw: vw, vh: vh, w: w, h: h, mx: mx, my: my, escala: escala };
   }
@@ -159,6 +149,7 @@
     });
     var frente = $(".frente", escena);
     var respaldo = $(".respaldo", escena);
+    var caja = $("#capas", escena);
     var halo = $("#halo"), luz = $("#luz"), brillo = $("#brillo");
     var angel = $(".angel", escena);
     var pal = paleta(temp);
@@ -174,7 +165,7 @@
     var ahora = { x: 0, y: 0 };
 
     function medir() {
-      geo = encajar(escena, capas, respaldo);
+      geo = encajar(escena, capas, caja);
       colocarHalo(geo);
     }
     medir();
