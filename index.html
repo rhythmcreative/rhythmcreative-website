@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rhythm</title>
-<meta name="description" content="Un escritorio Hyprland y lo que ha salido alrededor.">
+<title>RHYTHMCREA</title>
+<meta name="description" content="RHYTHMCREA. Un escritorio Hyprland y lo que ha salido alrededor.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0b0d0f">
 <link rel="stylesheet" href="assets/style.css">
@@ -12,13 +12,11 @@
 </head>
 <body>
 
-<canvas id="lluvia" aria-hidden="true"></canvas>
-
-<!-- La barra. La unica pieza que ya estaba bien, y no se toca. -->
-<div class="barra-z capa-z">
+<!-- La barra. -->
+<div class="barra-z">
   <div class="isla">
-    <span class="ojo-mini" id="ojo-mini" title="temperatura de la cpu" aria-hidden="true"></span>
-    <span class="rotulo">Rhythm</span>
+    <span class="punto" id="punto" title="temperatura de la cpu" aria-hidden="true"></span>
+    <span class="rotulo">Rhythmcrea</span>
     <nav>
       <a href="#proyectos">proyectos</a>
       <a href="#fuera">fuera</a>
@@ -27,20 +25,31 @@
   </div>
 </div>
 
-<!-- El campo: lluvia y un ojo. No hay nada mas arriba. -->
-<section class="campo capa-z" id="campo">
-  <canvas id="ojo" aria-label="Un ojo que te sigue. Pinchalo." role="img"></canvas>
-  <p class="susurro" id="susurro">&nbsp;</p>
-  <p class="firma">rhythm · hyprland · arch · <span id="cuenta">19</span> repos</p>
-  <a class="bajar" href="#proyectos" aria-label="Ir a los proyectos">proyectos<i></i></a>
+<!-- El campo: la foto deshecha en capas que se mueven a distinta velocidad. -->
+<section class="campo" id="campo">
+  <div class="escena" id="escena">
+    <div class="capa fondo"    data-hondo="0.6"></div>
+    <div class="capa angel"    data-hondo="1.5"><div class="aura"></div></div>
+    <div class="capa velo"     data-hondo="3.4"></div>
+    <div class="capa frente"   data-hondo="5.2"></div>
+    <div class="halo" id="halo" aria-hidden="true"></div>
+    <div class="luz"   id="luz"  aria-hidden="true"></div>
+    <canvas class="motas" id="motas" aria-hidden="true"></canvas>
+    <div class="brillo" id="brillo" aria-hidden="true"></div>
+  </div>
+
+  <div class="cartel">
+    <h1 class="nombre">RHYTHMCREA</h1>
+    <p class="bajo">hyprland · arch · <span id="cuenta">19</span> repos</p>
+    <button class="bajar" id="bajar" type="button">proyectos <i></i></button>
+  </div>
 </section>
 
-<!-- Los repos: capsulas, no tarjetas. Pincha una y se abre ahi mismo. -->
-<section class="capa-z" id="proyectos">
+<section class="cola" id="proyectos">
   <div class="rejilla" id="rejilla-p"></div>
 </section>
 
-<footer class="capa-z" id="fuera">
+<footer class="cola" id="fuera">
   <div class="pie">
     <a href="https://github.com/rhythmcreative" target="_blank" rel="noopener">github</a>
     <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">hyprland</a>
@@ -54,7 +63,7 @@
 <script src="data/system.js"></script>
 <script src="data/github.js"></script>
 <script src="assets/projects.js"></script>
-<script src="assets/ojo.js"></script>
+<script src="assets/capa.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# Rhythm
+# Rhythmcrea
 
 La web donde caben los proyectos. HTML, CSS y JavaScript a pelo: sin build, sin
 framework, sin dependencias. Se abre haciendo doble clic en `index.html` y
@@ -6,22 +6,36 @@ tambien se sirve tal cual desde GitHub Pages.
 
 ## Que es la pagina
 
-Dos piezas, y solo dos.
+La barra y una foto deshecha en capas.
 
 **La barra.** Una capsula de cristal con un punto que brilla a la izquierda, el
 nombre, dos enlaces y la hora. Ese punto no es decoracion: su color lo pone la
 temperatura real de la CPU, leida de `data/system.js`. Con la maquina fria esta
 apagado, con la maquina caliente brilla en oxido.
 
-**El campo.** Lluvia y un ojo. El ojo se dibuja en cada cuadro en un `<canvas>`,
-no es una imagen, y por eso te sigue con la pupila, parpadea, respira, y al
-pincharlo suelta un anillo. Su paleta tambien sale de la temperatura real.
+**El campo.** La foto del angel partida en cuatro capas que se mueven a distinta
+velocidad con el raton. Eso es la profundidad: no un filtro, sino el nearer y el
+farther separados de verdad.
+
+| Capa | Que es | Cuanto se mueve |
+|---|---|---|
+| `frente` | la hierba y las cruces de abajo de la foto | x5.2 |
+| `velo` | las bandas de niebla | x3.4 |
+| `angel` | la figura con las alas, recortada con canal alfa | x1.5 |
+| `fondo` | la escena sin la figura, desenfocada y fria | x0.6 |
+
+Encima, el halo de la cabeza, que es el otro motivo que comparte con la pagina:
+el de la barra. Ahi va el termometro, con el mismo color que el punto.
+
+Y el raton mueve tambien una luz, que no es un degradado sino un disco con
+`mix-blend-mode: soft-light`: por eso ilumina las alas por un lado y las deja en
+sombra por el otro. Al pinchar, las alas se abren un poco y pasa un barrido.
 
 Debajo, los repos como capsulas sueltas. Pincha una y se abre ahi mismo, encima
 de su sitio en la rejilla, como se abre tu isla.
 
-De donde sale todo: tu fondo de pantalla es una noche con lluvia y unos ojos
-rojos, y tu barra tiene un ojo. Eso es lo unico que hay.
+No hay lluvia. Se cambio por muy poca ceniza a la deriva, que es lo que hace
+falta para que el aire parezca vivo sin estorbar.
 
 ## Anadir un proyecto
 
@@ -103,14 +117,16 @@ cuando si los habia. Van por `/repos/<repo>/commits`, que si los devuelve.
 | `J` | Abre el primer proyecto |
 | `Esc` | Cierra lo que este abierto |
 
-El ojo tambien responde a `Enter` y a `Espacio` desde el teclado, para que no
-dependa del raton.
+La escena tambien responde a `Enter` y a `Espacio` desde el teclado, para que el
+barrido de luz y las alas no dependan del raton.
 
 ## Accesibilidad
 
-Con `prefers-reduced-motion: reduce` la lluvia no se dibuja y el ojo se pinta una
-sola vez: no parpadea, no respira y no suelta ondas. La pupila sigue al raton,
-porque eso es respuesta a lo que hace la persona y no movimiento por su cuenta.
+Con `prefers-reduced-motion: reduce` no se dibuja la ceniza, las capas no se
+mueven, el halo no respira y el raton no arrastra la luz. La escena se queda en
+una foto y todo lo de leer sigue igual. El parallax va con el raton, asi que ahi
+no hay nada unsolicited que apagar: es respuesta directa a lo que hace la
+persona.
 
 ## En local
 
@@ -129,19 +145,73 @@ opcion mas simple es dejar el repo en publico y apuntar Pages a la rama.
 Antes de publicarlo hay que decidir que hacer con `data/system.js`, que esta en
 `.gitignore` a proposito: lleva el nombre de la maquina, el kernel y los
 nombres de los sensores, y eso no va a un repo publico. Sin ese fichero la
-pagina funciona igual, pero el ojo se queda en gris y sin temperatura.
+pagina funciona igual, pero el punto de la barra se queda en gris y el halo sin
+encender.
+
+## Las capas: como se hacen
+
+```bash
+python3 scripts/preparar-angel.py
+```
+
+Sale de `~/Pictures/Wallpapers/Angel.jpg` y deja en `assets/`:
+
+- `angel.webp` — la figura con las alas, con canal alfa
+- `fondo.webp` — la escena sin la figura
+- `velo.webp` — las bandas de niebla
+- `frente.webp` — la franja de abajo, el primer plano
+
+Para volver a generarlas hay que tener el script de Pillow y numpy. No hace
+falde red, ni modelos, ni scipy.
+
+### Como sale el recorte
+
+El angel es oscuro contra niebla clara arriba, asi que en la mitad de arriba un
+umbral de gris lo separa bien. Abajo no: la tumba y la hierba tambien son
+oscuras, y ahi el umbral se come el cementerio entero. Por eso el recorte se
+limita a la banda de arriba y la base se queda en el fondo.
+
+Del recorte se saca la componente conexa grande, para tirar el arbol mojado de la
+izquierda y las cruces de la derecha. Antes de eso hay una apertura, que es lo
+que corta esas ramas: son finas, y el ala es gruesa.
+
+### Como se borra la figura del fondo
+
+Esto se probo de cuatro formas y solo una sirvio, que queda aqui para que nadie
+la repita por curiosity:
+
+1. **Difusion desde la foto.** Las alas son oscuras, el oscuro se arrastra hacia
+   dentro, y la figura no desaparece: solo se emborrona. Sale una mancha con
+   forma de angel.
+2. **Interpolacion por filas.** La niebla esta ARRIBA, no a los lados. En las
+   filas donde el ala llega al borde no hay nada que poner a la izquierda, se
+   coge el pixel de la derecha, que es oscuro, y sale un rayado horizontal de
+   kilometros.
+3. **Interpolacion por columnas.** Lo mismo al reves: el borde del ala es
+   irregular, cada columna sale con un brillo distinto, y sale rayado vertical.
+4. **Difusion pero disgando el relleno.** Esta. Se difunden a la vez la imagen y
+   una mascara (1 fuera de la figura, 0 dentro), y se divide una por otra:
+   convolution normalizada. La clave es que lo de fuera conserva su valor real,
+   porque es el dato que manda; lo de dentro se interpola. Y lo de dentro
+   arranca del color DEL CIELO de cada columna, no de la foto, que ahi dentro
+   esta la figura oscura.
+
+El error clasico aqui es poner a cero lo de fuera y normalizar al final: sale un
+aro negro justo en el borde, y parece que el recorte esta mal.
 
 ## Estructura
 
 ```
 index.html
 assets/style.css        los colores de pywal, en variables CSS
-assets/ojo.js           el ojo, en canvas
-assets/app.js           la lluvia, la barra y los repos
+assets/capa.js          las capas, el parallax, la luz y la ceniza
+assets/app.js           la barra y los repos
 assets/projects.js      los proyectos  <- se edita
 assets/fuentes/         JetBrains Mono, autoalojada
+assets/{angel,fondo,frente,velo}.webp   <- se generan
 data/system.js          el estado de la maquina  <- se genera, no se sube
 data/github.js          repos y commits          <- se genera
+scripts/preparar-angel.py
 scripts/collect-system-stats.sh
 scripts/collect-github.py
 serve.sh

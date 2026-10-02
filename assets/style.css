@@ -1,19 +1,15 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Rhythm
+   Rhythmcrea
 
-   Dos piezas y nada mas:
+   La barra, una foto deshecha en capas, y los repos.
 
-     · la barra     una capsula de cristal con un punto que brilla
-     · el campo     lluvia, y un ojo vivo en mitad
-
-   Todo lo demas se fue. Los recuadros de datos, la tabla de sensores, la curva
-   de temperatura, la lluvia de commits, las cuatro cifras, el semitono del
-   wallpaper: eran un documento disfrazado de escritorio, y eso no es lo que es
-   esto. Lo que es esto es una noche con lluvia y dos ojos rojos, que es tu
-   fondo de pantalla, y una isla con un ojo, que es tu barra.
+   La foto es la del angel. La parte scripts/preparar-angel.py la separa en
+   cuatro: la hierba de delante, la niebla, la figura con las alas, y la escena
+   de atras sin la figura. Cada capa se mueve con el raton a una velocidad
+   distinta, y de ahi sale la profundidad.
 
    Los colores son los tuyos, de pywal: --suelo 0b0d0f, --hielo 99bac9,
-   --oxido ba5f44. La fuente, JetBrains Mono, que es la de tu sistema.
+   --oxido ba5f44. La fuente, JetBrains Mono, la de tu sistema.
    ───────────────────────────────────────────────────────────────────────────── */
 
 @font-face {
@@ -25,7 +21,7 @@
 }
 
 :root {
-  --suelo:    #0b0d0f;
+  --suelo:    #07090b;
   --cristal:  rgba(16, 21, 25, 0.80);
   --hielo:    #99bac9;
   --oxido:    #ba5f44;
@@ -51,32 +47,21 @@ body {
   color: var(--hielo);
   font: 400 0.86rem/1.7 var(--f);
   -webkit-font-smoothing: antialiased;
-  /* Sin overflow-x: hidden a proposito. Ese overflow convierte el body en
-     contenedor de scroll, y entonces position:fixed de la barra se posiciona
-     respecto a el y no a la ventana: la barra se iba con la pagina al bajar.
-     No hace falta: el lienzo de la lluvia mide justo la ventana. */
 }
 a { color: inherit; text-decoration: none; }
 h1, h2, h3, p, dl, dd, dt { margin: 0; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; }
-a:focus-visible, button:focus-visible, canvas:focus-visible {
+a:focus-visible, button:focus-visible, .escena:focus-visible {
   outline: 1px solid var(--oxido); outline-offset: 3px; border-radius: var(--r);
 }
 ::selection { background: var(--oxido); color: var(--suelo); }
 
-.capa-z { position: relative; z-index: 1; }
-
-/* ══ LLUVIA ════════════════════════════════════════════════════════════════
-   El fondo de tu pantalla: noche azul y las rayas inclinadas. Se inclinan a la
-   izquierda como las tuyas, que en vertical parecian telarañas. */
-
-#lluvia { position: fixed; inset: 0; z-index: 0; pointer-events: none;
-          width: 100%; height: 100%; }
-@media (prefers-reduced-motion: reduce) { #lluvia { display: none; } }
+.cola { max-width: var(--ancho); margin: 0 auto;
+        padding: 0 clamp(1rem, 0.5rem + 2vw, 2rem); }
 
 /* ══ LA BARRA ══════════════════════════════════════════════════════════════ */
 
-.barra-z { position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+.barra-z { position: fixed; top: 0; left: 0; right: 0; z-index: 40;
            padding: 0.8rem 1rem 0; pointer-events: none; }
 .isla {
   display: flex; align-items: center; gap: 0.5rem;
@@ -85,15 +70,15 @@ a:focus-visible, button:focus-visible, canvas:focus-visible {
   border: 1px solid var(--linea);
   border-radius: var(--r-isla);
   padding: 0.38rem 0.4rem;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   pointer-events: auto;
   transition: border-color 0.3s;
 }
 .isla:hover, .isla:focus-within { border-color: var(--linea-alta); }
 
-/* El punto. Sale de data/system.js, no de un temporizador. */
-.ojo-mini {
+/* El punto. Su color lo pone la temperatura real de la CPU. */
+.punto {
   width: 24px; height: 24px; flex: none; border-radius: 50%;
   position: relative; cursor: help;
   background: radial-gradient(circle at 50% 42%, var(--o, var(--gris)) 0 26%, transparent 27%),
@@ -102,8 +87,8 @@ a:focus-visible, button:focus-visible, canvas:focus-visible {
   transition: box-shadow 0.8s, background 0.8s;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .ojo-mini::after { content: ""; position: absolute; inset: -3px; border-radius: 50%;
-                     border: 1px solid var(--halo, transparent); animation: latir 4.5s ease-out infinite; }
+  .punto::after { content: ""; position: absolute; inset: -3px; border-radius: 50%;
+                  border: 1px solid var(--halo, transparent); animation: latir 4.5s ease-out infinite; }
 }
 @keyframes latir { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.9); opacity: 0; } }
 
@@ -121,51 +106,117 @@ a:focus-visible, button:focus-visible, canvas:focus-visible {
 
 /* ══ EL CAMPO ═══════════════════════════════════════════════════════════════ */
 
-.campo {
-  min-height: 100svh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 5.5rem 1rem 4rem;
+.campo { position: relative; height: 100svh; overflow: hidden; }
+
+/* La niebla se disuelve hacia abajo en vez de cortarse en recto contra el
+   negro de los proyectos. Va por debajo del cartel, asi que el nombre no se
+   apaga. */
+.campo::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+                height: 26%; z-index: 4; pointer-events: none;
+                background: linear-gradient(180deg, transparent, var(--suelo) 88%); }
+
+.escena { position: absolute; inset: 0; overflow: hidden;
+          cursor: crosshair; background: #0a0e12; }
+
+/* Cada capa es la foto entera, encajada como cover, y se mueve distinto.
+   Todas llevan un poco de escala de mas: si la capa se desplaza, sin eso
+   se ve el borde del lienzo en un extremo. */
+.capa { position: absolute; inset: -4%; background-repeat: no-repeat;
+        background-position: center; background-size: cover;
+        will-change: transform; }
+
+.fondo  { background-image: url("fondo.webp");
+          filter: brightness(0.74) saturate(0.85); }
+.angel  { background-image: url("angel.webp");
+          filter: drop-shadow(0 0 14px rgba(153, 186, 201, 0.16))
+                  drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55)); }
+.velo   { background-image: url("velo.webp");
+          mix-blend-mode: screen; opacity: 0.5; }
+
+/* La capa de delante es una franja: la hierba y las cruces de abajo de la foto.
+   Va anclada abajo y sobredimensionada, que es como se ve el primer plano. */
+.frente { inset: auto 0 0 0; height: 42%; margin: 0;
+           background-image: url("frente.webp");
+           background-size: cover; background-position: center bottom;
+           -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 100%);
+           mask-image: linear-gradient(180deg, transparent, #000 30%, #000 100%);
+           filter: brightness(0.62); }
+
+/* El halo de la cabeza. Su color es el termometro. */
+.halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent 70%);
+        box-shadow: 0 0 24px 6px var(--halo, transparent),
+                    inset 0 0 12px var(--halo, transparent);
+        opacity: 0.55; mix-blend-mode: screen; }
+@media (prefers-reduced-motion: no-preference) {
+  .halo { animation: respirar 5.5s ease-in-out infinite; }
 }
-#ojo { display: block; width: min(86vw, 540px); height: min(86vw, 540px); cursor: pointer; }
+@keyframes respirar { 0%, 100% { opacity: 0.42; } 50% { opacity: 0.72; } }
 
-/* Lo que susurra el ojo al mirarlo. Sin esto el sitio no dice nada, y con una
-   linea de texto fija pareceria un pie de foto. */
-.susurro { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
-           color: var(--gris); height: 1.4rem; margin-top: -1.6rem;
-           transition: color 0.3s; }
-.firma { font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase;
-         color: rgba(107, 130, 140, 0.62); text-align: center; }
+/* La luz que sigue al raton. Es un disco con blur y blend, no un degradado:
+   por eso de verdad ilumina por un lado. */
+.luz { position: absolute; left: 50%; top: 42%; z-index: 2;
+       width: 62vw; height: 62vw; margin: -31vw 0 0 -31vw;
+       pointer-events: none; mix-blend-mode: soft-light; opacity: 0.7;
+       background: radial-gradient(closest-side, rgba(214, 232, 240, 0.55), transparent 72%);
+       filter: blur(28px); will-change: transform; }
 
-/* Una pista de que abajo hay mas. Sin esto la pagina parece terminada en el
-   ojo, que es justo lo que parecia con media pantalla en negro. */
-.bajar { position: absolute; left: 50%; bottom: 1.6rem; transform: translateX(-50%);
-         font-size: 0.58rem; letter-spacing: 0.26em; text-transform: uppercase;
-         color: rgba(107, 130, 140, 0.5); display: flex; flex-direction: column;
-         align-items: center; gap: 0.5rem; }
+/* El barrido al pinchar. */
+.brillo { position: absolute; inset: 0; z-index: 4; pointer-events: none;
+          background: linear-gradient(105deg, transparent 42%,
+                      rgba(226, 240, 246, 0.16) 50%, transparent 58%);
+          opacity: 0; }
+.brillo.pasando { animation: pasar 1.1s ease-out; }
+@keyframes pasar { 0% { opacity: 0; transform: translateX(-42%); }
+                  22% { opacity: 1; } 100% { opacity: 0; transform: translateX(42%); } }
+
+/* Al pinchar, las alas se abren un pelo. */
+.angelabriendo { animation: abrir 0.85s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes abrir { 0% { transform: scale(1, 1); }
+                  40% { transform: scale(1.03, 1.022); }
+                  100% { transform: scale(1, 1); } }
+
+.motas { position: absolute; inset: 0; z-index: 5; width: 100%; height: 100%;
+         pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .motas { display: none; } }
+
+/* El cartel: el nombre. */
+.cartel { position: absolute; left: 50%; bottom: clamp(1.6rem, 5vh, 3.4rem);
+          transform: translateX(-50%); z-index: 6;
+          display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+          text-align: center; width: 100%; padding: 0 1rem; }
+.nombre { font: 700 clamp(1.6rem, 6.4vw, 3.4rem)/1 var(--f);
+          letter-spacing: 0.42em; text-indent: 0.42em;   /* el espaciado deja
+             el nombre descentrado; el text-indent lo vuelve a centrar */
+          text-transform: uppercase; color: var(--hielo);
+          text-shadow: 0 2px 26px rgba(7, 9, 11, 0.95), 0 0 60px rgba(7, 9, 11, 0.8); }
+.bajo { font-size: 0.6rem; letter-spacing: 0.26em; text-transform: uppercase;
+        color: rgba(153, 186, 201, 0.5); }
+
+.bajar { margin-top: 0.5rem; display: flex; flex-direction: column; align-items: center;
+         gap: 0.5rem; font-size: 0.56rem; letter-spacing: 0.26em; text-transform: uppercase;
+         color: rgba(107, 130, 140, 0.62); cursor: pointer; }
+.bajar:hover { color: var(--hielo); }
 .bajar i { display: block; width: 1px; height: 26px;
            background: linear-gradient(180deg, var(--linea-alta), transparent); }
 @media (prefers-reduced-motion: no-preference) {
-  .bajar i { animation: goter 2.6s ease-in-out infinite; }
+  .bajar i { animation: goter 2.8s ease-in-out infinite; }
 }
 @keyframes goter { 0%, 100% { opacity: 0.25; transform: scaleY(0.6); }
                    50% { opacity: 1; transform: scaleY(1); } }
 @media (max-width: 560px) { .bajar { display: none; } }
 
 /* ══ LOS PROYECTOS ═════════════════════════════════════════════════════════
-   Capsulas sueltas en la oscuridad, no tarjetas con sombra. Se abren en el sitio,
-   como se abre tu isla. */
+   Capsulas sueltas en la oscuridad. Se abren en su sitio, como tu isla. */
 
-#proyectos { max-width: var(--ancho); margin: 0 auto;
-             padding: clamp(3rem, 8vh, 7rem) clamp(1rem, 0.5rem + 2vw, 2rem) 2rem; }
+#proyectos { padding-top: clamp(3rem, 8vh, 6rem); padding-bottom: 2.5rem; }
 .rejilla { display: grid; gap: 0.55rem 0.6rem;
            grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
 
-.cap {
-  display: flex; align-items: center; gap: 0.55rem;
-  border: 1px solid var(--linea); border-radius: var(--r);
-  padding: 0.52rem 0.7rem; cursor: pointer; text-align: left; width: 100%;
-  transition: border-color 0.2s, background 0.2s, transform 0.2s;
-}
+.cap { display: flex; align-items: center; gap: 0.55rem;
+       border: 1px solid var(--linea); border-radius: var(--r);
+       padding: 0.52rem 0.7rem; cursor: pointer; text-align: left; width: 100%;
+       transition: border-color 0.2s, background 0.2s, transform 0.2s; }
 .cap:hover { border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.04);
              transform: translateY(-1px); }
 .cap[aria-expanded="true"] { border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.06); }
@@ -176,13 +227,13 @@ a:focus-visible, button:focus-visible, canvas:focus-visible {
 .cap .der { margin-left: auto; font-size: 0.62rem; color: var(--gris); white-space: nowrap; }
 .cap .der b { color: var(--oxido); font-weight: 500; }
 
-/* La abierta: una isla desplegandose sobre la rejilla. */
-.abierta { grid-column: 1 / -1;  /* ocupa la fila entera: se lee como un panel */ display: flex; flex-direction: column; gap: 0.55rem;
+/* La ficha abierta, justo debajo de la capsula que se ha pinchado. */
+.abierta { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0.55rem;
            border: 1px solid var(--linea-alta); border-radius: var(--r-isla);
            background: var(--cristal); backdrop-filter: blur(14px);
            padding: 1.1rem 1.2rem; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
-           animation: abrir 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes abrir { from { opacity: 0; transform: translateY(-6px); } }
+           animation: surgir 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes surgir { from { opacity: 0; transform: translateY(-6px); } }
 .abierta .cabeza { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
 .abierta h3 { font-size: 0.95rem; font-weight: 500; }
 .abierta .meta { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gris); }
@@ -204,8 +255,7 @@ a:focus-visible, button:focus-visible, canvas:focus-visible {
 
 /* ══ PIE ════════════════════════════════════════════════════════════════════ */
 
-#fuera { max-width: var(--ancho); margin: 0 auto;
-         padding: 2rem clamp(1rem, 0.5rem + 2vw, 2rem) 4rem; }
+#fuera { padding-bottom: 4rem; }
 .pie { display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; align-items: center;
        font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
        color: var(--gris); }
