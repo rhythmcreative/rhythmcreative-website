@@ -135,11 +135,18 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 /* La caja de las cuatro capas. Su rectangulo lo mide capa.js, y coincide
    con el de la foto; la mascara se come doce pixeles de arriba y de abajo para
    que el paso a la zona sin foto no sea un corte recto. */
-.capas { position: absolute;
-         -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12px,
-                                             #000 calc(100% - 12px), transparent 100%);
-         mask-image: linear-gradient(180deg, transparent 0, #000 12px,
-                                     #000 calc(100% - 12px), transparent 100%); }
+/* --fade lo pone capa.js y es lo que hay de hueco real entre el borde de la
+   pantalla y el de la foto. Con hueco cero la mascara no hace nada.
+
+   Antes eran 12 px fijos, y eso era un fallo mio: cuando la foto ya llena el alto
+   —que es en casi cualquier pantalla— esos 12 px de arriba salian borrosos
+   contra el resto nitido, y se veia una franja de nitidez en mitad de la
+   imagen, sin que hubiera ni un hueco que tapar. */
+.capas { position: absolute; --fade: 0px;
+         -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade),
+                                             #000 calc(100% - var(--fade)), transparent 100%);
+         mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade),
+                                     #000 calc(100% - var(--fade)), transparent 100%); }
 
 /* El respaldo: la misma foto, estirada a cubrir la pantalla y muy difuminada,
    detras de todo. Cubre las franjas que quedan cuando la figura no llena la

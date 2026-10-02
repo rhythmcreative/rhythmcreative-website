@@ -71,6 +71,12 @@
       caja.style.top = my.toFixed(1) + "px";
       caja.style.width = w.toFixed(1) + "px";
       caja.style.height = h.toFixed(1) + "px";
+      // La mascara de los bordes mide lo que hay de hueco DE VERDAD, no un numero
+      // fijo. Si la foto ya llega al borde de la pantalla, el hueco es cero y la
+      // mascara no tiene que difuminar nada: si difumina, lo que sale es una
+      // franja borrosa arriba contra el resto nitido.
+      var hueco = Math.min(12, Math.max(0, my));
+      caja.style.setProperty("--fade", hueco.toFixed(1) + "px");
     }
     void capas;
 
