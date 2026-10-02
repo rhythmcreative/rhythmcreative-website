@@ -62,11 +62,35 @@
   <div id="hyprland-caja"></div>
 </section>
 
-<footer class="cola" id="fuera">
-  <div class="pie">
+<!-- El pie es el menu. En la barra solo caben cuatro cosas, y en un movil
+     caben dos: sin esto, en el movil no habia ninguna manera de llegar a
+     ningun sitio. Aqui esta todo, siempre. -->
+<footer class="cola pie-menu" id="fuera">
+  <div class="marca-menu">
+    <a class="rotulo-menu" href="#campo">Rhythmcrea</a>
+    <p>Un escritorio Arch que no se rompe.</p>
+  </div>
+
+  <nav class="col-menu" aria-label="La pagina">
+    <h3>La pagina</h3>
+    <a href="#campo">arriba</a>
+    <a href="#hyprland">hyprland</a>
+    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">el instalador</a>
+  </nav>
+
+  <nav class="col-menu" aria-label="Alrededor">
+    <h3>Alrededor</h3>
     <a href="https://github.com/rhythmcreative" target="_blank" rel="noopener">github</a>
     <a href="https://github.com/rhythmcreative/rust-dock" target="_blank" rel="noopener">rust-dock</a>
-    <span class="der" id="sello">&nbsp;</span>
+    <a href="https://github.com/k4ditano/k4" target="_blank" rel="noopener">k4</a>
+  </nav>
+
+  <div class="col-menu datos-menu">
+    <h3>Los datos</h3>
+    <span id="sello-datos">&nbsp;</span>
+    <span id="sello-repos">&nbsp;</span>
+    <span class="nota-menu">La pagina no pide nada a la red. Los dos datos de
+      arriba son de cuando se recogieron en la maquina.</span>
   </div>
 </footer>
 

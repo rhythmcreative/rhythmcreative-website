@@ -34,21 +34,29 @@
   --f: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --r: 10px;
   --r-isla: 16px;
-  --ancho: 1120px;
+  /* El ancho del contenido. Antes 1120 px fijos, que en una pantalla de 4K
+     ocupa el 27% y deja la pagina en una tira estrecha en mitad de la nada.
+     Ahora crece con la pantalla y se para en 1640, que es donde mas grande se
+     ve bien de leer. El min de 330 es para que en un movil de 360 no se salga. */
+  --ancho: clamp(330px, 74vw, 1640px);
   /* Niebla de los bordes de fondo.webp, medida en preparar-angel.py. Es lo que
      rellena las franjas cuando la figura no llena la pantalla. */
   --niebla: #545c64;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+/* El tamano de la raiz. Todo lo demas esta en rem, asi que esto decide si la
+   pagina se lee en un movil o en un 4K. Antes eran 16 px fijos y el cuerpo se
+   quedaba en 13.8 px en cualquier parte: en 2560x1440 y en 3840x2160 era
+   ilegible, no pequeno, ilegible. */
+html { font-size: clamp(15px, 0.5vw + 10px, 21px); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
   margin: 0;
   background: var(--suelo);
   color: var(--hielo);
-  font: 400 0.86rem/1.7 var(--f);
+  font: 400 0.86rem/1.7 var(--f);   /* 12.9 px en movil, 18 px en 4K */
   -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; text-decoration: none; }
@@ -238,7 +246,7 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
           transform: translateX(-50%); z-index: 6;
           display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
           text-align: center; width: 100%; padding: 0 1rem; }
-.nombre { font: 700 clamp(1.6rem, 6.4vw, 3.4rem)/1 var(--f);
+.nombre { font: 700 clamp(1.55rem, 5.6vw, 4.6rem)/1 var(--f);
           /* El hueco entre letras se aplica TAMBIEN despues de la ultima, con
              lo que la caja queda 0.42em mas ancha que los glifos y el nombre se
              va a la izquierda al centrarlo.
@@ -379,14 +387,45 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .banderas span { font-size: 0.74rem; color: var(--gris); }
 .abierta .etiquetas { margin-top: 0.5rem; padding-left: 1.4rem; }
 
-/* ══ PIE ════════════════════════════════════════════════════════════════════ */
+/* ══ EL PIE, QUE ES EL MENU ═══════════════════════════════════════════════
+   Cuatro columnas: la marca, la pagina, lo de alrededor y los datos. En un
+   movil van en dos, y en uno estrecho en una.
 
-#fuera { padding-bottom: 4rem; }
-.pie { display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; align-items: center;
-       font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
-       color: var(--gris); }
-.pie a:hover { color: var(--hielo); }
-.pie .der { margin-left: auto; color: rgba(107, 130, 140, 0.5); }
+   Es el sitio donde esta la navegacion de verdad. La barra lleva cuatro cosas y
+   en un movil solo caben dos, con lo que sin este menu no habia manera de llegar
+   a nada. */
+
+.pie-menu {
+  display: grid; gap: 1.8rem 2rem;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  align-items: start;
+  padding-top: clamp(2.4rem, 6vh, 4.5rem);
+  padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
+  border-top: 1px solid var(--linea);
+}
+@media (max-width: 860px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .pie-menu { grid-template-columns: 1fr; gap: 1.6rem; } }
+
+.rotulo-menu { font: 600 0.78rem/1 var(--f); letter-spacing: 0.22em;
+               text-transform: uppercase; color: var(--hielo); }
+.rotulo-menu:hover { color: #fff; }
+.marca-menu p { margin-top: 0.6rem; font-size: 0.74rem; color: var(--gris);
+                max-width: 22ch; }
+
+.col-menu { display: flex; flex-direction: column; gap: 0.34rem; }
+/* El rotulo de cada columna, pequeno y apagado, para que se lea como seccion y
+   no como un enlace mas. */
+.col-menu h3 { font: 600 0.58rem/1 var(--f); letter-spacing: 0.2em;
+               text-transform: uppercase; color: rgba(107, 130, 140, 0.72);
+               margin-bottom: 0.35rem; }
+.col-menu a { font-size: 0.76rem; color: var(--gris); width: fit-content;
+              transition: color 0.18s; }
+.col-menu a:hover { color: var(--hielo); }
+
+.datos-menu span { font-size: 0.74rem; color: var(--gris); }
+.nota-menu { margin-top: 0.5rem !important; font-size: 0.66rem !important;
+             color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
+             line-height: 1.6; }
 
 .brindis { position: fixed; left: 50%; bottom: 1.6rem; z-index: 70;
            transform: translate(-50%, 8px); opacity: 0; pointer-events: none;

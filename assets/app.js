@@ -109,13 +109,11 @@
       }).join("") + "</div>");
     }
 
+    // Solo el repo. Los enlaces al resto ya estan en el menu del pie, y aqui
+    // estaban las dos veces.
     izq.push('<div class="acciones-seccion">' +
       '<a class="b" href="https://github.com/' + esc(H.repo) +
-      '" target="_blank" rel="noopener">github ↗</a>' +
-      (H.alrededor || []).map(function (a) {
-        return '<a class="b f" href="https://github.com/' + esc(a.repo) +
-               '" target="_blank" rel="noopener">' + esc(a.nombre) + "</a>";
-      }).join("") + "</div>");
+      '" target="_blank" rel="noopener">el repo ↗</a></div>');
 
     // ── Las piezas, a la derecha ─────────────────────────────────────────
     var der = ['<div class="piezas">'];
@@ -170,6 +168,14 @@
     return h + dentro;
   }
 
+  // De cuando son los datos. Va en el menu y no en la barra, que ya va bastante
+  // cargada. Sin esto, el pie decia "sin datos" aunque los hubiera.
+  function sellos() {
+    var a1 = $("#sello-datos"), a2 = $("#sello-repos");
+    if (a1) a1.textContent = S ? "la maquina, " + hace(S.generado) : "sin datos de la maquina";
+    if (a2) a2.textContent = G ? "los repos, " + hace(G.recogido) : "sin datos de github";
+  }
+
   // ── Arranque ───────────────────────────────────────────────────────────────
 
   function tic() {
@@ -215,9 +221,11 @@
       }
     });
 
+    sellos();
     pintarHyprland();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);
   else inicio();
+
 })();

@@ -59,6 +59,32 @@ Los numeros de arriba (estrellas, lenguaje, ultimo push) los anade solo
 `data/github.js`. Los de "vivo" salen de `data/system.js`, asi que si el
 recolector no ha corrido everan en vez de inventarse un numero.
 
+## Como se adapta
+
+El tipo y el ancho del contenido no estan fijos, que es lo que hacia que en un
+4K todo se viera diminuto. La raiz va en `clamp(15px, 0.5vw + 10px, 21px)` y el
+contenido en `clamp(330px, 74vw, 1640px)`.
+
+Medido en el navegador, no estimado:
+
+| pantalla | cuerpo | barra | contenido | nombre | seccion |
+|---|---|---|---|---|---|
+| 360x640 | 12,9px | 315px | 300px | 23px | 1 col |
+| 390x844 | 12,9px | 330px | 299px | 23px | 1 col |
+| 768x1024 | 12,9px | 330px | 298px | 24px | 1 col |
+| 1024x768 | 12,9px | 568px | 523px | 43px | 1 col |
+| 1280x1024 | 13,0px | 758px | 702px | 57px | 2 col |
+| 1440x900 | 14,1px | 947px | 882px | 72px | 2 col |
+| 1920x1080 | 14,8px | 1066px | 997px | 79px | 2 col |
+| 2560x1440 | 16,9px | 1421px | 1342px | 90px | 2 col |
+| 3840x2160 | 18,1px | 1640px | 1556px | 97px | 2 col |
+
+Sin desbordamiento horizontal en ninguna.
+
+La barra en movil solo lleva el nombre y la hora, que es lo que cabe. Por eso
+el menu esta en el pie y no en la barra: en el movil, sin pie, no habia manera
+de llegar a nada.
+
 ## Los datos
 
 La pagina no pide nada a nadie. Dos scripts escriben dos ficheros y la pagina los
