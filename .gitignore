@@ -1,10 +1,12 @@
-# El estado del escritorio es de ESTA maquina: el hostname, el kernel, las
+# El estado de la maquina es de ESTA maquina: el hostname, el kernel, las
 # temperaturas y el nombre de los sensores. No va al repo a proposito, asi que
 # no se publica el hostname de quien lo suba.
 #
-# La web lo lleva bien: sin este fichero, la seccion "Escritorio" explica que
-# no hay datos y como generarlos, en vez de teachar ceros. Para tenerla al dia
-# en local:  ./scripts/collect-system-stats.sh
+# La web lo lleva bien sin el: el ojo se queda en gris, sin temperatura, y el
+# sello del pie lo dice. Para tenerlo al dia en local:
+#
+#     ./scripts/collect-system-stats.sh
+#
 data/system.js
 
 .DS_Store

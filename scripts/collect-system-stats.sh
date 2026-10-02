@@ -111,27 +111,67 @@ def leer(pat):
             pass
     return None
 salidas = []
-# k10temp es la CPU en AMD, coretemp en Intel.
-for etiqueta, patron in (("cpu", "/sys/class/hwmon/hwmon*/temp1_input"),
-                         ("gpu", "/sys/class/hwmon/hwmon*/temp1_input")):
-    v = leer(patron)
-    if v is not None:
-        salidas.append({"label": etiqueta, "c": round(v, 1)})
-        break
-# El resto de sensores se listan aparte, sin adivinar cual es cual.
+# El sensor de la CPU se busca POR NOMBRE, no por indice.
+#
+# Antes se hacia leer("/sys/class/hwmon/hwmon*/temp1_input") y cogerse el
+# primero que saliera, y en este portatil salia spd5118, que es el sensor de
+# la RAM. La web decia "cpu 64 grados, fresca" con la CPU a 96. No era un
+# detalle: el ojo de la barra saca su color de ahi, y se ponia azul con la
+# maquina hirviendo.
+#
+# Los nombres de la CPU, en el orden en que se fia uno de ellos:
+#   k10temp      Ryzen / AM4          coretemp    Intel
+#   zenpower     Zen (temperatura     x86_pkg_temp  nucleo
+#                por nucleo)          cpu_thermal / soc_thermal  chips ARM
+CPU_ASI = ("k10temp", "coretemp", "zenpower", "x86_pkg_temp",
+           "cpu_thermal", "soc_thermal", "cpu-thermal", "soc_thermal")
+GPU_ASI = ("amdgpu", "radeon", "nouveau", "i915", "xe", "nvidia", "amdgpu-pci")
+
+
+def sensores():
+    for base in sorted(glob.glob("/sys/class/hwmon/hwmon*")):
+        try:
+            with open(os.path.join(base, "name")) as fh:
+                nombre = fh.read().strip()
+        except Exception:
+            continue
+        vals = []
+        for i in range(1, 13):
+            v = leer(os.path.join(base, "temp%d_input" % i))
+            if v is not None:
+                vals.append(round(v, 1))
+        if vals:
+            yield nombre, base, vals
+
+todos = list(sensores())
+
+def primero_de(nombres):
+    for busqueda in nombres:
+        for nombre, base, vals in todos:
+            if busqueda in nombre.lower():
+                return nombre, vals[0]
+    return None, None
+
+cpu_nombre, cpu = primero_de(CPU_ASI)
+gpu_nombre, gpu = primero_de(GPU_ASI)
+if cpu is not None:
+    salidas.append({"label": "cpu", "chip": cpu_nombre, "c": cpu})
+if gpu is not None and gpu_nombre != cpu_nombre:
+    salidas.append({"label": "gpu", "chip": gpu_nombre, "c": gpu})
+
+# El resto se listan aparte. Se quita acpitz: en este portatil vale EXACTAMENTE
+# lo mismo que k10temp porque solo rebota su lectura, y salia la CPU por dos
+# lados en la lista de sensores.
 otros = []
-for base in sorted(glob.glob("/sys/class/hwmon/hwmon*")):
-    nombre = "?"
-    try:
-        with open(os.path.join(base, "name")) as fh:
-            nombre = fh.read().strip()
-    except Exception:
+for nombre, base, vals in todos:
+    if nombre in (cpu_nombre, gpu_nombre) or "acpitz" in nombre:
         continue
-    for i in range(1, 7):
-        v = leer(os.path.join(base, "temp%d_input" % i))
-        if v is not None:
-            otros.append({"chip": nombre, "c": round(v, 1)})
-print(json.dumps({"cpu": salidas[0]["c"] if salidas else None, "all": otros}))
+    for idx, v in enumerate(vals):
+        otros.append({"chip": nombre if idx == 0 else "%s#%d" % (nombre, idx + 1), "c": v})
+otros.sort(key=lambda x: -x["c"])
+print(json.dumps({"cpu": cpu, "cpu_chip": cpu_nombre,
+                  "gpu": gpu, "gpu_chip": gpu_nombre,
+                  "all": otros}))
 PY
 )
 fi
@@ -213,6 +253,7 @@ print(json.dumps({
 PY
 )
 fi
+
 
 # ── escritura ──────────────────────────────────────────────────────────────────────
 {

@@ -211,9 +211,9 @@ window.RHYTHM_PROJECTS = [
 ];
 
 window.RHYTHM_CATEGORIES = [
-  { id: "all", label: "Todo" },
-  { id: "desktop", label: "Escritorio" },
-  { id: "android", label: "Android" },
-  { id: "home", label: "Casa" },
-  { id: "tools", label: "Herramientas" }
+  { id: "all", etiqueta: "Todo" },
+  { id: "desktop", etiqueta: "Hyprland" },
+  { id: "android", etiqueta: "Android" },
+  { id: "home", etiqueta: "Casa" },
+  { id: "tools", etiqueta: "Herramientas" }
 ];

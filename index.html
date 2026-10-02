@@ -1,171 +1,60 @@
 <!doctype html>
-<html lang="es" data-theme="oscuro">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rhythm — un escritorio Hyprland y lo que hay alrededor</title>
-<meta name="description" content="Un escritorio Hyprland construido para no romperse, un dock en Rust, OTA para varios moviles y cosas para la casa. Todo con datos leidos de los repos y de la maquina.">
-<meta name="color-scheme" content="dark light">
-
-<meta property="og:title" content="Rhythm">
-<meta property="og:description" content="Un escritorio Hyprland y los proyectos que han salido alrededor.">
-<meta property="og:type" content="website">
-
+<title>Rhythm</title>
+<meta name="description" content="Un escritorio Hyprland y lo que ha salido alrededor.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0d0f">
 <link rel="stylesheet" href="assets/style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='%23ba5f44'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%230b0d0f'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23ba5f44'/%3E%3C/svg%3E">
 </head>
 <body>
 
-<header class="cabecera">
-  <div class="wrap">
-    <a class="marca" href="#top"><span class="punto"></span>Rhythm</a>
-    <nav class="nav">
-      <a href="#proyectos">Proyectos</a>
-      <a href="#escritorio">Escritorio</a>
-      <a href="#como">Como</a>
+<canvas id="lluvia" aria-hidden="true"></canvas>
+
+<!-- La barra. La unica pieza que ya estaba bien, y no se toca. -->
+<div class="barra-z capa-z">
+  <div class="isla">
+    <span class="ojo-mini" id="ojo-mini" title="temperatura de la cpu" aria-hidden="true"></span>
+    <span class="rotulo">Rhythm</span>
+    <nav>
+      <a href="#proyectos">proyectos</a>
+      <a href="#fuera">fuera</a>
     </nav>
-    <button class="tema-btn" data-tema-btn type="button" title="Cambiar de tema (T)">
-      <span class="swatch"></span><span data-tema-nombre>Tema</span>
-    </button>
-    <button class="tema-btn" data-ayuda type="button" title="Atajos de esta pagina (?)">?</button>
-  </div>
-</header>
-
-<main id="top">
-
-  <section class="portada wrap">
-    <h1>
-      Un escritorio <span class="fuerte">Hyprland</span><br>
-      y <span class="tinte">todo lo que ha salido alrededor</span>.
-    </h1>
-
-    <p class="entradilla">
-      Un instalador que no rompe el escritorio, actualizaciones que no tocan tu
-      distro, un doctor que dice que esta roto y un dock escrito en Rust. Todo
-      con los repos y la maquina leyendo solos.
-    </p>
-
-    <div class="acciones">
-      <a class="boton primario" href="#proyectos">Ver los proyectos</a>
-      <a class="boton" href="#escritorio">Como esta el escritorio ahora</a>
-    </div>
-
-    <!-- Esto lo rellena scripts/collect-system-stats.sh con el estado real. -->
-    <dl class="tira"></dl>
-  </section>
-
-  <section class="seccion wrap" id="proyectos">
-    <p class="etiqueta">Proyectos</p>
-
-    <div class="filtros" id="filtros"></div>
-
-    <div class="rejilla" id="rejilla"></div>
-
-    <p class="centinela" style="margin-top:1.6rem">
-      Las estrellas y la fecha del ultimo commit se leen de la API de GitHub al
-      cargar esta pagina. Donde pone <b>en vivo</b>, es de ahora mismo.
-    </p>
-  </section>
-
-  <section class="seccion wrap" id="escritorio">
-    <p class="etiqueta">Escritorio</p>
-
-    <h2 style="font-size:var(--step-3);font-weight:400;max-width:20ch;margin-bottom:1.4rem">
-      El Hyprland de esta pagina, ahora mismo.
-    </h2>
-
-    <p class="entradilla" style="margin:0 0 2rem">
-      No es una captura: lo de abajo sale de la maquina que genera
-      <code>scripts/collect-system-stats.sh</code>. Si no hay datos, lo dice.
-    </p>
-
-    <div class="pizarra" id="sistema"></div>
-  </section>
-
-  <section class="seccion wrap" id="como">
-    <p class="etiqueta">Como</p>
-
-    <div class="pizarra">
-      <div class="panel">
-        <h3>La pagina</h3>
-        <p class="detalle" style="font-size:var(--step-0);color:var(--fg-dim)">
-          HTML, CSS y JavaScript a pelo. Sin build, sin framework y sin
-          dependencias. Se abre haciendo doble clic en <code>index.html</code> y
-          tambien se sirve desde GitHub Pages tal cual.
-        </p>
-        <p class="detalle" style="font-size:var(--step--1);color:var(--fg-dim)">
-          Los datos van en ficheros <code>.js</code> y no en <code>.json</code> a
-          proposito: un <code>fetch</code> de un JSON local desde
-          <code>file://</code> lo bloquea el navegador.
-        </p>
-      </div>
-
-      <div class="panel">
-        <h3>Anadir un proyecto</h3>
-        <p class="detalle" style="font-size:var(--step-0);color:var(--fg-dim)">
-          Se edita <code>assets/projects.js</code> y se anade un objeto al array.
-          Con <code>repo</code> mise, el <code>name</code> y la frase, la
-          tarjeta sale sola con los datos en vivo.
-        </p>
-        <p class="detalle" style="font-size:var(--step--1);color:var(--fg-dim)">
-          La API de GitHub sin token da 60 peticiones por hora. Con este numero
-          de repos sobra, y si algun dia se queda corta la pagina lo dice y
-          enseña el valor guardado en vez de quedarse en blanco.
-        </p>
-      </div>
-
-      <div class="panel">
-        <h3>El tema vivo</h3>
-        <p class="detalle" style="font-size:var(--step-0);color:var(--fg-dim)">
-          El tema <b>Pywal</b> no esta escrito a mano: sale de
-          <code>~/.cache/wal/colors.json</code>, los mismos colores que tiñen la
-          barra y la isla. Cambia el fondo de pantalla y cambia aqui.
-        </p>
-        <p class="detalle" style="font-size:var(--step--1);color:var(--fg-dim)">
-          <kbd>T</kbd> siguiente, <kbd>Shift</kbd>+<kbd>T</kbd> el anterior, y
-          se recuerda en <code>localStorage</code>.
-        </p>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<footer class="pie wrap">
-  <span>Rhythm · <span id="anio"></span></span>
-  <span class="derecha">
-    <a class="enlace" href="https://github.com/rhythmcreative" target="_blank" rel="noopener">GitHub</a>
-    <a class="enlace" href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">hyprland</a>
-    <a class="enlace" href="https://github.com/rhythmcreative/rust-dock" target="_blank" rel="noopener">rust-dock</a>
-    <a class="enlace" href="https://github.com/ryoku-dev/ryoku" target="_blank" rel="noopener">ryoku</a>
-    <a class="enlace" href="https://github.com/omacom/omarchy" target="_blank" rel="noopener">omarchy</a>
-  </span>
-</footer>
-
-<!-- Capa de atajos -->
-<div class="capa" id="capa" role="dialog" aria-modal="true" aria-label="Atajos de la pagina">
-  <div>
-    <h2>Atajos</h2>
-    <dl>
-      <dt><kbd>T</kbd></dt><dd>Tema siguiente</dd>
-      <dt><kbd>Shift</kbd><kbd>T</kbd></dt><dd>Tema anterior</dd>
-      <dt><kbd>/</kbd></dt><dd>Buscar proyectos</dd>
-      <dt><kbd>G</kbd></dt><dd>Ir a los proyectos</dd>
-      <dt><kbd>E</kbd></dt><dd>Ir al escritorio en vivo</dd>
-      <dt><kbd>?</kbd></dt><dd>Esta ventana</dd>
-      <dt><kbd>Esc</kbd></dt><dd>Cerrar</dd>
-    </dl>
+    <span class="reloj" id="reloj">--:--:--</span>
   </div>
 </div>
 
-<div class="brindis" role="status" aria-live="polite"></div>
+<!-- El campo: lluvia y un ojo. No hay nada mas arriba. -->
+<section class="campo capa-z" id="campo">
+  <canvas id="ojo" aria-label="Un ojo que te sigue. Pinchalo." role="img"></canvas>
+  <p class="susurro" id="susurro">&nbsp;</p>
+  <p class="firma">rhythm · hyprland · arch · <span id="cuenta">19</span> repos</p>
+  <a class="bajar" href="#proyectos" aria-label="Ir a los proyectos">proyectos<i></i></a>
+</section>
+
+<!-- Los repos: capsulas, no tarjetas. Pincha una y se abre ahi mismo. -->
+<section class="capa-z" id="proyectos">
+  <div class="rejilla" id="rejilla-p"></div>
+</section>
+
+<footer class="capa-z" id="fuera">
+  <div class="pie">
+    <a href="https://github.com/rhythmcreative" target="_blank" rel="noopener">github</a>
+    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">hyprland</a>
+    <a href="https://github.com/rhythmcreative/rust-dock" target="_blank" rel="noopener">rust-dock</a>
+    <span class="der" id="sello">&nbsp;</span>
+  </div>
+</footer>
+
+<div class="brindis" id="brindis" role="status" aria-live="polite"></div>
 
 <script src="data/system.js"></script>
+<script src="data/github.js"></script>
 <script src="assets/projects.js"></script>
+<script src="assets/ojo.js"></script>
 <script src="assets/app.js"></script>
-<script>
-  // El anyo, para que no se quede en 2026 escrito a mano dentro de un ano.
-  document.getElementById("anio").textContent = new Date().getFullYear();
-</script>
 </body>
 </html>

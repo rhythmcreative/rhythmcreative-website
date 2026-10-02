@@ -1,502 +1,260 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Rhythm — todo el comportamiento de la pagina.
+   Lo que hace la pagina: dibuja la lluvia, arranca el ojo, pinta los repos y
+   hace que el ojo de la barra tome su color de la temperatura real de la CPU.
 
-   Tres cosas la hacen dinamica, y las tres degradan bien:
-
-     1. Los proyectos se pintan desde assets/projects.js, que es el unico
-        fichero que hay que tocar para anadir uno.
-     2. Las estrellas, el ultimo commit y el lenguaje de cada repo se consultan
-        a la API de GitHub al cargar. Si falla, se queda el valor de respaldo y
-        la tarjeta lo dice, en vez de quedarse muda.
-     3. El estado real del escritorio sale de data/system.js, que genera
-        scripts/collect-system-stats.sh en la maquina. Si no existe, la seccion
-        lo explica en vez de mostrar ceros inventados.
+   La pagina no pide nada a nadie. Todo sale de data/system.js y data/github.js,
+   que escriben dos scripts en la maquina (scripts/collect-system-stats.sh y
+   scripts/collect-github.py). Cero llamadas por visita, funciona sin conexion y
+   se puede abrir con doble clic desde file://.
    ───────────────────────────────────────────────────────────────────────────── */
 
 (function () {
   "use strict";
 
-  var $ = function (sel, raiz) { return (raiz || document).querySelector(sel); };
-  var $$ = function (sel, raiz) {
-    return Array.prototype.slice.call((raiz || document).querySelectorAll(sel));
-  };
-
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var PROYECTOS = window.RHYTHM_PROJECTS || [];
-  var CATEGORIAS = window.RHYTHM_CATEGORIES || [{ id: "all", label: "Todo" }];
-  var SISTEMA = window.RHYTHM_SYSTEM || null;
+  var S = window.RHYTHM_SYSTEM || null;
+  var G = window.RHYTHM_GITHUB || null;
+  var ojo = null;
 
-  // ── Temas ────────────────────────────────────────────────────────────────
-  //
-  // "pywal" no es un tema escrito a mano: se construye con los colores que
-  // pywal esta generando ahora mismo en la maquina, que es la misma idea que
-  // hace Ryoku con el marco y la barra. Si no hay colores, el tema no existe.
-
-  var TEMAS = [
-    { id: "oscuro", etiqueta: "Tinta", swatch: "#ba5f44" },
-    { id: "papel", etiqueta: "Papel", swatch: "#a4432a" },
-    { id: "catppuccin", etiqueta: "Catppuccin", swatch: "#fab387" },
-    { id: "tokyo", etiqueta: "Tokyo Night", swatch: "#7aa2f7" },
-    { id: "nord", etiqueta: "Nord", swatch: "#88c0d0" },
-    { id: "gruvbox", etiqueta: "Gruvbox", swatch: "#fabd2f" },
-    { id: "vacio", etiqueta: "Blanco", swatch: "#ffffff" }
-  ];
-
-  function temaPywal() {
-    if (!SISTEMA || !SISTEMA.pywal) return null;
-    var p = SISTEMA.pywal;
-    if (!p.bg || !p.fg) return null;
-    return {
-      id: "pywal",
-      etiqueta: "Pywal",
-      swatch: p.c3 || p.c4,
-      css: {
-        "--bg": p.bg, "--bg-2": p.c0, "--bg-3": p.c0,
-        "--fg": p.fg,
-        "--fg-dim": p.c2 || p.fg,
-        "--fg-faint": p.c1 || p.fg,
-        "--line": p.c1 || p.bg,
-        "--line-2": p.c2 || p.fg,
-        "--accent": p.c3 || p.fg,
-        "--accent-2": p.c4 || p.fg,
-        "--accent-ink": p.bg
-      }
-    };
-  }
-
-  function aplicarTema(tema, anunciar) {
-    var raiz = document.documentElement;
-    // Las variables del tema pywal se quitan antes de cambiar: si no, siguen
-    // como estilos en linea y ganan a la hoja de estilos, asi que el cambio de
-    // tema no se veria.
-    if (tema && tema.css) {
-      Object.keys(tema.css).forEach(function (k) { raiz.style.setProperty(k, tema.css[k]); });
-    } else {
-      raiz.removeAttribute("style");
-    }
-    raiz.setAttribute("data-theme", tema ? tema.id : "oscuro");
-
-    try { localStorage.setItem("ritmo-tema", tema ? tema.id : "oscuro"); } catch (e) {}
-
-    var btn = $("[data-tema-btn]");
-    if (btn) {
-      var punto = $(".swatch", btn);
-      if (punto && tema && tema.swatch) punto.style.background = tema.swatch;
-      var txt = $("[data-tema-nombre]", btn);
-      if (txt) txt.textContent = tema ? tema.etiqueta : "Tema";
-    }
-    if (anunciar) brindis("Tema: " + (tema ? tema.etiqueta : "—"));
-  }
-
-  function todosLosTemas() {
-    var lista = TEMAS.slice();
-    var py = temaPywal();
-    if (py) lista.splice(1, 0, py);
-    return lista;
-  }
-
-  function cambiarTema(delta) {
-    var lista = todosLosTemas();
-    var actual = document.documentElement.getAttribute("data-theme");
-    var i = -1;
-    for (var k = 0; k < lista.length; k++) if (lista[k].id === actual) i = k;
-    if (i < 0) i = 0;
-    var siguiente = lista[(i + delta + lista.length) % lista.length];
-    aplicarTema(siguiente, true);
-  }
-
-  // ── Aviso flotante ────────────────────────────────────────────────────────
-  var brindisTemporizador = null;
-  function brindis(texto) {
-    var el = $(".brindis");
-    if (!el) return;
-    el.textContent = texto;
-    el.classList.add("visible");
-    clearTimeout(brindisTemporizador);
-    brindisTemporizador = setTimeout(function () { el.classList.remove("visible"); }, 1400);
-  }
-
-  // ── GitHub ────────────────────────────────────────────────────────────────
-  //
-  // Sin token la API da 60 peticiones por hora por IP. Con 19 repos no hay
-  // problema, pero en cuanto nos corten no se reintenta: reintentar 19 veces
-  // solo gasta mas cuota. Ademas van en tandas de 6, porque disparar 19
-  // peticiones de golpe es justo lo queprovoca el corte.
-  var SIN_CUOTA = false;
-
-  function pedirGithub(repo) {
-    if (!repo || SIN_CUOTA) return Promise.resolve(null);
-    return fetch("https://api.github.com/repos/" + repo, {
-      headers: { Accept: "application/vnd.github+json" }
-    })
-      .then(function (r) {
-        if (r.status === 403 || r.status === 429) { SIN_CUOTA = true; return null; }
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .catch(function () { return null; });
-  }
-
-  // ── Utilidades ────────────────────────────────────────────────────────────
-
-  function escapar(s) {
+  function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
 
-  function haceDias(fecha) {
-    if (!fecha) return null;
-    var d = (Date.now() - new Date(fecha).getTime()) / 86400000;
-    return d < 0 ? 0 : d;
+  function hace(fecha) {
+    if (!fecha) return "sin datos";
+    var t = new Date(String(fecha).replace(" ", "T"));
+    if (isNaN(t)) return esc(fecha);
+    var min = Math.floor((Date.now() - t.getTime()) / 60000);
+    if (min < 1) return "ahora mismo";
+    if (min < 60) return "hace " + min + " min";
+    var h = Math.floor(min / 60);
+    return h < 24 ? "hace " + h + " h" : "hace " + Math.floor(h / 24) + " d";
   }
 
-  function textoFecha(fecha) {
-    var d = haceDias(fecha);
-    if (d === null) return "";
-    if (d < 1) return "hoy";
-    if (d < 2) return "ayer";
-    if (d < 30) return "hace " + Math.floor(d) + " d";
-    if (d < 365) return "hace " + Math.floor(d / 30) + " meses";
-    return "hace " + Math.floor(d / 365) + " años";
+  // Color estable por nombre: el mismo repo es siempre el mismo punto.
+  function colorDe(nombre) {
+    var h = 0;
+    for (var i = 0; i < nombre.length; i++) h = (h * 31 + nombre.charCodeAt(i)) % 360;
+    return "hsl(" + h + " 34% 52%)";
   }
 
-  // ── Proyectos ────────────────────────────────────────────────────────────
+  // ── La barra: el punto toma su color de la temperatura real ────────────────
+  var FRASES = [
+    "fresca", "templada", "caliente", "hirviendo",
+    "sigo aqui", "mira", "has llegado"
+  ];
 
-  var filtroActual = "all";
-  var textoActual = "";
-  var vivos = {};   // repo -> datos de la API, para no consultarlo dos veces
-
-  function coincide(p) {
-    if (filtroActual !== "all" && p.category !== filtroActual) return false;
-    if (!textoActual) return true;
-    var h = textoActual.toLowerCase();
-    var todo = (p.name + " " + (p.tagline || "") + " " + (p.blurb || "") + " " +
-                (p.tags || []).join(" ") + " " + (p.category || "")).toLowerCase();
-    return h.split(/\s+/).every(function (t) { return todo.indexOf(t) !== -1; });
-  }
-
-  function estrella(p) {
-    var vivo = vivos[p.repo];
-    var n = vivo && typeof vivo.stargazers_count === "number"
-      ? vivo.stargazers_count
-      : (p.stars || 0);
-    if (vivo) {
-      return '<span class="estrella viva">★ ' + n +
-        ' <span class="nuevo" title="Leido de la API de GitHub al cargar esta pagina">en vivo</span></span>';
+  function ojoBarra(temp) {
+    var el = $("#ojo-mini");
+    if (!el) return;
+    var nucleo, iris, halo, txt;
+    if (temp === null || temp === undefined) {
+      nucleo = "#6b828c"; iris = "#304f79"; halo = "rgba(107,130,140,0.3)";
+      txt = "sin datos de temperatura";
+    } else if (temp >= 80) {
+      nucleo = "#e97454"; iris = "#ba5f44"; halo = "rgba(233,116,84,0.85)";
+      txt = "cpu a " + temp.toFixed(0) + "° · hirviendo";
+    } else if (temp >= 70) {
+      nucleo = "#d8845a"; iris = "#ba5f44"; halo = "rgba(216,132,90,0.6)";
+      txt = "cpu a " + temp.toFixed(0) + "° · caliente";
+    } else if (temp >= 55) {
+      nucleo = "#cea878"; iris = "#96603c"; halo = "rgba(206,168,120,0.4)";
+      txt = "cpu a " + temp.toFixed(0) + "° · templada";
+    } else {
+      nucleo = "#99bac9"; iris = "#3a6080"; halo = "rgba(153,186,201,0.35)";
+      txt = "cpu a " + temp.toFixed(0) + "° · fresca";
     }
-    return '<span class="estrella">★ ' + n + "</span>";
+    el.style.setProperty("--o", nucleo);
+    el.style.setProperty("--i", iris);
+    el.style.setProperty("--halo", halo);
+    el.title = txt;
   }
 
-  function tarjeta(p) {
-    var vivo = vivos[p.repo];
-    var lang = (vivo && vivo.language) || p.lang || "";
-    var url = p.url || (p.repo ? "https://github.com/" + p.repo : "#");
+  // ── El campo ───────────────────────────────────────────────────────────────
 
-    var pie = "";
-    if (lang) pie += '<span class="lenguaje">' + escapar(lang) + "</span>";
-    if (vivo && vivo.pushed_at) {
-      pie += '<span class="lenguaje">' + escapar(textoFecha(vivo.pushed_at)) + "</span>";
+  function susurro(temp) {
+    var el = $("#susurro");
+    if (!el) return;
+    var dentro = false;
+    if (ojo && ojo.raton && ojo.raton.dentro) {
+      var mx = (ojo.raton.x - ojo.w / 2) / (ojo.w / 2);
+      var my = (ojo.raton.y - ojo.h / 2) / (ojo.h / 2);
+      dentro = Math.sqrt(mx * mx + my * my) < 0.55;
     }
-    pie += estrella(p);
-
-    return (
-      '<article class="tarjeta' + (p.featured ? " destacada" : "") + '">' +
-        "<h3>" + escapar(p.name) + "</h3>" +
-        '<span class="categoria">' + escapar(p.category || "") + "</span>" +
-        '<p class="lema">' + escapar(p.tagline || "") + "</p>" +
-        '<p class="detalle">' + escapar(p.blurb || "") + "</p>" +
-        '<div class="tags">' + (p.tags || []).map(function (t) {
-          return '<span class="tag">' + escapar(t) + "</span>";
-        }).join("") + "</div>" +
-        '<div class="pie">' + pie + "</div>" +
-        '<a class="tendido" href="' + escapar(url) + '" target="_blank" rel="noopener" ' +
-          'aria-label="Abrir ' + escapar(p.name) + '"></a>' +
-      "</article>"
-    );
+    if (!dentro) { el.innerHTML = "&nbsp;"; el.style.color = "var(--gris)"; return; }
+    var i = Math.floor(Math.random() * FRASES.length);
+    el.textContent = FRASES[i];
+    el.style.color = "var(--hielo)";
   }
 
-  function pintar() {
-    var rejilla = $("#rejilla");
-    if (!rejilla) return;
-    var lista = PROYECTOS.filter(coincide);
-    if (!lista.length) {
-      rejilla.innerHTML =
-        '<p class="vacio-estado">Nada con eso. ' +
-        '<button class="chip" data-limpiar>Quitar el filtro</button></p>';
-      return;
+  // La lluvia. Se inclina a la izquierda como la del wallpaper.
+  function lluvia() {
+    var c = $("#lluvia");
+    if (!c) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var ctx = c.getContext("2d");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var gotas = [];
+    var raton = { x: -999, y: -999, on: false };
+    var INCL = 0.28;                     // el angulo de las rayas de tu fondo
+
+    function medir() {
+      c.width = Math.floor(innerWidth * dpr);
+      c.height = Math.floor(innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    lista.sort(function (a, b) { return (b.featured ? 1 : 0) - (a.featured ? 1 : 0); });
-    rejilla.innerHTML = lista.map(tarjeta).join("");
-  }
-
-  // ── Escritorio en vivo ────────────────────────────────────────────────────
-
-  function barra(nombre, valor, pct, color) {
-    return '<div class="barra-fila"><span class="nombre">' + escapar(nombre) + "</span>" +
-      '<span class="barra-pista"><span class="barra-relleno" style="width:' +
-      pct.toFixed(0) + "%;background:" + (color || "") + '"></span></span>' +
-      '<span class="cifra">' + escapar(valor) + "</span></div>";
-  }
-
-  function pintarSistema() {
-    var raiz = $("#sistema");
-    if (!raiz) return;
-
-    if (!SISTEMA) {
-      raiz.innerHTML =
-        '<div class="panel"><h3>Sin datos</h3><p class="centinela">' +
-        "Este estado se lee de <code>data/system.js</code>, que genera " +
-        "<code>scripts/collect-system-stats.sh</code> en la maquina. Aqui no hay, " +
-        "y antes de inventar ceros se dice que no hay." +
-        "</p></div>";
-      return;
+    function nueva(inicial) {
+      var t = Math.random();
+      return {
+        x: Math.random() * innerWidth,
+        y: inicial ? Math.random() * innerHeight : -30,
+        largo: t < 0.7 ? 14 + Math.random() * 20 : 6 + Math.random() * 8,
+        vel: t < 0.7 ? 620 + Math.random() * 520 : 250 + Math.random() * 200,
+        a: t < 0.7 ? 0.14 + Math.random() * 0.14 : 0.05 + Math.random() * 0.06,
+        w: t < 0.7 ? 1 : 1.3
+      };
     }
-
-    var s = SISTEMA;
-    var mons = s.monitors || [];
-    var binds = s.binds || [];
-    var temps = s.temps || {};
-    var serv = s.servicios || {};
-    var carga = String(s.loadavg || "0,0,0").split(",").map(parseFloat);
-
-    // Tira de la portada
-    var tira = $(".tira");
-    if (tira) {
-      var porLua = binds.filter(function (b) { return b.lua; }).length;
-      var celdas = [
-        ["Monitores", mons.length,
-          mons.map(function (m) { return m.name + " " + m.width + "×" + m.height; }).join(" · ")],
-        ["Atajos", binds.length, porLua + " escritos en Lua"],
-        ["Encendido", s.uptime || "—", s.kernel || ""],
-        ["Paquetes", s.paquetes != null ? s.paquetes : "—",
-          s.disco_libre ? s.disco_libre + " libres" : ""]
-      ];
-      tira.innerHTML = celdas.map(function (c) {
-        return "<div><dt>" + c[0] + "</dt><dd>" + escapar(String(c[1])) +
-               "</dd><small>" + escapar(c[2] || "") + "</small></div>";
-      }).join("");
+    function sembrar() {
+      gotas = [];
+      var n = Math.max(60, Math.min(320, Math.round((innerWidth * innerHeight) / 5200)));
+      for (var i = 0; i < n; i++) gotas.push(nueva(true));
     }
-
-    var paneles = [];
-
-    // Pantallas
-    paneles.push(
-      '<div class="panel"><h3>Pantallas</h3>' +
-      (mons.length
-        ? mons.map(function (m) {
-            var interna = /^(eDP|LVDS|DSI)/.test(m.name || "");
-            return '<div class="monitor"><div class="forma' + (interna ? " interna" : "") + '"></div>' +
-              '<div class="info"><b>' + escapar(m.name) + "</b><span>" +
-              m.width + "×" + m.height + " · escala " + m.scale +
-              (m.refresh ? " · " + m.refresh + " Hz" : "") +
-              (interna ? " · panel interno" : "") + "</span></div></div>";
-          }).join("")
-        : '<p class="centinela">No se han detectado pantallas.</p>') +
-      "</div>"
-    );
-
-    // Temperaturas. A partir de 80 grados se pinta con el acento, que es donde
-    // un portatil empieza a bajar el rendimiento por calor.
-    if (temps.all && temps.all.length) {
-      paneles.push(
-        '<div class="panel"><h3>Temperaturas</h3><div class="barras">' +
-        temps.all.slice(0, 7).map(function (t) {
-          var color = t.c >= 80 ? "var(--accent)" : t.c >= 70 ? "var(--accent-2)" : "";
-          return barra(String(t.chip).slice(0, 9), t.c.toFixed(0) + "°C",
-                       Math.min(100, (t.c / 100) * 100), color);
-        }).join("") +
-        "</div></div>"
-      );
-    }
-
-    // Carga
-    var lineaEstado = serv.fallidos
-      ? '<p class="centinela" style="color:var(--accent)">' + serv.fallidos + " servicio(s) caido(s)</p>"
-      : '<p class="centinela">' + (serv.activos || 0) + " servicios de usuario activos</p>";
-    paneles.push(
-      '<div class="panel"><h3>Carga</h3><div class="barras">' +
-      ["1 min", "5 min", "15 min"].map(function (et, i) {
-        var v = carga[i] || 0;
-        return barra(et, v.toFixed(2), Math.min(100, (v / 8) * 100));
-      }).join("") +
-      "</div>" + lineaEstado + "</div>"
-    );
-
-    // Atajos: los de nombre mas corto, porque 78 en fila no dicen nada.
-    var cortos = binds.slice().sort(function (a, b) {
-      return String(a.key).length - String(b.key).length;
-    }).slice(0, 44);
-    paneles.push(
-      '<div class="panel"><h3>Atajos (' + binds.length + ")</h3>" +
-      '<div class="lista-atajos">' +
-      cortos.map(function (b) {
-        return '<span class="atajo">' + (b.mod ? "<b>SUPER+</b>" : "") +
-               escapar(b.key) + "</span>";
-      }).join("") +
-      "</div>" +
-      (binds.length > cortos.length
-        ? '<p class="centinela">y ' + (binds.length - cortos.length) + " mas</p>"
-        : "") +
-      "</div>"
-    );
-
-    raiz.innerHTML = paneles.join("");
-
-    // Las barras se animan despues de insertarlas: si el ancho ya esta puesto
-    // al insertar, no hay transicion que ver.
-    requestAnimationFrame(function () {
-      $$(".barra-relleno", raiz).forEach(function (el) {
-        var w = el.style.width;
-        el.style.width = "0";
-        requestAnimationFrame(function () { el.style.width = w; });
-      });
-    });
-  }
-
-  // ── Aparicion al hacer scroll ─────────────────────────────────────────────
-
-  function observar() {
-    var elementos = $$(".aparece");
-    var sinMovimiento = window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!("IntersectionObserver" in window) || sinMovimiento) {
-      elementos.forEach(function (e) { e.classList.add("visible"); });
-      return;
-    }
-    var io = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (e) {
-        if (e.isIntersecting) {
-          e.target.classList.add("visible");
-          io.unobserve(e.target);
+    var ult = 0;
+    function paso(t) {
+      var dt = Math.min(0.05, (t - ult) / 1000 || 0.016);
+      ult = t;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      var W = innerWidth, H = innerHeight;
+      for (var i = 0; i < gotas.length; i++) {
+        var g = gotas[i];
+        var vy = g.vel;
+        var vx = vy * INCL;
+        if (raton.on) {
+          var dx = g.x - raton.x, dy = g.y - raton.y, d2 = dx * dx + dy * dy;
+          if (d2 < 26000) {
+            var d = Math.sqrt(d2) || 1, f = (1 - d2 / 26000) * 200;
+            vx += (dx / d) * f; vy += (dy / d) * f * 0.6;
+          }
         }
-      });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
-    elementos.forEach(function (e) { io.observe(e); });
-  }
-
-  // ── Teclado ──────────────────────────────────────────────────────────────
-
-  function irA(sel) {
-    var el = $(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function alternarCapa() {
-    var c = $("#capa");
-    if (c) c.classList.toggle("abierta");
-  }
-
-  function teclado(e) {
-    var enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-    if (e.key === "Escape") {
-      var c = $("#capa");
-      if (c) c.classList.remove("abierta");
-      if (enCampo) document.activeElement.blur();
-      return;
-    }
-    if (enCampo || e.metaKey || e.ctrlKey || e.altKey) return;
-
-    if (e.shiftKey && (e.key === "T" || e.key === "t")) { e.preventDefault(); cambiarTema(-1); }
-    else if (e.key === "t" || e.key === "T") { e.preventDefault(); cambiarTema(1); }
-    else if (e.key === "/") {
-      e.preventDefault();
-      var b = $("#q");
-      if (b) { b.focus(); b.select(); }
-    } else if (e.key === "?") { e.preventDefault(); alternarCapa(); }
-    else if (e.key === "g") { e.preventDefault(); irA("#proyectos"); }
-    else if (e.key === "e") { e.preventDefault(); irA("#escritorio"); }
-  }
-
-  // ── Arranque ──────────────────────────────────────────────────────────────
-
-  function iniciar() {
-    var guardado = null;
-    try { guardado = localStorage.getItem("ritmo-tema"); } catch (e) {}
-    var lista = todosLosTemas();
-    var tema = null;
-    for (var k = 0; k < lista.length; k++) if (lista[k].id === guardado) tema = lista[k];
-    aplicarTema(tema || lista[0], false);
-
-    var barraFiltros = $("#filtros");
-    if (barraFiltros) {
-      barraFiltros.innerHTML = CATEGORIAS.map(function (c) {
-        return '<button class="chip" data-cat="' + c.id + '" aria-pressed="' +
-          (c.id === filtroActual) + '">' + escapar(c.label) + "</button>";
-      }).join("") +
-      '<div class="buscador"><input id="q" type="search" placeholder="Buscar…" ' +
-      'aria-label="Buscar proyectos" autocomplete="off" spellcheck="false"></div>';
-
-      barraFiltros.addEventListener("click", function (ev) {
-        var chip = ev.target.closest(".chip");
-        if (!chip) return;
-        if (chip.hasAttribute("data-limpiar")) {
-          filtroActual = "all";
-          textoActual = "";
-          var q0 = $("#q");
-          if (q0) q0.value = "";
-        } else {
-          filtroActual = chip.getAttribute("data-cat");
-        }
-        $$(".chip[data-cat]", barraFiltros).forEach(function (c) {
-          c.setAttribute("aria-pressed",
-            String(c.getAttribute("data-cat") === filtroActual));
-        });
-        pintar();
-      });
-
-      var entrada = $("#q");
-      if (entrada) {
-        var t = null;
-        entrada.addEventListener("input", function () {
-          clearTimeout(t);
-          t = setTimeout(function () {
-            textoActual = entrada.value.trim();
-            pintar();
-          }, 120);
-        });
+        g.x += vx * dt; g.y += vy * dt;
+        ctx.strokeStyle = "rgba(153,186,201," + g.a.toFixed(3) + ")";
+        ctx.lineWidth = g.w;
+        ctx.beginPath();
+        ctx.moveTo(g.x, g.y);
+        ctx.lineTo(g.x - vx * 0.03, g.y - vy * 0.03);
+        ctx.stroke();
+        if (g.y > H + 40 || g.x < -80 || g.x > W + 80) gotas[i] = nueva(false);
       }
+      requestAnimationFrame(paso);
     }
+    medir(); sembrar(); requestAnimationFrame(paso);
+    addEventListener("resize", function () { medir(); sembrar(); });
+    addEventListener("mousemove", function (e) { raton.x = e.clientX; raton.y = e.clientY; raton.on = true; });
+    addEventListener("mouseleave", function () { raton.on = false; });
+  }
 
-    pintar();
-    pintarSistema();
-    observar();
+  // ── Los proyectos ──────────────────────────────────────────────────────────
 
-    document.addEventListener("keydown", teclado);
-    document.addEventListener("click", function (ev) {
-      if (ev.target.closest("[data-tema-btn]")) cambiarTema(1);
-      if (ev.target.closest("[data-ayuda]")) alternarCapa();
-      if (ev.target.closest(".capa") && !ev.target.closest(".capa > div")) alternarCapa();
+  var abierto = null;
+
+  function datoDe(repo) { return (G && G.repos && G.repos[repo]) || null; }
+
+  // La ficha abierta se inserta justo detras de la capsula que se ha
+  // pinchado, no al final de la rejilla. Al final parecia que se habia abierto
+  // otra cosa: la isla tiene que.desplegarse donde la tocaste.
+  function pintarProyectos() {
+    var caja = $("#rejilla-p");
+    var partes = [];
+    PROYECTOS.forEach(function (p) {
+      var d = datoDe(p.repo);
+      var estrellas = d && typeof d.stars === "number" ? d.stars : (p.stars || 0);
+      partes.push('<button class="cap" type="button" data-nombre="' + esc(p.name) + '"' +
+        ' aria-expanded="' + (abierto === p.name) + '"' +
+        ' style="--color:' + colorDe(p.name) + '">' +
+        '<span class="gota"></span>' +
+        '<span class="nom">' + esc(p.name) + "</span>" +
+        '<span class="der">' + (estrellas > 0 ? "★ " + estrellas : "") +
+        (d && d.lenguaje ? " &nbsp;" + esc(d.lenguaje) : "") + "</span></button>");
+      if (abierto === p.name) partes.push(detalle(p));
+    });
+    caja.innerHTML = partes.join("");
+  }
+
+  function detalle(p) {
+    var d = datoDe(p.repo);
+    var estrellas = d && typeof d.stars === "number" ? d.stars : (p.stars || 0);
+    var h = '<div class="abierta">';
+    h += '<div class="cabeza"><h3>' + esc(p.name) + "</h3>" +
+      '<span class="meta">★ ' + estrellas +
+      (d && d.lenguaje ? "  ·  " + esc(d.lenguaje) : "") +
+      (d && d.push ? "  ·  " + esc(hace(d.push)) : "") + "</span></div>";
+    if (p.tagline) h += "<p>" + esc(p.tagline) + "</p>";
+    if (p.blurb) h += "<p>" + esc(p.blurb) + "</p>";
+    h += '<div class="pildoras">' + (p.tags || []).map(function (t) {
+      return "<span>" + esc(t) + "</span>";
+    }).join("") + "</div>";
+    h += '<div class="filas">' +
+      '<a class="b" href="https://github.com/' + esc(p.repo) +
+      '" target="_blank" rel="noopener">github ↗</a>' +
+      '<button class="b f" type="button" data-cerrar="1">cerrar · esc</button></div>';
+    return h + "</div>";
+  }
+
+  // ── Arranque ───────────────────────────────────────────────────────────────
+
+  function tic() {
+    var d = new Date(), p = function (x) { return (x < 10 ? "0" : "") + x; };
+    var r = $("#reloj");
+    if (r) r.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  function inicio() {
+    var temp = S && S.temps ? S.temps.cpu : null;
+    ojoBarra(temp);
+    $("#cuenta").textContent = PROYECTOS.length;
+
+    if (window.RHYTHM_OJO) ojo = window.RHYTHM_OJO.montar($("#ojo"), temp);
+    lluvia();
+    setInterval(tic, 1000);
+    tic();
+
+    // El susurro cambia solo cuando miras al ojo, asi que no hace falta un
+    // temporizador por fuera; se refresca con el mismo bucle de dibujado.
+    setInterval(function () { susurro(temp); }, 1400);
+
+    $("#rejilla-p").addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-cerrar]")) { abierto = null; pintarProyectos(); return; }
+      var c = ev.target.closest(".cap");
+      if (c) {
+        var n = c.getAttribute("data-nombre");
+        abierto = abierto === n ? null : n;
+        pintarProyectos();
+      }
     });
 
-    var cab = $(".cabecera");
-    if (cab) {
-      var alPagar = function () { cab.classList.toggle("pegada", window.scrollY > 8); };
-      window.addEventListener("scroll", alPagar, { passive: true });
-      alPagar();
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") { if (abierto) { abierto = null; pintarProyectos(); } }
+      else if (ev.key === "j") {
+        var p0 = PROYECTOS[0];
+        if (p0) { abierto = abierto === p0.name ? null : p0.name; pintarProyectos(); }
+      }
+    });
+
+    // El sello del pie dice de cuando son los datos, no "en vivo": es una foto.
+    var sello = $("#sello");
+    if (sello) {
+      sello.textContent = S && G
+        ? "foto " + hace(S.generado) + " · repos " + hace(G.recogido)
+        : S ? "foto " + hace(S.generado) : "sin datos";
     }
 
-    // Datos de GitHub despues de pintar, para que la pagina se vea al instante
-    // y los numeros lleguen cuando lleguen.
-    var cola = PROYECTOS.filter(function (p) { return p.repo; });
-    var i = 0;
-    (function bombear() {
-      if (i >= cola.length || SIN_CUOTA) return;
-      var lote = cola.slice(i, i + 6);
-      i += 6;
-      Promise.all(lote.map(function (p) {
-        return pedirGithub(p.repo).then(function (d) {
-          if (d) { vivos[p.repo] = d; p.lang = d.language; }
-        });
-      })).then(function () {
-        pintar();
-        bombear();
-      });
-    })();
+    pintarProyectos();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", iniciar);
-  } else {
-    iniciar();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);
+  else inicio();
 })();
