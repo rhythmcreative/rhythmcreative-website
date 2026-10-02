@@ -270,6 +270,32 @@ if [ -f "$REPO_HYPR/hyprland.lua" ] && command -v python3 >/dev/null 2>&1; then
     ATAJOS_LEGIBLES=$(python3 "$(dirname "$0")/parse-binds.py" "$REPO_HYPR" 2>/dev/null || echo "null")
 fi
 
+# ── la portada ─────────────────────────────────────────────────────────────────
+#
+# Si hero.conf dice "auto", la portada sale del wallpaper que tengas puesto. El
+# trabajo son unos veinte segundos y solo se hace si el wallpaper ha cambiado: se
+# compara con el "origen" que dejo escrito el ultimo que se genero.
+#
+# Con "angel" — que es lo de ahora — no se toca nada. Las capas del angel estan
+# commiteadas y son las mismas desde el principio.
+# El wallpaper se le pasa desde aqui y no se busca otra vez dentro del script:
+# ya esta resuelto en $WALLPAPER, que sale de ~/.cache/current-wallpaper. Adivinarlo
+# con hyprctl o con swww aqui no funciono —ninguno de los dos devuelve la ruta en
+# esta maquina— y el resultado era "no se ha dicho ningun wallpaper".
+MODO_HERO="angel"
+if [ -f "$AQUI/hero.conf" ]; then
+    MODO_HERO=$(grep -v '^#' "$AQUI/hero.conf" | grep -v '^[[:space:]]*$' | head -1)
+    MODO_HERO=${MODO_HERO%% *}
+fi
+if [ "$MODO_HERO" = "auto" ]; then
+    if [ -n "$WALLPAPER" ] && [ -f "$WALLPAPER" ]; then
+        python3 "$AQUI/scripts/preparar-hero.py" --auto "$WALLPAPER" 2>&1 \
+            | sed 's/^/  portada: /' || true
+    else
+        echo "  portada: modo auto, pero no hay wallpaper en ~/.cache/current-wallpaper" >&2
+    fi
+fi
+
 # ── doctor ─────────────────────────────────────────────────────────────────────────────
 #
 # La salida REAL de rhythm-doctor, para que la pagina enseñe el diagnostico en vez de

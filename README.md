@@ -229,6 +229,118 @@ partida y parece un fallo. Esto se ha llevao por delante dos veces en esta pagin
 el enlace de salto "no aparecia" y las lineas del terminal "no tenian color" (esa
 era la animacion `sur gir` de la pieza, que empieza en `opacity: 0`).
 
+## La portada se deshace sola del wallpaper
+
+`scripts/preparar-hero.py` deshace **cualquier** wallpaper de
+`~/Pictures/Wallpapers` en las mismas tres capas que el angel, con la misma
+profundidad. Cambia el wallpaper, corre el recolector, y la portada cambia con
+el. Igual que la paleta de pywal.
+
+    scripts/preparar-hero.py                        # el wallpaper de ahora
+    scripts/preparar-hero.py ruta/a/una.jpg         # uno concreto
+    scripts/preparar-hero.py --auto " wallpaper "   # solo si ha cambiado
+
+`hero.conf` decide cual de las dos portadas se usa:
+
+- **`angel`** — la del angel del cementerio, con la mascara hecha a mano. Es la
+  mejor: seis intentos de recorte. Las capas estan commiteadas, asi que con esto
+  no se toca nada.
+- **`auto`** — la del wallpaper del escritorio, deshecha automaticamente.
+
+Ahora esta en `auto`, que es lo que se ha pedido. Para volver al angel: una
+palabra en `hero.conf` y `python3 scripts/preparar-angel.py`.
+
+### Lo que no se puede hacer, y por que
+
+El angel se recorta con una mascara hecha a mano porque es un recorte de una
+figura concreta. Eso **no se puede repetir con los 572 wallpapers de esa
+carpeta**: separar la figura del fondo es segmentacion, y en esta maquina solo
+hay PIL y numpy. Sin `cv2`, sin `torch`, sin `rembg` ni un modelo de profundidad
+guardado en local, no hay nada que sepa donde esta el sujeto.
+
+Lo que si se puede es usar las dos cosas que **todos** esos wallpapers tienen en
+comun aunque no se parezcan en nada:
+
+1. **El sujeto esta cerca del centro.** En los seis que se miraron —un angel con
+   espada, gatos goticos, unos ojos en ascii, el logo de Arch, un arbol con una
+   luna, una chica con una espada— esta en el centro o cerca.
+2. **Abajo esta lo cerca y arriba lo lejos.** Suelo abajo, cielo arriba: es como
+   el ojo lee la profundidad en una foto fija.
+
+De ahi sale el sujeto: una **elipse suave en el centro**, con las feathers
+largas para que no se vea el circulo. No es una segmentacion y no lo pretende.
+
+### La otra mitad de la profundidad: perspectiva aerea
+
+Las tres capas ya se movian a velocidades distintas con el raton —0.6, 1.5 y 5.2
+segun `data-hondo`— y eso es el paralaje. Pero el paralaje solo se ve como un
+temblor si todas las capas estan igual de nitidas.
+
+Aqui ademas:
+
+- **lo lejano va desenfocado** (1.6 % del alto de radio) y lo cercano nitido. Eso
+  es perspectiva aerea, y es la mitad de la profundidad que no es movimiento.
+- **la graduacion se adapta a la foto**, no es un factor fijo. Se mide la mediana
+  de la imagen y se empuja a un objetivo: 46 en oscuro, 206 en claro. Con un
+  factor fijo, el angel con la espada —que es casi blanco— se iba a perder, o el
+  de los gatos goticos —que es casi negro— se comia. Es lo mismo que hace pywal.
+
+Comprobado en cuatro wallpapers muy distintos —uno claro, uno de arte ascii, un
+paisaje y el de Arch—: en los cuatro la figura sale nitida y el entorno
+desenfocado, y el efecto se lee.
+
+### El halo
+
+En el angel se busca el aro de verdad, y sale en el sitio exacto. En uno
+generico no hay aro, asi que se busca la **fuente de luz**: el punto mas claro
+de la mitad de arriba, que en la practica es el cielo detras del sujeto. Se
+suaviza antes de buscar el maximo, porque si no el anillo se planta en un grano
+suelto. Y va acotado a `0.16..0.84` en horizontal y `0.09..0.40` en vertical:
+sin acotar caia en `y 0.00`, en el borde, y un aro pegado al borde no es un aro,
+se ve medio circulo cortado.
+
+### `--auto` compara dos cosas, no una
+
+Si no cambia nada, no se rehace, porque son veinte segundos. Se comparan:
+
+- **el wallpaper** (contra el `origen` que escribe el propio script)
+- **la receta**, una huella de las constantes que afectan al resultado
+
+Lo de la receta estaba porque cambiar la graduacion y volver a correr `--auto` no
+hacia nada: la comprobacion era solo "¿es el mismo wallpaper?" y el wallpaper era
+el mismo. Veinte segundos mirando una imagen que no habia cambiado.
+
+Y el campo va anclado al principio de linea (`^[ \t]*origen:`) porque sin el `^`
+el comentario `// origen: de que imagen salieron` tambien casaba y devolvia `de`.
+Medido: hacia que `--auto` rehiziese la foto cada vez y dijera que el wallpaper
+habia cambiado cuando no habia cambiado nada.
+
+### El tema claro se quemaba
+
+A 226 de mediana, con una foto ya clara el factor era 1.0 y los claros se comian
+el rango: el angel con la espada salia casi sin dibujo. Bajado a 206 y con el
+tope de subida en 1.18 en vez de 1.45. Subir mas de lo que ya es claro no es
+graduar, es quemar.
+
+Medido sobre el resultado, con un wallpaper saturado en tema claro: nombre
+16.97:1, subtitulo 14.71:1, boton 5.52:1. Los tres por encima de AA.
+
+### Y pesa menos
+
+| | imagen de la portada |
+|---|---|
+| el angel | 160 KB por tema |
+| un wallpaper | **91 KB** por tema |
+
+La pagina entera se queda en 148 KB con gzip en oscuro y 177 KB en claro.
+
+### Lo que hay que saber antes de publicar
+
+En modo `auto`, **el wallpaper se publica**: las capas van commiteadas en
+`assets/`, porque GitHub Pages sirve desde el repo. Con el angel no hay nada que
+darse cuenta; con `auto`, lo que tengas puesto en el escritorio se vera en la
+portada.
+
 ## Los atajos: por que se leen del fichero y no de la API
 
 `hyprctl binds` devuelve los 78 por dentro:

@@ -246,7 +246,12 @@ def main():
 
     with open(os.path.join(DESTINO, "capa-datos.js"), "w", encoding="utf-8") as fh:
         fh.write("// Generado por scripts/preparar-angel.py. No editar a mano.\n")
-        fh.write("window.RHYTHM_CAPA_TAM = {\n  w: %d,\n  h: %d,\n" % (W, H))
+        fh.write("// origen y el mismo campo que escribe preparar-hero.py, para que los dos\n"
+                 "// scripts hablen el mismo idioma y el recolector sepa de donde viene\n"
+                 "// la portada. Aqui la foto es fija, asi que no hay de donde comprobar.\n")
+        fh.write("window.RHYTHM_CAPA_TAM = {\n")
+        fh.write('  origen: "angel",\n')
+        fh.write("  w: %d,\n  h: %d,\n" % (W, H))
         fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f },\n" % HALO["oscuro"])
         fh.write("  haloClaro: { x: %.4f, y: %.4f, r: %.4f }\n" % HALO["claro"])
         fh.write("};\n")
