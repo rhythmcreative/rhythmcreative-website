@@ -67,7 +67,20 @@
     var vw = escena.clientWidth, vh = escena.clientHeight;
     if (!vw || !vh) return null;
     var contiene = Math.min(vw / FOTO_W, vh / FOTO_H);
-    var escala = Math.max(contiene, (vh * 0.9) / FOTO_H);
+    // Que entre la foto ENTERA, o que llene el alto, segundo lo que admita la
+    // pantalla.
+    //
+    // Antes era siempre "llena el 92% del alto", y en una ventana alta eso
+    // recortaba la imagen mas de dos veces de ancho: las alas salian cortadas
+    // de golpe en los dos bordes, que es justo lo que no puede ser. La foto no
+    // se recorta por arriba o por abajo, se sigue.
+    //
+    // El recorte lateral solo se acepta en pantallas estrechas, que es donde
+    // la figura llena la pantalla y las alas quedan en los bordes, que es lo
+    // que ya se vio bien en el movil.
+    var escala = vw < 900
+      ? Math.max(contiene, (vh * 0.92) / FOTO_H)
+      : contiene;
     var w = FOTO_W * escala, h = FOTO_H * escala;
     var mx = (vw - w) / 2, my = (vh - h) / 2;
 
@@ -85,7 +98,11 @@
       // fijo. Si la foto ya llega al borde de la pantalla, el hueco es cero y la
       // mascara no tiene que difuminar nada: si difumina, lo que sale es una
       // franja borrosa arriba contra el resto nitido.
-      var hueco = Math.min(12, Math.max(0, my));
+      //
+      // Y el tope no son 12 px sino 180, porque con 12 y una franja de 654 —en
+      // una ventana alta— la foto cortaba en recto contra el respaldo. El
+      // difuminado tiene que dar la medida de la franja que tapa.
+      var hueco = Math.min(180, Math.max(0, my));
       caja.style.setProperty("--fade", hueco.toFixed(1) + "px");
     }
     void capas;
