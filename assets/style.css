@@ -269,8 +269,11 @@ html.claro {
 html.claro .isla { box-shadow: 0 8px 26px rgba(30, 28, 24, 0.16); }
 html.claro .nombre { color: #16181a; text-shadow: 0 2px 24px rgba(255, 255, 255, 0.92); }
 html.claro .piezas .cuerpo b { color: #16181a; }
-html.claro .bajo, html.claro .col-menu h3,
-html.claro .bajar { color: rgba(30, 32, 34, 0.5); }
+/* 0.5 daba 3.18:1 al boton de abajo, por debajo del 4.5:1 que pide WCAG AA
+   para texto normal. A 0.66 se mide en 5.1:1 y todavia se ve apagado, que es
+   lo que tiene que ser un boton secundario. El subtitulo estaba en 4.89:1. */
+html.claro .bajo, html.claro .col-menu h3 { color: rgba(30, 32, 34, 0.56); }
+html.claro .bajar { color: rgba(30, 32, 34, 0.66); }
 html.claro .marca-menu p, html.claro .col-menu a, html.claro .pieza .cuerpo i,
 html.claro .intro, html.claro .abierta p, html.claro .banderas span,
 html.claro .datos-menu span, html.claro .chip-mini, html.claro .etiquetas span,
@@ -494,7 +497,8 @@ html.claro .brillo {
 /* Las banderas del instalador, en monoespaciada, que es como se escriben. */
 .banderas { display: flex; flex-direction: column; gap: 0.32rem; margin-top: 0.35rem;
             padding-left: 1.4rem; }
-.banderas > div { display: flex; gap: 0.7rem; align-items: baseline; flex-wrap: wrap; }
+.banderas > div { display: grid; grid-template-columns: minmax(9.5rem, auto) 1fr;
+                    gap: 0.7rem; align-items: baseline; }
 .banderas code { font: 0.72rem/1.5 var(--f); color: var(--azul-4);
                  border: 1px solid var(--linea); border-radius: 6px;
                  padding: 0.05rem 0.4rem; white-space: nowrap; }
@@ -541,3 +545,104 @@ html.claro .brillo {
              color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
              line-height: 1.6; }
 
+/* ══ LOS CUATRO BLOQUES DE DATOS VIVOS ════════════════════════════════════
+   La paleta, la salida del doctor, el comando de instalar y las pantallas.
+   Todos leen de data/system.js. Si el dato no esta, sale .sin-datos: una
+   linea de aviso, nunca un numero inventado.                            */
+
+/* Cuando no hay dato. */
+.abierta .sin-datos { font-size: 0.74rem; color: var(--gris); opacity: 0.75;
+                      font-style: italic; padding-left: 1.4rem; margin: 0.3rem 0 0; }
+.abierta .nota-dato { font-size: 0.68rem; color: var(--gris); opacity: 0.7;
+                      padding-left: 1.4rem; margin: 0.5rem 0 0; }
+.abierta .nota-dato code { font: 0.68rem/1 var(--f); color: var(--azul-4); }
+
+/* ── La paleta de pywal ──────────────────────────────────────────────────
+   Ocho muestras en fila. El color va en el fondo del propio square, no en
+   una variable del sitio: si aqui se usara --hielo, al cambiar el wallpaper
+   habria que recompilar el CSS, que es justo lo que esta mostrando. */
+.muestras { display: flex; flex-wrap: wrap; gap: 0.4rem 0.55rem; margin-top: 0.5rem;
+            padding-left: 1.4rem; }
+.muestra  { display: flex; align-items: center; gap: 0.36rem; }
+.muestra .chip { width: 1.15rem; height: 1.15rem; border-radius: 4px; flex: none;
+                 box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+                             0 1px 3px rgba(0, 0, 0, 0.35); }
+.muestra .hex  { display: flex; flex-direction: column; line-height: 1.25; }
+.muestra .hex  { font: 0.66rem/1.25 var(--f); color: var(--hielo); }
+html.claro .muestra .chip { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10),
+                            0 1px 3px rgba(0, 0, 0, 0.12); }
+.muestra .hex i { font-style: normal; font-size: 0.55rem; letter-spacing: 0.1em;
+                  text-transform: uppercase; color: var(--gris); opacity: 0.7; }
+
+/* ── La salida del doctor ───────────────────────────────────────────────
+   Un bloque de terminal de verdad: fondo casi solido, monoespaciada, y cada
+   linea con su color segun lo que dijo el doctor. Se leen los codigos de
+   color que trae la salida, no una traduccion nuestra. */
+.terminal { margin-top: 0.5rem; padding-left: 1.4rem; }
+.terminal pre { margin: 0; padding: 0.7rem 0.8rem; max-height: 21rem; overflow: auto;
+                border: 1px solid var(--linea); border-radius: var(--r);
+                background: var(--cristal-opaco);
+                font: 0.66rem/1.62 var(--f); color: var(--gris);
+                scrollbar-width: thin; }
+.terminal .l { display: block; white-space: pre-wrap; overflow-wrap: anywhere;
+                padding-left: 1.6em; text-indent: -1.6em; }
+.terminal .l.ok     { color: #7fb08a; }
+.terminal .l.mal    { color: #d4795c; }
+.terminal .l.aviso  { color: #c8a45c; }
+.terminal .l.titulo { color: var(--hielo); margin-top: 0.35rem; }
+.terminal .l.mal::before { content: "▸ "; color: var(--oxido); }
+/* Solo si hay mas linea abajo. Sin esto la ultima sale cortada por la mitad y
+   parece que la pagina ha fallado, cuando lo que pasa es que hay mas. */
+.terminal.desplaza::after { content: ""; position: absolute; inset: auto 0 0 0;
+                            height: 2.2rem; pointer-events: none; border-radius: 0 0 var(--r) var(--r);
+                            background: linear-gradient(to top, var(--cristal-opaco), transparent); }
+.terminal { position: relative; }
+.terminal-pie { margin: 0.4rem 0 0 !important; font: 0.62rem/1.4 var(--f) !important;
+                letter-spacing: 0.06em; }
+html.claro .terminal .l.ok    { color: #2f7a45; }
+html.claro .terminal .l.mal   { color: #a34425; }
+html.claro .terminal .l.aviso { color: #8a6a1f; }
+
+/* ── El comando de instalar ─────────────────────────────────────────────
+   El comando entero en una sola linea, con scroll si no cabe, y un boton
+   que lo copia. El boton es pequeno a proposito: no es un boton de la pagina,
+   es una etiqueta que se pone verde un momento. */
+.comando { display: flex; align-items: stretch; gap: 0.4rem; margin-top: 0.5rem;
+           padding-left: 1.4rem; }
+.comando code { flex: 1; min-width: 0; white-space: pre-wrap;
+                 overflow-wrap: anywhere; padding: 0.5rem 0.6rem 0.5rem 2.1rem;
+                 border: 1px solid var(--linea); border-radius: var(--r);
+                 background: var(--cristal-opaco);
+                 font: 0.66rem/1.5 var(--f); color: var(--azul-4);
+                 text-indent: -1.5rem; }
+.comando code::before { content: "$"; margin-right: 0.75rem; color: var(--gris);
+                        text-indent: 0; opacity: 0.7; }
+.copiar { flex: none; align-self: stretch; padding: 0 0.7rem; cursor: pointer;
+          border: 1px solid var(--linea-alta); border-radius: var(--r);
+          background: transparent; color: var(--gris);
+          font: 0.62rem/1 var(--f); letter-spacing: 0.12em; text-transform: uppercase;
+          transition: color 0.18s, border-color 0.18s, background 0.18s; }
+.copiar:hover { color: var(--hielo); border-color: var(--hielo); }
+.copiar.hecho { color: #7fb08a; border-color: #7fb08a;
+                background: rgba(127, 176, 138, 0.10); }
+html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
+                           background: rgba(47, 122, 69, 0.08); }
+
+/* ── Las pantallas ─────────────────────────────────────────────────────
+   Tres columnas por monitor. El nombre va en monoespaciada porque es lo que
+   escribe Hyprland y es lo que hay que escribir en monitor,preferred. */
+.pantallas { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin-top: 0.5rem;
+             padding-left: 1.4rem; }
+.fila-pantalla { display: flex; align-items: baseline; gap: 0.6rem; }
+.fila-pantalla .nom { font: 0.72rem/1.4 var(--f); color: var(--hielo); }
+.fila-pantalla .res { font: 0.7rem/1.4 var(--f); color: var(--azul-4); }
+.fila-pantalla .det { font-size: 0.68rem; color: var(--gris); }
+
+/* En movil el padding izquierdo de 1.4rem, que venia de la sangria del filo,
+   se come el ancho. Se quita. */
+@media (max-width: 560px) {
+  .terminal, .comando, .muestras, .pantallas,
+  .abierta .nota-dato, .abierta .sin-datos { padding-left: 0; }
+  .muestras { gap: 0.5rem 0.7rem; }
+  .terminal pre { font-size: 0.6rem; max-height: 17rem; }
+}

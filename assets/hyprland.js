@@ -1,154 +1,167 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   La seccion de Hyprland.
+   The Hyprland section.
 
-   Todo lo que hay aqui sale del repo de verdad, no inventado:
-     · los scripts son los de ~/.local/bin
-     · las banderas son las que --help imprime en install.sh
-     · las estrellas y el ultimo push los recoge scripts/collect-github.py
+   Everything here comes out of the repo, not made up:
+     · the scripts are the ones in ~/.local/bin
+     · the flags are the ones install.sh --help prints
+     · the stars and the last push come from scripts/collect-github.py
 
-   Es el unico fichero que hay que tocar para anadir o cambiar una pieza.
+   Four of the pieces render live data out of data/system.js: the palette, the
+   doctor, the install command and the displays. `tipo` picks the renderer.
+
+   This is the only file to edit to add or change a piece.
    ───────────────────────────────────────────────────────────────────────────── */
 
 window.RHYTHM_HYPRLAND = {
   repo: "rhythmcreative/hyprland",
-  nombre: "rhythm's hyprland",
-  lema: "Un escritorio Arch que no se rompe.",
-  intro: "Instalador que funciona a la primera, actualizaciones que no tocan tu " +
-         "distro y un doctor que dice que esta roto. Sin esto se puede tener " +
-         "Hyprland; con esto se tiene un escritorio.",
+  lema: "An Arch desktop that doesn't break.",
+  intro: "An installer that works the first time, updates that don't touch your " +
+         "distro, and a doctor that tells you what's broken. You can have " +
+         "Hyprland without any of this. With it, you have a desktop.",
 
-  // Lo que hay en la sesion ahora mismo, del recolector.
+  // What is running right now, from the collector. If it hasn't run, it shows a
+  // dash rather than making a number up.
   enVivo: [
-    { etiqueta: "atajos",    valor: null, de: "binds" },
-    { etiqueta: "pantallas", valor: null, de: "monitors" },
-    { etiqueta: "paquetes",  valor: null, de: "paquetes" }
+    { etiqueta: "keybindings", de: "binds" },
+    { etiqueta: "displays",    de: "monitors" },
+    { etiqueta: "packages",    de: "paquetes" }
   ],
 
-  // Las piezas. `chips` es lo pequeno que va abajo; `filas` son lineas de
-  // detalle que salen al abrirla.
   piezas: [
     {
       id: "instalador",
-      titulo: "El instalador",
-      resumen: "Una linea, y funciona.",
-      chips: ["install.sh", "arch", "una sola pasada"],
+      titulo: "The installer",
+      resumen: "One line, and it works.",
+      chips: ["install.sh", "arch", "single pass"],
       filas: [
-        "Un solo comando: curl del install.sh y ya. No hay que clonar, ni elegir " +
-        "paquetes a mano, ni arreglar nada despues.",
-        "Rechaza seguir si no es Arch, si no hay sudo autenticado o si no hay " +
-        "internet. Antes de tocar nada.",
-        "Con --preview se ve el guion entero sin que se ejecute una sola linea.",
-        "Con --resume sigue una instalacion a medias: lo ya hecho no se repite, y " +
-        "las configs que ya son iguales al repo no se tocan ni se respaldan.",
-        "El log va a un fichero y se dice donde, asi que un fallo no se pierde " +
-        "en la terminal."
+        "A single command: curl the install.sh and you're done. Nothing to clone, " +
+        "no packages to pick by hand, nothing to fix afterwards.",
+        "It refuses to continue if this isn't Arch, if sudo isn't authenticated, " +
+        "or if there's no network. Before touching anything.",
+        "--preview runs the whole script through without executing a single line.",
+        "--resume picks up an interrupted install: finished steps are skipped, " +
+        "and configs that already match the repo are left alone instead of being " +
+        "backed up and overwritten.",
+        "The log goes to a file and it says where, so a failure isn't lost in the " +
+        "terminal."
       ],
+      tipo: "comando",
+      comando: 'bash -c "$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh)"',
       banderas: [
-        ["--update", "sincroniza configs, ayudantes y paquetes"],
-        ["--preview", "ensaya el guion entero sin tocar el sistema"],
-        ["--resume", "continua una instalacion interrumpida"],
-        ["--gpu", "nvidia, amd, intel, auto o none"],
-        ["--replace-configs-all", "sobrescribe sin dejar copias .bak"],
-        ["-y --no-reboot", "sin preguntas y sin reiniciar"]
+        ["--update", "sync configs, helpers and packages"],
+        ["--preview", "run the script through without changing the system"],
+        ["--resume", "continue an interrupted install"],
+        ["--gpu", "nvidia, amd, intel, auto or none"],
+        ["--replace-configs-all", "overwrite without keeping .bak copies"],
+        ["-y --no-reboot", "no questions, no reboot"]
       ]
     },
     {
       id: "doctor",
-      titulo: "El doctor",
-      resumen: "Dice que esta roto, en vez de fallar en silencio.",
-      chips: ["rhythm-doctor", "diagnostico"],
+      titulo: "The doctor",
+      resumen: "It tells you what's broken instead of failing quietly.",
+      chips: ["rhythm-doctor", "diagnostics"],
       filas: [
-        "Un comando que mira el sistema entero y dice que falta o que esta " +
-        "mal. Sin el, un fallo aparece tres semanas despues y no se sabe de " +
-        "donde vino.",
-        "El verificador lo llama el propio instalador al terminar, asi que no " +
-        "hay que acordarse de ejecutarlo."
+        "One command that looks at the whole machine and says what's missing or " +
+        "wrong. Without it, a problem shows up three weeks later and nobody " +
+        "knows where it came from.",
+        "The installer runs it when it finishes, so there's nothing to remember.",
+        "This is its actual output, not a summary of it. When something fails, " +
+        "it fails here too — with the command that fixes it."
       ],
-      banderas: []
+      tipo: "terminal"
     },
     {
-      id: "ota",
-      titulo: "Las actualizaciones",
-      resumen: "Sin tocar tu distro.",
-      chips: ["system-ota", "rhythm-ota-checker", "paquetes propios"],
+      id: "paleta",
+      titulo: "The palette",
+      resumen: "pywal re-tints itself when the wallpaper changes.",
+      chips: ["pywal", "live", "this page"],
       filas: [
-        "El escritorio se actualiza sin tocar la distro. No se anade ningun " +
-        "repositorio de terceros a pacman ni se mezclan los paquetes de Arch " +
-        "con los propios.",
-        "El sistema avisa cuando hay version nueva y dice que trae antes de " +
-        "aplicarla.",
-        "Cada version sale con notas en ingles, cortas, con lo que cambia y " +
-        "lo que se rompe."
+        "Change the wallpaper and pywal rewrites the whole palette. The bar, the " +
+        "dock, rofi, the terminal and the island recolour themselves.",
+        "The swatches below are the ones your system generated a moment ago — " +
+        "they're read from ~/.cache/wal/colors.json. They change when you change " +
+        "the wallpaper.",
+        "This page is themed from its own pywal too, which is why it doesn't look " +
+        "the same twice."
       ],
-      banderas: []
+      tipo: "paleta"
     },
     {
       id: "isla",
-      titulo: "La isla",
-      resumen: "Quickshell. Se pliega y se abre sola.",
-      chips: ["quickshell", "qml", "plugin", "barra"],
+      titulo: "The island",
+      resumen: "Quickshell. Folds away, opens by itself.",
+      chips: ["quickshell", "qml", "plugin", "bar"],
       filas: [
-        "La barra es un plugin. Tambien lo son el reloj, el lanzador, el " +
-        "centro de control y la captura: no hay nada privileged dentro.",
-        "Se pliega a 34 px pegada al borde y se abre cuando tiene algo que " +
-        "ensenar. El raton llegando al filo tambien la saca.",
-        "Encuentra HYPRLAND_INSTANCE_SIGNATURE por su cuenta, para que hyprctl " +
-        "le funcione a todo lo que lanza.",
-        "El color del punto es la temperatura real de la CPU."
-      ],
-      banderas: []
+        "The bar is a plugin. So are the clock, the launcher, the control centre " +
+        "and the capture tool: there's nothing privileged inside.",
+        "It folds to 34 px against the screen edge and opens when it has " +
+        "something to show. Reaching the edge with the mouse brings it out too.",
+        "It finds HYPRLAND_INSTANCE_SIGNATURE on its own, so hyprctl works for " +
+        "everything it spawns.",
+        "The dot's colour is the real CPU temperature."
+      ]
     },
     {
       id: "dock",
-      titulo: "El dock",
-      resumen: "En Rust, compilado desde el fuente.",
-      chips: ["rust-dock", "rust", "instalador lo compila"],
+      titulo: "The dock",
+      resumen: "In Rust, built from source.",
+      chips: ["rust-dock", "rust", "built by the installer"],
       filas: [
-        "Un dock escrito en Rust, compilado durante la instalacion. Con " +
-        "--skip-rust-dock se salta.",
-        "Es el proceso que mas memoria se ahorra frente a lo habitual en un " +
-        "escritorio de Hyprland."
-      ],
-      banderas: []
+        "A dock written in Rust, compiled during the install. " +
+        "--skip-rust-dock skips it.",
+        "It's the process that saves the most memory compared to a typical " +
+        "Hyprland desktop."
+      ]
     },
     {
       id: "greeter",
-      titulo: "La pantalla de acceso",
-      resumen: "SDDM con tema propio, y solo en la pantalla de dentro.",
-      chips: ["sddm", "tema propio", "cursor"],
+      titulo: "The login screen",
+      resumen: "SDDM with its own theme, and only on the built-in panel.",
+      chips: ["sddm", "own theme", "cursor"],
       filas: [
-        "Tema propio para SDDM, con el cursor del sistema y el fondo que " +
-        "tengas.",
-        "El tema se despliega con rhythm-sddm-deploy, que es la unica fuente " +
-        "de verdad de esos ficheros del sistema. pywal los modifica en vivo, " +
-        "y por eso no se versionan.",
-        "Solo aparece en el panel interno: en la pantalla de fuera no se ofrece " +
-        "iniciar sesion."
-      ],
-      banderas: []
+        "A custom theme for SDDM, with the system cursor and the wallpaper you " +
+        "already have.",
+        "The theme is deployed by rhythm-sddm-deploy, which is the single source " +
+        "of truth for those system files. pywal modifies them live, which is why " +
+        "they aren't versioned.",
+        "It only shows up on the internal panel: there's no way to log in from the " +
+        "external one."
+      ]
     },
     {
       id: "temas",
-      titulo: "El tema",
-      resumen: "pywal se retine solo al cambiar el fondo.",
-      chips: ["pywal", "se regenera", "los tres planos"],
+      titulo: "The theme",
+      resumen: "pywal re-tints itself when the wallpaper changes.",
+      chips: ["pywal", "regenerates", "all three surfaces"],
       filas: [
-        "Cambias el fondo de pantalla y pywal vuelve a escribir la paleta " +
-        "entera. Barra, dock, rofi, terminal y la isla se recolorean solos.",
-        "El fondo se repara solo: si un monitor se queda sin pintar, se vuelve " +
-        "a pintar en unos segundos.",
-        "La transicion al cambiar de fondo solo se hace en la pantalla de " +
-        "dentro."
+        "Change the wallpaper and pywal rewrites the palette again. Bar, dock, " +
+        "rofi, terminal and island all follow.",
+        "The wallpaper repairs itself: if a monitor stops being painted, it gets " +
+        "repainted within seconds.",
+        "The transition when you change wallpaper only runs on the built-in panel."
+      ]
+    },
+    {
+      id: "pantallas",
+      titulo: "The displays",
+      resumen: "Two panels, and the greeter only on one of them.",
+      chips: ["hyprland", "per-monitor", "live"],
+      filas: [
+        "Read straight from Hyprland: name, resolution and scale, with the " +
+        "primary one marked.",
+        "This is why the login screen only appears on the internal panel — the " +
+        "external one is never a login target."
       ],
-      banderas: []
+      tipo: "pantallas"
     }
   ],
 
-  // Con que esta hecho. Solo nombres; el detalle esta en el repo.
+  // What it's built with. Names only; the detail is in the repo.
   base: ["Hyprland", "Quickshell", "Rust", "Waybar", "Hyprlock", "Rofi",
          "Pywal", "SDDM", "bash", "QML"],
 
-  // El resto del ecosistema, para el pie. Solo enlaces.
+  // The rest of the ecosystem, for the links. Only where it lives.
   alrededor: [
     { nombre: "rust-dock", repo: "rhythmcreative/rust-dock" },
     { nombre: "k4", repo: "k4ditano/k4" }

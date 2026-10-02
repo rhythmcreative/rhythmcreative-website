@@ -25,14 +25,14 @@
   }
 
   function hace(fecha) {
-    if (!fecha) return "sin datos";
+    if (!fecha) return "no data";
     var t = new Date(String(fecha).replace(" ", "T"));
     if (isNaN(t)) return esc(fecha);
     var min = Math.floor((Date.now() - t.getTime()) / 60000);
-    if (min < 1) return "ahora mismo";
-    if (min < 60) return "hace " + min + " min";
+    if (min < 1) return "just now";
+    if (min < 60) return min + " min ago";
     var h = Math.floor(min / 60);
-    return h < 24 ? "hace " + h + " h" : "hace " + Math.floor(h / 24) + " d";
+    return h < 24 ? h + " h ago" : Math.floor(h / 24) + " d ago";
   }
 
   // ── La temperatura. Ya no hay punto en la barra: el termometro vive en el
@@ -90,7 +90,7 @@
     izq.push('<span class="meta">' +
       (d ? "★ " + esc(d.stars) + (d.lenguaje ? "  ·  " + esc(d.lenguaje) : "") +
            (d.push ? "  ·  " + esc(hace(d.push)) : "")
-           : "sin datos de github") + "</span>");
+           : "no github data") + "</span>");
     izq.push("</div>");
     izq.push('<p class="lema">' + esc(H.lema) + "</p>");
     izq.push('<p class="intro">' + esc(H.intro) + "</p>");
@@ -150,24 +150,152 @@
 
     if (abierto !== p.id) return h;
 
-    var dentro = '<div class="abierta">';
-    (p.filas || []).forEach(function (f) {
-      dentro += "<p>" + esc(f) + "</p>";
-    });
-    if ((p.banderas || []).length) {
-      dentro += '<div class="banderas">' + p.banderas.map(function (b) {
-        return "<div><code>" + esc(b[0]) + "</code><span>" + esc(b[1]) + "</span></div>";
-      }).join("") + "</div>";
-    }
-    if ((p.chips || []).length > 2) {
-      dentro += '<div class="etiquetas">' + p.chips.map(function (c) {
-        return "<span>" + esc(c) + "</span>";
-      }).join("") + "</div>";
-    }
-    dentro += "</div>";
-    return h + dentro;
+      var dentro = '<div class="abierta">';
+      (p.filas || []).forEach(function (f) {
+        dentro += "<p>" + esc(f) + "</p>";
+      });
+      if (p.tipo) dentro += vivo(p);
+      if ((p.banderas || []).length) {
+        dentro += '<div class="banderas">' + p.banderas.map(function (b) {
+          return "<div><code>" + esc(b[0]) + "</code><span>" + esc(b[1]) + "</span></div>";
+        }).join("") + "</div>";
+      }
+      if ((p.chips || []).length > 2) {
+        dentro += '<div class="etiquetas">' + p.chips.map(function (c) {
+          return "<span>" + esc(c) + "</span>";
+        }).join("") + "</div>";
+      }
+      dentro += "</div>";
+      return h + dentro;
   }
 
+// ── Los cuatro bloques de datos vivos ───────────────────────────────────
+    //
+    // Todos leen de data/system.js, que escribe el recolector en la maquina
+    // del sitio. `tipo` en assets/hyprland.js elige cual se pinta.
+    //
+    // Si el dato no esta, sale una linea de aviso. Nunca un numero inventado:
+    // una pagina que se inventa un dato es peor que una que no lo tiene.
+    function vivo(p) {
+      if (p.tipo === "paleta") return paleta();
+      if (p.tipo === "terminal") return terminal();
+      if (p.tipo === "comando") return comando(p);
+      if (p.tipo === "pantallas") return pantallas();
+      return "";
+    }
+
+    // La paleta que pywal ha generado ahora mismo. Es la del sistema de quien
+    // publica, no una fija: si cambia el wallpaper, esto cambia con el.
+    function paleta() {
+      var w = (S && S.pywal) || null;
+      if (!w || !w.c0) return '<p class="sin-datos">No pywal palette collected.</p>';
+      var claves = [["c0", "background"], ["c1", "one"], ["c2", "two"],
+                    ["c3", "three"], ["c4", "four"], ["c5", "five"],
+                    ["fg", "foreground"]];
+      var muestras = claves.filter(function (k) { return w[k[0]]; }).map(function (k) {
+        return '<div class="muestra"><span class="chip" style="background:' +
+               esc(w[k[0]]) + '"></span><span class="hex">' + esc(w[k[0]]) +
+               '<i>' + esc(k[1]) + "</i></span></div>";
+      }).join("");
+      return '<div class="muestras">' + muestras + "</div>" +
+        '<p class="nota-dato">Read from <code>~/.cache/wal/colors.json</code>' +
+        (S && S.generado ? " " + esc(hace(S.generado)) : "") +
+        ". Change the wallpaper and these change with it.</p>";
+    }
+
+    // La salida REAL de rhythm-doctor, sin el color. Including whatever failed:
+    // un doctor que solo dice ok no demuestra nada.
+    function terminal() {
+      var d = (S && S.doctor) || null;
+      if (!d || !d.lineas) return '<p class="sin-datos">rhythm-doctor has not been run.</p>';
+      var cuerpo = d.lineas.map(function (l) {
+        var clase = "";
+        if (/^\s*FAIL/.test(l)) clase = " mal";
+        else if (/^\s*warn/.test(l)) clase = " aviso";
+        else if (/^\s*ok/.test(l)) clase = " ok";
+        else if (/^[A-Za-z]/.test(l)) clase = " titulo";
+        return '<span class="l' + clase + '">' + esc(l) + "</span>";
+      }).join("");
+      var pie = d.fallos
+        ? '<span class="l mal">' + d.fallos + " item" + (d.fallos > 1 ? "s" : "") +
+          " failing right now</span>"
+        : '<span class="l ok">nothing failing</span>';
+      var html = '<div class="terminal" tabindex="0" role="group" ' +
+                 'aria-label="rhythm-doctor output"><pre>' + cuerpo + "</pre>" +
+                 '<p class="terminal-pie">' + pie + (d.truncado ? " (truncated)" : "") +
+                 "</p></div>";
+      // El bloque tiene altura maxima, asi que con 20 lineas de salida siempre
+      // hay algo abajo. Se marca con una clase para poder poner un degradado
+      // que avise de que se puede bajar, en vez de cortar la linea del tiempo
+      // y que parezca un fallo de la pagina.
+      requestAnimationFrame(function () {
+        var pre = document.querySelector(".terminal pre");
+        if (!pre) return;
+        var caja = pre.parentNode;
+        if (pre.scrollHeight > pre.clientHeight + 2) caja.classList.add("desplaza");
+      });
+      return html;
+    }
+
+    // El comando de instalacion, para copiarlo de un clic.
+    function comando(p) {
+      if (!p.comando) return "";
+      return '<div class="comando"><code>' + esc(p.comando) + "</code>" +
+        '<button class="copiar" type="button" data-copiar="' + esc(p.comando) +
+        '">copy</button></div>';
+    }
+
+    // Las pantallas, leidas de Hyprland.
+    function pantallas() {
+      var ms = (S && S.monitors) || [];
+      if (!ms.length) return '<p class="sin-datos">No displays collected.</p>';
+      var filas = ms.map(function (m) {
+        var extra = "";
+        if (m.primary) extra += "  ·  primary";
+        if (/^(eDP|LVDS|DSI)/.test(m.name || "")) extra += "  ·  built in";
+        return '<div class="fila-pantalla"><span class="nom">' + esc(m.name) + "</span>" +
+          '<span class="res">' + esc(String(m.width)) + "×" + esc(String(m.height)) +
+          "</span>" + '<span class="det">scale ' + esc(String(m.scale)) + extra +
+          "</span></div>";
+      }).join("");
+      return '<div class="pantallas">' + filas + "</div>";
+    }
+
+    // El boton de copiar. Va por delegacion, asi que sirve para todos los
+    // comandos que se anadan despues sin tocar nada mas.
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest && ev.target.closest(".copiar");
+      if (!b) return;
+      var txt = b.getAttribute("data-copiar") || "";
+      var listo = function () {
+        var antes = b.textContent;
+        b.textContent = "copied";
+        b.classList.add("hecho");
+        setTimeout(function () {
+          b.textContent = antes;
+          b.classList.remove("hecho");
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(listo, function () { copiavieja(txt, listo); });
+      } else {
+        copiavieja(txt, listo);
+      }
+    });
+
+    // file:// no siempre tiene clipboard.writeText, y ahi es justo donde se mira
+    // la pagina. El truco viejo de textarea sigue funcionando.
+    function copiavieja(txt, listo) {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); listo(); } catch (e) { /* nada */ }
+      document.body.removeChild(ta);
+    }
   // ── El interruptor de color y blanco y negro ────────────────────────────
   //
   // Se guarda en localStorage, que funciona tambien desde file://, y si no hay
@@ -184,7 +312,7 @@
     var b = $("#interruptor");
     if (b) {
       b.setAttribute("aria-pressed", String(activo));
-      b.title = activo ? "Pasar al tema negro" : "Pasar al tema blanco";
+      b.title = activo ? "Switch to the dark theme" : "Switch to the light theme";
     }
     // El halo del angel cae en otro punto en cada tema, asi que hay que recolocarlo.
     if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
@@ -208,8 +336,8 @@
   // cargada. Sin esto, el pie decia "sin datos" aunque los hubiera.
   function sellos() {
     var a1 = $("#sello-datos"), a2 = $("#sello-repos");
-    if (a1) a1.textContent = S ? "la maquina, " + hace(S.generado) : "sin datos de la maquina";
-    if (a2) a2.textContent = G ? "los repos, " + hace(G.recogido) : "sin datos de github";
+    if (a1) a1.textContent = S ? "this machine, " + hace(S.generado) : "no data from this machine";
+    if (a2) a2.textContent = G ? "the repos, " + hace(G.recogido) : "no github data";
   }
 
   // ── Arranque ───────────────────────────────────────────────────────────────

@@ -255,6 +255,30 @@ PY
 fi
 
 
+# ── doctor ─────────────────────────────────────────────────────────────────────────────
+#
+# La salida REAL de rhythm-doctor, para que la pagina enseñe el diagnostico en vez de
+# contarlo. Including lo que sale mal, que es justo lo que hace que valga: si todo
+# estuviese bien no probaria nada.
+#
+# Tarda medio segundo. Se le quita el color, que en un fichero de datos no vale nada,
+# y se corta a 40 lineas por si un dia hay mucho que contar.
+#
+# Si rhythm-doctor no esta, no es un fallo del recolector: la pagina lo dira y ya.
+DOCTOR_JSON="null"
+if command -v rhythm-doctor >/dev/null 2>&1; then
+    DOCTOR_JSON=$(timeout 30 rhythm-doctor --check 2>&1 | python3 -c '
+import json, re, sys
+raw = sys.stdin.read()
+raw = re.sub(r"\x1b\[[0-9;]*m", "", raw)          # quitar el color
+lineas = [l.rstrip() for l in raw.split("\n") if l.strip()]
+if not lineas:
+    print("null"); raise SystemExit
+print(json.dumps({"lineas": lineas[:40], "truncado": len(lineas) > 40,
+                  "fallos": sum(1 for l in lineas if l.strip().startswith("FAIL"))},
+                 ensure_ascii=False))' 2>/dev/null || echo "null")
+fi
+
 # ── escritura ──────────────────────────────────────────────────────────────────────
 {
     printf '// Generado por scripts/collect-system-stats.sh. No editar a mano.\n'
@@ -274,7 +298,8 @@ fi
     printf '  binds: %s,\n' "$BIND_JSON"
     printf '  temps: %s,\n' "$TEMP_JSON"
     printf '  servicios: %s,\n' "$SERV_JSON"
-    printf '  pywal: %s\n' "$PYWAL_JSON"
+    printf '  pywal: %s,\n' "$PYWAL_JSON"
+    printf '  doctor: %s\n' "$DOCTOR_JSON"
     printf '};\n'
 } > "$DESTINO"
 
