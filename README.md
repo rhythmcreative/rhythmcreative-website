@@ -276,13 +276,44 @@ con el color de la niebla de los bordes de la foto medido aqui.
 
 ### El encuadre
 
-La caja de las capas la calcula capa.js. Con `background-size: cover` en un
-monitor 16:10 las dos puntas de las alas se salian por los lados. La escala sale
-de las dos cosas a la vez: que entre la foto entera, pero que la figura llene al
-menos el 90% del alto. En horizontal manda la foto entera y se ve el angel
-completo; en vertical manda el 90% y se recorta por lo alto, que es lo unico
-que se puede recortar sin perder la figura. El parallax se acota al margen que
-sobra alrededor, para que ninguna capa enseñe un borde al moverse.
+La caja de las capas la calcula capa.js, y la regla cabe en dos lineas:
+
+    pantalla estrecha (menos de 900 px)   escala al ALTO de la pantalla
+    pantalla ancha                         escala al ANCHO de la pantalla
+
+En horizontal la foto se escala SIEMPRE al ancho de la pantalla, aunque con eso
+haya que recortar por arriba y por abajo. En vertical se recorta por los lados,
+que es donde la figura llena la pantalla y las alas quedan en los bordes, que es
+como se vio bien en el movil.
+
+El invariante es simple: **en pantalla ancha el margen lateral nunca puede ser
+positivo**, porque la escala es como minimo `ancho / 2000`, con lo que el ancho
+de la foto nunca baja del de la pantalla. La franja sin fondo no puede aparecer.
+
+Tres formas que se probaron y fallaron:
+
+1. `background-size: cover`. En un monitor 16:10 las puntas de las alas se
+   salian por los lados.
+2. "Que la figura llene el 90-92% del alto", sin mirar el ancho. En una ventana
+   alta —1440x2100— escalaba la imagen hasta 2,2 veces de ancho y la cortaba de
+   golpe por los dos lados, con las alas partidas.
+3. "Que entre la foto entera", sin mirar el ancho tampoco, que es la que ha
+   estado hasta ahora. En un monitor mas ancho que 16:9 sobraban franjas a los
+   lados, y esas franjas eran el respaldo difuminado: un corte vertical durisimo
+   entre la foto nitida y la niebla. Es lo de la captura.
+
+Cuando sobra alto se recorta casi todo por abajo —la hierba y el nombre—, y por
+arriba un 3.5% de la foto como mucho, que es lo justo para no comerse el halo ni
+las puntas de las alas, que estan al 9% y al 6% de la altura. Repartido en
+proporcion al exceso, en un monitor 21:9 el recorte de arriba era del 18% y el
+halo desaparecia.
+
+El parallax se acota al margen que sobra alrededor, para que ninguna capa enseñe
+un borde al moverse, y el difuminado de los bordes va con la medida de la franja
+que tapa, hasta 180 px.
+
+Comprobado en 3440x1440, 3840x2160, 2560x1440, 1920x1080, 1440x900, 1280x1024,
+1024x768, 768x1024, 430x880 y 360x640: sin franja ni corte vertical en ninguna.
 
 ## Estructura
 
