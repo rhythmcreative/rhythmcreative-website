@@ -2,6 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+
+<!-- Que se permite y que no, y por que.
+     --
+     Esta pagina no carga NADA de fuera: ni un pixel, ni una fuente, ni un
+     analytics, ni un script de un tercero. Todo lo que necesita esta aqui. Por
+     eso se puede cerrar del todo, que es lo que hace esta linea.
+
+     Lo que mas hace es lo ultimo: connect-src 'none'. Aunque alguien dejara un
+     error manana y lograra meter codigo en la pagina, no podria llamar a
+     ningun sitio: ni a mandarse tus datos, ni a una pagina de anuncios. No
+     puede hablar con nadie porque la pagina no habla.
+
+     El script de arriba es el unico script en linea, y va con su huella, que es
+     una suma del texto exacto. Si alguien anade otro script en linea, el
+     navegador no lo ejecuta: no coincide. Los scripts de siempre, los de
+     assets/, siguen entrando con 'self'.
+
+     style-src lleva 'unsafe-inline' porque un par de colores de pywal se ponen
+     con style="..." en linea. Es lo unico que se abre, y con lo que se abre no
+     se puede ejecutar codigo: un color solo pinta. Si algun dia se ponen con
+     JavaScript, esa palabra se puede quitar.
+
+     frame-ancestors no esta porque en un <meta> el navegador lo ignora: solo
+     cuenta en una cabecera HTTP, que en GitHub Pages no se puede poner. Lo de
+     que nadie meta esta pagina en un iframe tiene que ir en la cabecera. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rhythmcrea</title>
 <meta name="description" content="RHYTHMCREA. A Hyprland desktop and everything that came out around it.">

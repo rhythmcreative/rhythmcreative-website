@@ -91,8 +91,27 @@ class ConRangos(SimpleHTTPRequestHandler):
         # asterisco. La respuesta a cualquiera de las dos es la misma.
         return "*" in adelante or etiqueta in [x.strip() for x in adelante.split(",")]
 
+    def _es_de_git(self, ruta):
+        """True si la ruta cae dentro de un .git.
+
+        Sin esto, http://127.0.0.1:8788/.git/config responde 200 y entrega el
+        repositorio entero: el historial, las ramas, y lo que se hubiera
+        configurado ahi. En local no pasa nada, pero este servidor tiene un
+        --bind que lo pone a escuchar en la red sin contrasena, que es justo como
+        se prueba desde el movil. Y nada de lo que la pagina necesita esta en
+        .git, asi que no se pierde nada.
+        """
+        # Se compara por partes, no con "in": "/x/.gitignore" no es "/x/.git/" y
+        # ese fichero si se quiere servir.
+        partes = ruta.replace(os.sep, "/").split("/")
+        return ".git" in partes
+
     def send_head(self):
         """Devuelve la respuesta a un GET o a un HEAD. El padre decide el 200."""
+        if self._es_de_git(self.translate_path(self.path)):
+            self.send_error(404, "File not found")
+            return None
+
         rango = self.headers.get("Range")
 
         # El 304 se comprueba solo sin rango: una peticion por rango siempre quiere

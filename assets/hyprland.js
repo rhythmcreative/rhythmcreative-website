@@ -141,7 +141,7 @@ window.RHYTHM_HYPRLAND = {
       ],
       tipo: "terminal",
       salida:
-        "rhythm-doctor: check (repo: /home/rhythmcreative/hyprland)\n\n"
+        "rhythm-doctor: check (repo: ~/hyprland)\n\n"
           +           "  ok    /etc/sddm/Xsetup is up to date\n"
           +           "  ok    xsetup.conf.disabled is present (X11 stays off, correct)\n"
           +           "  ok    all deployed units point at real executables\n"

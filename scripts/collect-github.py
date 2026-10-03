@@ -84,10 +84,28 @@ def main():
     ]
     repos = list(REPOS)
 
+    # Los fallos tampoco van con su nombre. Un 403 sin token puede ser cuota
+    # agotada o puede ser un repo privado, y desde aqui no se distingue: si se
+    # escribe el nombre, se puede estar publicando el nombre de algo que nadie
+    # mas ve. El detalle va por pantalla, que es del usuario.
     fallos = []
+    detalle_fallos = []
     # Repos que se dejan fuera a proposito, en vez de fallos. Van aparte porque no
     # son lo mismo: un fallo es que la API no respondio, y esto es una decision.
-    omitidos = []
+    # Los repos que no se pueden leer NO se escriben con su nombre, ni privado ni
+    # inexistente. El fichero que sale de aqui se publica entero, y el nombre de un
+    # repo que no es publico ya es informacion: dice que existe algo called
+    # "lineage-build-scripts" que nadie mas puede ver.
+    #
+    # Antes se guardaba el nombre en dos sitios —el que venia con private=true y el
+    # 404 de un repo privado sin token— y los dos se acababan publicando. Ahora solo
+    # se cuenta cuantos fueron y por que. Para el que esta delante del ordenador el
+    # nombre se sigue viendo, que se imprime al terminar y no va al fichero.
+    #
+    # El filtro de abajo, el que no escribe su contenido, es lo importante y ya
+    # estaba: esto es la otra mitad del mismo problema.
+    no_leidos = {"privado": 0, "no_visible": 0, "otro": 0}
+    nombres_no_leidos = []
     datos = {}
     # Cuantas releases se buscan. Con token da igual (5000 por hora), pero sin
     # token la cuota son 60 y buscar una release en cada repo son 20 peticiones
@@ -106,7 +124,8 @@ def main():
         try:
             d = pedir("https://api.github.com/repos/" + nombre)
             if d.get("private"):
-                omitidos.append("%s (privado)" % nombre)
+                no_leidos["privado"] += 1
+                nombres_no_leidos.append(nombre)
                 continue
             datos[nombre] = {
                 "stars": d.get("stargazers_count"),
@@ -121,11 +140,18 @@ def main():
             # marcaba cuota_ok en falso y la pagina avisaba de un problema donde
             # lo unico que habia pasado es que ese repo no se puede ver.
             if e.code != 404:
-                fallos.append("%s (%d)" % (nombre, e.code))
+                fallos.append(e.code)
+                detalle_fallos.append("%s (%d)" % (nombre, e.code))
             else:
-                omitidos.append("%s (no existe o no es publico)" % nombre)
+                # Sin token, un repo privado sale como 404 y no como 403, asi que
+                # esta rama Tambien es la de los privados. Por eso el nombre no se
+                # escribe: aqui no se sabe de que se trata, y no se puede
+                # distinguir de un repo que no existe.
+                no_leidos["no_visible"] += 1
+                nombres_no_leidos.append(nombre)
         except Exception as e:
-            fallos.append("%s (%s)" % (nombre, e))
+            fallos.append("error")
+            detalle_fallos.append("%s (%s)" % (nombre, e))
 
     # La ultima release de cada repo: la version que tiene ahora mismo.
     #
@@ -196,7 +222,11 @@ def main():
         "recogido": ahora,
         "cuota_ok": len(fallos) == 0,
         "fallos": fallos,
-        "omitidos": omitidos,
+        # Cuantos repos no se han podido leer, sin decir como se llaman. El
+        # numero avisa de que la lista de la pagina esta desfasada; los nombres no
+        # van, porque un repo privado se identifica por su nombre igual que por su
+        # contenido.
+        "no_leidos": no_leidos,
         "repos": datos,
         "commits": commits[:40],
         "total": sum(v["stars"] or 0 for v in datos.values()),
@@ -217,8 +247,13 @@ def main():
         len(datos), len(commits[:40]), len(recientes),
         sum(v["stars"] or 0 for v in datos.values()),
         (", %d fallos" % len(fallos)) if fallos else ""))
-    for f in fallos[:4]:
+    for f in detalle_fallos[:4]:
         print("   fallo:", f)
+    # Los nombres de los repos que no se han podido leer se dicen aqui y no en el
+    # fichero. Esta consola es del usuario; el fichero es de todo el mundo.
+    if nombres_no_leidos:
+        print("   %d repo(s) sin leer, NO van al fichero: %s" % (
+            len(nombres_no_leidos), ", ".join(nombres_no_leidos)))
     return 0 if not fallos else 0
 
 

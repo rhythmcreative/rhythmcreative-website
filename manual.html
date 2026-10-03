@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+
+<!-- La misma politica que en la portada, y por el mismo motivo. La huella del
+     script es la misma porque el script del tema es el mismo fichero con el
+     mismo texto: si algun dia divergieran, hay que volver a mirar este numero.
+     El detalle de cada palabra esta escrito alli. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The manual — Rhythmcrea</title>
 <meta name="description" content="Everything in the Hyprland setup: the installer and its flags, all 78 keybindings, every component, and what to do when something breaks.">
