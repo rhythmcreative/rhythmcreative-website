@@ -200,10 +200,11 @@
 
 // ── Los bloques de datos vivos ─────────────────────────────────────────
     //
-    // Todos leen de data/system.js, que escribe el recolector en la maquina
-    // del sitio. Ya no se pintan en la pagina: la seccion se quedo en la
-    // cabecera, el clip y los dos botones. Se dejan aqui porque son lo que
-    // haria falta si algun dia vuelven.
+    // Antes leian de data/system.js, que escribia un recolector en la maquina del
+    // sitio. Eso ya no existe: ni el fichero ni el script que lo hacia, porque una
+    // web estatica no tiene por que saber nada de la maquina de quien la publica.
+    // Se dejan aqui porque son lo que haria falta si algun dia vuelven, y solo
+    // tendrian que recibir los datos por otro lado.
     //
     // Si el dato no esta, sale una linea de aviso. Nunca un numero inventado:
     // una pagina que se inventa un dato es peor que una que no lo tiene.
@@ -827,9 +828,9 @@
   // ni la carga, ni el disco, ni los servicios.
   //
   // Si algun dia vuelven a hacer falta, la lista de lo que se puede enseñar estaba
-  // aqui (FICHA: kernel, uptime, load, disk, services) y el script que lo recoge
-  // del sistema es scripts/collect-system-stats.sh, que sigue corriendo cada
-  // cinco minutos y escribiendo data/system.js.
+  // aqui (FICHA: kernel, uptime, load, disk, services). El script que lo recogia
+  // del sistema se fue con el resto: leerlo de la maquina del autor obligaba a que
+  // esa maquina existiera para siempre, y una pagina web no es eso.
 
 // ── La pagina del manual ───────────────────────────────────────────────────
 //
@@ -1215,10 +1216,10 @@
         }).join("") + "</ul>";
       }
       if (p.tipo === "comando") out += comando(p);
-      // La salida real del doctor. Se commitea con la pieza en vez de leerse de
-      // la maquina: data/system.js no se publica, asi que leerla de ahi dejaria
-      // el bloque vacio en la web y el texto de arriba diria "esta es su salida
-      // de verdad" sin ninguna salida debajo.
+      // La salida real del doctor. Va commiteada con la pieza en vez de leerse
+      // de la maquina del autor: si se leyera de ahi, en la web el bloque saldria
+      // vacio y el texto de arriba diria "esta es su salida de verdad" sin
+      // ninguna salida debajo.
       if (p.tipo === "terminal" && p.salida) out += salidaTerminal(p.salida);
     });
     // Y por ultimo lo de la seccion: las banderas del instalador, que salen
