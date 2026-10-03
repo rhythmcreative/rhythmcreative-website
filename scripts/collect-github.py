@@ -4,7 +4,7 @@
 POR QUE ESTO NO LO HACE LA PAGINA
 ----------------------------------
 La API de GitHub sin token da 60 peticiones por hora por IP, y la pagina
-hacia una por repos: 19. Con tres visitas al dia la cuota se acababa, y cuando
+hacia una por repos: 17. Con tres visitas al dia la cuota se acababa, y cuando
 se acaba el API responde con un objeto de error en vez de una lista. La pagina
 entonces decia "sin commits publicos", que es mentira: lo que pasa es que le
 han cortado.
@@ -72,9 +72,11 @@ def main():
         "rhythmcreative/lineage-launcher",
         "rhythmcreative/motion-assist",
         "rhythmcreative/AppStore",
-        "rhythmcreative/lineage-scripts",
-        "rhythmcreative/lineage-build-scripts",
-        "rhythmcreative/android",
+        # Los repos privados NO se listan aqui, ni aunque se generen al
+        # principio. Su nombre en un fichero commiteado ya dice que existen, y eso
+        # es lo que se acaba publicando. El filtro de "private" de mas abajo es
+        # la segunda linea de defensa; esta es la primera.
+          "rhythmcreative/android",
         "rhythmcreative/Info",
         "rhythmcreative/Kiosk-chromium",
         "rhythmcreative/Kiosk-waydroid",
@@ -94,8 +96,8 @@ def main():
     # son lo mismo: un fallo es que la API no respondio, y esto es una decision.
     # Los repos que no se pueden leer NO se escriben con su nombre, ni privado ni
     # inexistente. El fichero que sale de aqui se publica entero, y el nombre de un
-    # repo que no es publico ya es informacion: dice que existe algo called
-    # "lineage-build-scripts" que nadie mas puede ver.
+    # repo que no es publico ya es informacion por si mismo: dice que hay algo ahi
+    # que nadie mas puede ver.
     #
     # Antes se guardaba el nombre en dos sitios —el que venia con private=true y el
     # 404 de un repo privado sin token— y los dos se acababan publicando. Ahora solo
