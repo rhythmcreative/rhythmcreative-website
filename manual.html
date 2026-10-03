@@ -55,6 +55,16 @@
       <nav>
         <a href="index.html">home</a>
         <a href="#hyprland/empezar">install</a>
+        <!-- El boton de contenido SOLO sale en movil, y es la pieza que hacia
+             falta: en una pantalla estrecha el indice es una tira de dos mil
+             pixeles dentro de trescientos, y sin esto no hay manera de saber
+             donde estas ni de saltar a donde sea. El boton abre el indice
+             entero como un panel. En escritorio no aparece, porque ahi el
+             indice ya esta a la vista al lado y un boton para abrirlo seria
+             un boton que no hace falta. -->
+        <button id="contenidos" class="contenidos" type="button"
+                aria-expanded="false" aria-controls="indice"
+                title="Show the contents"><span class="largo">contents</span><span class="corto">index</span></button>
       </nav>
       <!-- El boton de tema. El icono va DENTRO, en el HTML, y no lo pone app.js:
            el JS solo lee el estado y engancha el click. Con el boton vacio se

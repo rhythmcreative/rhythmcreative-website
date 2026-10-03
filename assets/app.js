@@ -1193,7 +1193,12 @@
     var secciones = PROYECTOS.map(function (proy) {
       var cuerpo = proy.subs.map(function (sub) {
         var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        var siguiente = entrada ? PLANO[entrada.n] : null;   // PLANO[n] es el n+1
+        // PLANO va de 0 y la entrada n va de 1, asi que el siguiente es
+        // PLANO[entrada.n] y el anterior es PLANO[entrada.n - 2]. Con el -2
+        // al principio: la entrada numero 1 no tiene anterior y sale undefined,
+        // que es justo lo que hace falta para no pintarlo.
+        var siguiente = entrada ? PLANO[entrada.n] : null;
+        var anterior = entrada ? PLANO[entrada.n - 2] : null;
         var chips = (piezaPorId(sub.pieza) || {}).chips || [];
 
         return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
@@ -1207,11 +1212,26 @@
               }).join("") + "</span>"
             : "") +
           "</div>" + cuerpoSeccion(proy, sub) +
-          (siguiente
-            ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
-              "<span>Next</span>" + esc(siguiente.sub.t) + "<i aria-hidden=\"true\"></i></a>"
-            : '<p class="fin-manual">That is the whole manual. ' +
-              'Back to <a href="index.html">the front page</a>.</p>') +
+          // Abajo van los dos: antes solo el siguiente, con lo que en movil no
+          // habia manera de volver atras sin tirar del indice. Y en la ultima
+          // seccion, en vez de eso, un vuelta arriba —que es lo que se quiere
+          // pulsar al terminar, no un enlace a la portada.
+          (anterior || siguiente
+            ? '<div class="siguientes">' +
+              (anterior
+                ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
+                  '<i aria-hidden="true"></i><span>Previous</span>' +
+                  esc(anterior.sub.t) + "</a>"
+                : "") +
+              (siguiente
+                ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
+                  "<span>Next</span>" + esc(siguiente.sub.t) +
+                  '<i aria-hidden="true"></i></a>'
+                : '<a class="siguiente anterior arriba" href="#contenido">' +
+                  '<i aria-hidden="true"></i><span>End of the manual</span>' +
+                  "Back to the top</a>") +
+              "</div>"
+            : "") +
           "</section>";
       }).join("");
 
@@ -1232,6 +1252,7 @@
     // se pinta desde PLANO, no desde las secciones, asi que el orden entre estas
     // dos llamadas solo importa para que marcarIndice() encuentre los enlaces.
     pintarIndice();
+    indicePanel();
     montarBuscador();
     marcarIndice();
 
@@ -1283,12 +1304,14 @@
       if (!el) return;
       if (el.getBoundingClientRect().top <= 140) actual = x.id;
     });
+    var activoEl = null;
     enlaces.forEach(function (a) {
       var activo = a.getAttribute("href") === "#" + actual;
       a.classList.toggle("activo", activo);
-      if (activo) a.setAttribute("aria-current", "true");
+      if (activo) { a.setAttribute("aria-current", "true"); activoEl = a; }
       else a.removeAttribute("aria-current");
     });
+    sigueAlActivo(activoEl);
     // Y el proyecto entero, con un poco mas de margen, para que el encabezado
     // grande se resalte tambien al pasar por el.
     var proyecto = null;
@@ -1300,6 +1323,57 @@
       g.classList.toggle("activo", g.querySelector("h3").textContent ===
         (PROYECTOS.filter(function (p) { return p.id === proyecto; })[0] || {}).titulo);
     });
+  }
+
+  // Lleva el enlace activo de la tira a la vista, sin mover la pagina.
+  //
+  // Se mide a mano en vez de usar scrollIntoView porque scrollIntoView tambien
+  // desplaza la pagina entera, y al marcar la seccion While you scroll eso
+  // haria que la pagina saltase cada vez que el indice se actualiza. Con esto
+  // solo se mueve la tira, y solo si el enlaceactivo esta fuera de su hueco.
+  function sigueAlActivo(el) {
+    if (!el) return;
+    var tira = el.closest(".indice");
+    if (!tira || tira.scrollWidth <= tira.clientWidth + 2) return;  // cabe entero
+    var a = el.getBoundingClientRect(), t = tira.getBoundingClientRect();
+    // Un margen de un lado y medio del otro, para que el enlace no quede
+    // pegado al borde: se lee mejor con un poco de aire delante y detras.
+    var izquierda = tira.scrollLeft + (a.left - t.left) - 24;
+    var derecha = tira.scrollLeft + (a.right - t.left) - tira.clientWidth + 24;
+    if (izquierda > 0) tira.scrollLeft = izquierda;              // esta a la derecha
+    else if (derecha > 0) tira.scrollLeft = derecha;              // esta a la izquierda
+  }
+
+  // El panel de contenido de movil.
+  //
+  // Se abre con el boton de la barra y se cierra solo: al elegir una seccion, con
+  // Escape, o al volver arriba. Un menu que hay que cerrar a mano encima de un
+  // menu que tapa la pantalla es el peor de los dos.
+  function indicePanel() {
+    var boton = $("#contenidos");
+    var panel = $("#indice");
+    if (!boton || !panel) return;
+
+    var abierto = false;
+    var fijar = function (v) {
+      abierto = v;
+      panel.classList.toggle("indice-abierto", v);
+      boton.setAttribute("aria-expanded", v ? "true" : "false");
+      document.documentElement.classList.toggle("con-indice", v);
+    };
+    boton.addEventListener("click", function () { fijar(!abierto); });
+
+    // Al tocar un enlace se cierra, y el panel se va con el scroll que trae el
+    // cambio de seccion: si el lector pasa el dedo hacia arriba para seguir
+    // leyendo, el menu no le queda encima tapando el texto.
+    panel.addEventListener("click", function (e) {
+      if (e.target.closest("a")) fijar(false);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && abierto) { fijar(false); boton.focus(); }
+    });
+    addEventListener("scroll", function () { if (abierto) fijar(false); },
+                    { passive: true });
   }
 
   // El sello de arriba: que version del repo describe esto y de cuando es.

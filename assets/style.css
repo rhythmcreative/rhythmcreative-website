@@ -1395,7 +1395,11 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
 
 /* Y en el mas estrecho de todos, tampoco cabe "hyprland" al lado. */
 @media (max-width: 330px) {
-  .isla nav { display: none; }
+  /* Los enlaces otra vez, y no el nav entero. Escondiendo el nav se lleva el
+     boton de contenido y a 320 px te quedas sin ninguna manera de abrir el
+     indice: medido, el boton salia a 0x0. Un movil de 320 es raro pero existe,
+     y dejar sin salida a quien llega a el no vale la pena ganar 20 px. */
+  .isla nav a { display: none; }
   .isla .rotulo { font-size: 0.78rem; letter-spacing: 0.12em; }
 }
 
@@ -1417,7 +1421,11 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
      de dedo: con raton ya lo cubre la regla de 620, pero el ancho pequeno es el
      mismo en los dos casos y la cifra no depende de como se pulse. */
   @media (max-width: 540px) {
-    .isla nav { display: none; }
+    /* Los ENLACES, no el nav entero. Escondiendo el nav se lleva por delante el
+       boton de contenido, que vive dentro de el, y en movil te quedas sin
+       ninguna manera de abrir el indice: midido, el nav se quedaba a 0x0 y con
+       el el boton dentro. */
+    .isla nav a { display: none; }
   }
 
   /* Y por debajo de 370 el problema es el nombre, no los enlaces: con el nav ya
@@ -1441,6 +1449,11 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
   .interruptor .ic { width: 1.2rem; height: 1.2rem; }
   .isla nav a { min-height: 44px; display: grid; place-items: center;
                 padding: 0 0.55rem; }
+  /* El boton de contenido entra en la misma regla que los enlaces y no lleva una
+     suya: asi hereda los mismos 44 px y el mismo centrado, y no hay dos cifras
+     de alto de dedo en la misma barra que se puedan desincronizar. */
+  .isla nav .contenidos { min-height: 44px; display: grid; place-items: center;
+                          padding: 0 0.55rem; }
 }
 
 /* ── El dedo no tiene :hover ───────────────────────────────────────────────
@@ -2209,3 +2222,154 @@ html.claro .figura figcaption { color: rgba(30, 32, 34, 0.6); }
 
 html.claro .salida { color: var(--gris); }
 html.claro .salida .linea-ok { color: var(--hielo); }
+
+/* ══ NAVEGACION EN MOVIL ═════════════════════════════════════════════════════
+   En una pantalla estrecha no hay indice al lado: la lista entera son dos mil
+   pixeles de contenido en trescientos de hueco. Hace falta una puerta, y hace
+   falta que la tira diga donde estas. */
+
+/* El boton. En escritorio no aparece: el indice ya esta a la vista y un boton
+   para abrirlo seria un boton que no hace nada. */
+.contenidos {
+  display: none;
+  font: inherit; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--enlace-barra);
+  background: none; border: 0; border-left: 1px solid var(--linea);
+  padding: 0.34rem 0.58rem; margin-left: 0.15rem;
+  border-radius: var(--r); cursor: pointer;
+  min-height: 28px;
+  transition: color 0.2s, background 0.2s;
+}
+.contenidos:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
+.contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
+html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
+.contenidos[aria-expanded="true"] { color: var(--azul-4); }
+/* Dos nombres y uno se esconde. Medido a 390 px: con "contents" el boton pisa
+   el reloj por 15 px, porque en la barra solo queda para el nombre 126 px, el
+   reloj 98 y el interruptor 44, y "contents" con su relleno se come el hueco
+   entero. Con "index" sobran 31 px. El largo se queda a partir de 430, que es
+   donde ya no hace falta. */
+.contenidos .corto { display: none; }
+@media (max-width: 430px) {
+  .contenidos .largo { display: none; }
+  .contenidos .corto { display: inline; }
+}
+
+/* Los dos enlaces de la barra se van en movil para dejarle sitio al boton.
+   "home" sigue estando en el nombre de la izquierda, que va a lo mismo. */
+@media (max-width: 860px) {
+  /* El alto de dedo va AQUI y no solo en el bloque de (hover: none) que hay mas
+     arriba. Los dos sitios tienen los 44 px a proposito: el de tactil cubre un
+     portatil con pantalla tactil a lo ancho, y este cubre un movil. Se
+     comprobar que la regla de (hover: none) arrives al boton: el alto se media
+     en 28 px, que es el valor de la regla base, con lo que la otra no estaba
+     llegando. Ponerlo en los dos sitios es lo que garantiza que llegue. */
+  .isla nav .contenidos { display: inline-block; min-height: 44px; }
+  .isla nav a { display: none; }
+}
+
+/* El panel: la lista entera, encima del texto, desde justo debajo de la barra
+   hasta abajo. Se abre con el boton y se cierra solo. */
+@media (max-width: 860px) {
+  .indice.indice-abierto {
+    /* display:block y no nada: cerrado, .indice es la tira horizontal y es flex.
+       Abierto tiene que ser una lista vertical, y si se queda en flex el "On
+       this page" sale centrado al lado de los elementos en vez de encima, y los
+       titulos se parten en dos lineas porque la columna se queda estrecha. */
+    display: block;
+    position: fixed;
+    top: auto;
+    left: 0; right: 0;
+    bottom: 0;
+    /* La altura de la barra, medida: son 44 px con dedo y 41 con raton. Se usa la
+       misma medida que el resto de la pagina para que el panel no tape la hora
+       ni el boton de tema. */
+    max-height: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 40;
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+    /* Un fondo casi opaco: es un menu encima del texto, y con el cristal de la
+       barra se leeria el texto de debajo a traves de cada fila. */
+    background: var(--suelo);
+    padding-bottom: 1.5rem;
+  }
+  .indice.indice-abierto h2 { display: block; margin-bottom: 0.8rem; }
+  .indice.indice-abierto .grupo-indice,
+  .indice.indice-abierto ol.subs { display: block; }
+  .indice.indice-abierto .grupo-indice h3 {
+    display: flex; margin: 1.1rem 0 0.4rem; padding-left: 0;
+  }
+  .indice.indice-abierto ol.subs {
+    display: block; border-left: 0; overflow: visible;
+  }
+  .indice.indice-abierto li a {
+    /* Sin la tira horizontal: aqui la lista es vertical y cabe entera. */
+    white-space: normal;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.82rem;
+    min-height: 44px;                 /* dedo */
+  }
+  .indice.indice-abierto li a.activo { border-bottom-color: var(--azul-4); }
+}
+
+/* Con el panel abierto la pagina de detras no se mueve. El scroll del body se
+   bloquea con overflow:hidden en el html y no con position:fixed: lo segundo
+   ademas tiene que acordarse de cuanto habia antes, y en un movil eso se nota
+   al cerrar el panel, que la pagina salta. */
+html.con-indice { overflow: hidden; }
+
+/* ── Anterior / siguiente ─────────────────────────────────────────────────────
+   Los dos en una fila: con uno solo no hay vuelta atras, que es justo lo que
+   hace falta en un movil donde el indice cuesta de abrir. */
+.siguientes {
+  display: flex; align-items: stretch; gap: 1.5rem;
+  margin-top: 1.6rem; padding-top: 0.8rem;
+  border-top: 1px solid var(--linea);
+  flex-wrap: wrap;
+}
+.siguiente {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  flex: 1 1 12rem;
+  font-size: 0.8rem; color: var(--gris); text-decoration: none;
+  padding: 0.35rem 0;
+}
+.siguiente.anterior { justify-content: flex-start; }
+.siguiente:not(.anterior) { justify-content: flex-end; text-align: right; }
+.siguiente span { font-size: 0.6rem; letter-spacing: 0.16em;
+                  text-transform: uppercase; color: rgba(107, 130, 140, 0.65);
+                  white-space: nowrap; }
+.siguiente:hover { color: var(--hielo); }
+.siguiente:hover span { color: var(--azul-4); }
+.siguiente i { width: 0; height: 0; align-self: center; flex: none;
+               border-left: 5px solid currentColor;
+               border-top: 3.5px solid transparent;
+               border-bottom: 3.5px solid transparent;
+               transition: transform 0.2s; }
+.siguiente.anterior i { transform: rotate(180deg); }
+.siguiente:not(.anterior):hover i { transform: translateX(3px); }
+.siguiente.anterior:hover i { transform: rotate(180deg) translateX(3px); }
+.siguiente.arriba i { transform: rotate(-90deg); }
+.siguiente.arriba:hover i { transform: rotate(-90deg) translateX(3px); }
+
+/* En movil los dos van apilados y con altura de dedo, no en fila: con 390 px de
+   ancho, dos botones de texto largo en fila se parten en tres lineas cada uno. */
+@media (max-width: 620px) {
+  .siguientes { flex-direction: column; gap: 0; }
+  .siguiente { flex: none; justify-content: flex-start !important;
+               text-align: left !important; min-height: 44px;
+               align-items: center; }
+  .siguiente + .siguiente { border-top: 1px solid var(--linea); }
+  .siguiente i { display: none; }
+}
+
+html.claro .siguiente { color: var(--gris); }
+html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .siguiente i { transition: none; }
+}
