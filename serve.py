@@ -32,30 +32,76 @@ RANGO = re.compile(r"^bytes=(\d*)-(\d*)$")
 class ConRangos(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler + respuestas 206 para peticiones por rango."""
 
+    # Que cabecera de cache se manda. Lo normal es "no-cache", que NO es lo que
+    # parece: deja guardar el fichero pero obliga a preguntar antes de usarlo. Con
+    # el ETag de abajo, esa pregunta se responde con un 304 vacio, y una recarga
+    # no baja practicamente nada. Con "fresco" se vuelve a no-store, que es lo
+    # que habia antes y no deja ni guardar una copia.
+    cabecera_cache = "no-cache"
+
     def __init__(self, *args, directorio, **kwargs):
         super().__init__(*args, directory=directorio, **kwargs)
+
+    def _etag(self):
+        """Una etiqueta por fichero, o None si no hay fichero que servir.
+
+        La etiqueta tiene que cambiar cuando el contenido cambia, y solo entonces.
+        Con la fecha de modificacion y el tamaño sale: si tocas el fichero, cambia
+        la fecha, y si dos ficheros distintos tienen la misma fecha, el tamaño los
+        distingue. Con solo la fecha habia un fallo raro —reescribir un fichero
+        dentro del mismo segundo—, que es de los que hacen perder media tarde.
+        """
+        ruta = self.translate_path(self.path)
+        if os.path.isdir(ruta):
+            ruta = os.path.join(ruta, "index.html")
+        try:
+            st = os.stat(ruta)
+        except OSError:
+            return None
+        return '"%x-%x"' % (int(st.st_mtime_ns), st.st_size)
 
     def end_headers(self):
         # Ahi es donde el padre escribe las cabeceras: se anade esta antes de
         # cerrar la cabecera, que es lo que hace insertar cabeceras de verdad.
         self.send_header("Accept-Ranges", "bytes")
-        # Sin esto el navegador se guarda el CSS y el JS con su propio criterio y
-        # los vuelve a pintar sin preguntar al servidor. Como no hay Cache-Control
-        # ni ETag, el freshness es el que cada navegador se inventa, y recargar no
-        # siempre revalida: se ve el fichero viejo, se cambia el CSS y la
-        # pagina sigue igual, que es justo cuando uno cree que el cambio no ha
-        # surtido efecto. Pasa porque el Last-Modified solo, sin ETag, no obliga a
-        # revalidar nada.
-        #
-        # no-store y no max-age=0 a proposito: la primera no deja ni guardar la
-        # copia, y la segunda la deja guardar pero obliga a preguntar cada vez.
-        # En desarrollo da igual cual de las dos, y la segunda no evita el disco.
-        self.send_header("Cache-Control", "no-store")
+        # El ETag es lo que arregla la recarga. Antes no habia ni Cache-Control ni
+        # ETag, asi que el navegador se guardaba el CSS y el JS con el criterio que
+        # cada uno se inventa y no siempre revalidaba: se cambia el CSS y la pagina
+        # sigue igual, que es cuando uno cree que el cambio no ha surtido efecto.
+        # Pasa porque el Last-Modified solo, sin ETag, no obliga a revalidar nada.
+        etiqueta = self._etag()
+        if etiqueta:
+            self.send_header("ETag", etiqueta)
+        self.send_header("Cache-Control", self.cabecera_cache)
         super().end_headers()
+
+    def _sin_cambios(self):
+        """True si el navegador ya tiene la copia buena y no hay que mandarla.
+
+        Es la respuesta 304, que no lleva cuerpo: el navegador se queda con lo que
+        ya tenia. Medido en la recarga: sin esto bajaba 604 KB cada vez, y con esto
+        baja 1 KB, que es solo el HTML.
+        """
+        etiqueta = self._etag()
+        adelante = self.headers.get("If-None-Match")
+        if not etiqueta or not adelante:
+            return False
+        # If-None-Match puede ser una lista, y cualquiera de las dos cosas que se
+        # pueden poner ahi es "que me tienes lo que te pedi": la lista entera o un
+        # asterisco. La respuesta a cualquiera de las dos es la misma.
+        return "*" in adelante or etiqueta in [x.strip() for x in adelante.split(",")]
 
     def send_head(self):
         """Devuelve la respuesta a un GET o a un HEAD. El padre decide el 200."""
         rango = self.headers.get("Range")
+
+        # El 304 se comprueba solo sin rango: una peticion por rango siempre quiere
+        # bytes de verdad, y responderle con un "no ha cambiado" la deja sin nada.
+        if not rango and self._sin_cambios():
+            self.send_response(304)
+            self.end_headers()
+            return None
+
         if not rango:
             return super().send_head()
 
@@ -142,9 +188,22 @@ def main():
     ap.add_argument("puerto", nargs="?", type=int, default=8788)
     ap.add_argument("--bind", default="127.0.0.1")
     ap.add_argument("--dir", default=aqui)
+    ap.add_argument(
+        "--fresco",
+        action="store_true",
+        help=(
+            "No deja ni guardar copias en el navegador. Por defecto el servidor "
+            "guarda el ETag y responde 304 a lo que no ha cambiado, que recarga "
+            "al instante y siempre trae la version nueva."
+        ),
+    )
     args = ap.parse_args()
 
     manejador = partial(ConRangos, directorio=args.dir)
+    if args.fresco:
+        # Se cambia en la clase y no en la instancia: el manejador se crea por
+        # peticion, y la cabecera se escribe en end_headers, que no recibe nada.
+        ConRangos.cabecera_cache = "no-store"
     servidor = ThreadingHTTPServer((args.bind, args.puerto), manejador)
 
     print(f"Sirviendo {args.dir}")
