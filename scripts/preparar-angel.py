@@ -12,6 +12,7 @@ la luna:
 
     fondo-oscuro.webp  angel-oscuro.webp  frente-oscuro.webp   tema negro
     fondo-claro.webp   angel-claro.webp   frente-claro.webp    tema blanco
+    aro-oscuro.webp    aro-claro.webp                        el aro, solo
 
 Los dos temas son MONOCROMOS. La version que habia antes era un gris oscuro que
 no era ni blanco ni negro, con los azules y los verdes todavia dentro.
@@ -52,11 +53,36 @@ ANGEL_CLARO = os.path.join(DESCARGA, "Fondo gótico con profundidad claro 1.png"
 # Umbral del fondo que se quita: el damero en el recorte a color.
 UMBRAL_OSCURO = 160
 
-# Donde cae el halo, en fracciones de la foto. Medido en cada fichero.
+# Donde cae el halo, en fracciones de la foto: centro x, centro y, y los DOS
+# semiejes. Medido sobre el perfil de cada foto, no a ojo.
+#
+# SON DOS SEMIEJES Y NO UN RADIO porque el aro de la foto es una ELIPSE, no un
+# circulo: la estatua esta vista de lado y el aro se ve tumbado. Medido sobre
+# angel-claro.webp: el anillo va de x 943 a 1070 y de y 87 a 133, o sea 127 por
+# 46, un 2,8 a 1. Con un solo radio el dibujo salia CIRCULAR y se挂着 encima de
+# la elipse de la foto: dos aros que no coincidian, y al pinchar se encendia el
+# equivocado.
+#
+# Los dos semiejes van en la misma unidad que el radio de antes: x en fracciones
+# de W, y en fracciones de H. La y es la que de verdad cambia, porque H es 1133 y
+# W son 2000: la misma proporcion en vertical seria casi el doble de alta.
+# La Y ES LA MISMA EN LOS DOS: los recortes del angel se cortaron con una regla
+# un poco distinta y el aro de cada foto cae 6 px mas abajo en el de blanco y
+# negro (0,0971 contra 0,0918). Con la misma y los dos aros quedan a la misma
+# altura en pantalla, que es lo que se ve al cambiar de tema. 6 px es nada
+# comparado con los 46 px que el aro tiene de alto, asi que sigue encima del aro
+# de su foto.
 HALO = {
-    "oscuro": (0.5035, 0.088, 0.032),   # sobre el recorte a color
-    "claro": (0.5200, 0.094, 0.030),    # sobre el de blanco y negro
+    # centro, semieje en x (de W), semieje en y (de H)
+    "oscuro": (0.5040, 0.0918, 0.0305, 0.0221),   # sobre el recorte a color
+    "claro":  (0.5030, 0.0918, 0.0315, 0.0203),   # sobre el de blanco y negro
 }
+
+# Cuanto de ancho tiene el anillo, como fraccion de la distancia al aro. A 0.34
+# el aro ocupa de 0.66 a 1.34: es el grosor que tiene el de la foto, medido
+# sobre el perfil radial. Con 0.42 sale un aro de neón, que es lo que pasaba
+# antes.
+ANCHO_ARO = 0.34
 
 # Cuanto sube o baja el cementerio. Sin esto los dos temas son el mismo gris con
 # distinta brillantez, y no se nota el cambio.
@@ -184,6 +210,89 @@ def velo(W, H):
     return Image.fromarray(rgba, "RGBA")
 
 
+def aro(W, H, tema):
+    """SOLO el aro de la cabeza, en su propia capa transparente.
+
+    Va su propia imagen y no un div con un radial-gradient por dos razones.
+
+    La primera es que el aro hay que colocarlo donde esta la cabeza, y eso lo
+    sabe el mismo sitio que coloca el halo: el centro y los dos semiejes estan
+    medidos en HALO. Un div con un degradado enradial necesita que alguien vuelva
+    a escribir esas fracciones en el CSS, y basta con que se desplace un pixel la
+    foto para que el aro se quede fuera de su sitio.
+
+    La segunda es la que mas se notaba: un div no se puede iluminar bien. Al
+    pinchar habia que subirle el opacity a un bloom, y con mix-blend-mode
+    screen en oscuro y multiply en claro, subir el opacity no es "encender": en
+    claro multiplica y lo que sale es mas oscuro, no mas luz. Una imagen con su
+    alfa propia se enciende igual en los dos temas: es lo mismo quecalar la foto.
+
+    El aro dibuja una ELIPSE con los dos semiejes de HALO, no un circulo: la foto
+    lo tiene tumbado y hay que superimposedlo encima. Y no lleva un pelo
+    brillante en el borde: el aro de la foto ya es una linea difusa, y aqui el
+    pelo lo convertia en un aro de neon dibujado, que en claro encima del papel
+    se leia como un circulo trazado a lapiz.
+    """
+    x, y, rx, ry = HALO[tema]
+    cx, cy = x * W, y * H
+    semi_x, semi_y = rx * W, ry * H
+
+    # Solo se dibuja en el rectangulo del aro y se pega: hacerlo en la imagen
+    # entera son 2000x1133 pixeles de float para una elipse de 127 px.
+    ancho = int(semi_x * 3.0)
+    alto = int(semi_y * 3.0)
+    x0, y0 = int(cx - ancho / 2), int(cy - alto / 2)
+    yy, xx = np.mgrid[0:alto, 0:ancho]
+    # d = 1 es justo la elipse; al ser 0.30 en x y 0.02 en y, esto no se puede
+    # hacer con un radio normalizado a un lado y otro, y por eso d va partido.
+    d = np.sqrt(((xx - ancho / 2.0) / semi_x) ** 2 + ((yy - alto / 2.0) / semi_y) ** 2)
+    # El anillo: 1.0 es el aro medido, y se abre +-ANCHO_ARO a cero.
+    t = np.abs(d - 1.0) / ANCHO_ARO
+    alfa = np.clip(1.0 - t, 0.0, 1.0) ** 2.2
+    # Un pelo de mas en el borde, pero muy suave: lo justo para que se lea como
+    # aro y no como mancha, sin el nervio que antes lo hacia de neon.
+    alfa = np.clip(alfa + np.exp(-((d - 1.0) / (ANCHO_ARO * 0.55)) ** 2) * 0.10, 0, 1)
+    alfa[alfa < 0.004] = 0.0
+
+    if tema == "claro":
+        # En claro el aro se MULTIPLICA sobre la foto, y multiplicar con blanco no
+        # hace nada: sobre el papel sale el color del propio aro. Por eso es
+        # dorado y no un blanco de luz — un aro dorado se lee como halo en los dos
+        # temas, y en claro encaja con el aro de la estatua en vez de parecer un
+        # circulo trazado a lapiz.
+        #
+        # El dorado va bajito de saturacion a proposito: con el mix-blend a tope
+        # el anillo cae encima del marfil del angel y de las lapidas del fondo, y
+        # un dorado saturado ahi se lee como un pegamento.
+        # El mismo dorado, el que se mide arriba. Con (214,170,74) sobre el
+        # papel salia (226,205,158): otra vez apagado.
+        rgb = np.zeros((alto, ancho, 3), dtype=np.float32)
+        rgb[..., 0] = 232.0
+        rgb[..., 1] = 164.0
+        rgb[..., 2] = 44.0
+    else:
+        # En oscuro el aro va con screen, asi que lo que se ve es el color del
+        # aro aclarando el cielo. Tambien es dorado, y por el mismo motivo que en
+        # claro: un aro blanco o azul aqui se leia como un aro de neón, y con
+        # este tono el aro se lee como oro en los dos temas y el cambio de tema
+        # no lo cambia de color.
+        # Un dorado con MAS separacion entre canales de lo que parece. Con un
+        # dorado suave (255,212,130) la diferencia entre rojo y verde es de 43, y
+        # a la opacidad que lleva la capa (~0,6) sobre un fondo gris se queda en
+        # 20: medido sobre la foto, el aro salia (159,139,101), que es un tono
+        # apagado y no oro. Con 255,178,58 la diferencia es de 77 y el mismo
+        # pixel sale (218,155,58).
+        rgb = np.zeros((alto, ancho, 3), dtype=np.float32)
+        rgb[..., 0] = 255.0
+        rgb[..., 1] = 178.0
+        rgb[..., 2] = 58.0
+
+    capa = np.dstack([rgb, alfa * 255.0]).astype(np.uint8)
+    out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    out.paste(Image.fromarray(capa, "RGBA"), (x0, y0))
+    return out
+
+
 def main():
     os.makedirs(DESTINO, exist_ok=True)
     faltan = [r for r in (CEMENTERIO_OSCURO, CEMENTERIO_CLARO,
@@ -230,6 +339,15 @@ def main():
         print("%-7s angel-%s-p.webp  %.0f KB  (el que se baja el movil)"
               % (tema, tema, os.path.getsize(p2) / 1024))
 
+        # El aro, en su propia capa. Va con la foto entera de lienzo y con el
+        # radio medido, que es lo que lo hace caer justo en la cabeza sin que
+        # haya que colocar nada desde el CSS.
+        capa_aro = aro(W, H, tema)
+        ruta_aro = os.path.join(DESTINO, "aro-%s.webp" % tema)
+        capa_aro.save(ruta_aro, "WEBP", quality=88, method=6)
+        print("%-7s aro-%s.webp  %.0f KB  (solo el anillo de la cabeza)"
+              % (tema, tema, os.path.getsize(ruta_aro) / 1024))
+
         fondo = cemetery(ruta_fondo, claro)
         fondo.save(os.path.join(DESTINO, "fondo-%s.webp" % tema), "WEBP",
                    quality=86, method=6)
@@ -252,8 +370,10 @@ def main():
         fh.write("window.RHYTHM_CAPA_TAM = {\n")
         fh.write('  origen: "angel",\n')
         fh.write("  w: %d,\n  h: %d,\n" % (W, H))
-        fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f },\n" % HALO["oscuro"])
-        fh.write("  haloClaro: { x: %.4f, y: %.4f, r: %.4f }\n" % HALO["claro"])
+        # rx es fraccion de W y ry fraccion de H: son semiejes, y el del aro de
+        # la foto son 2,8 a 1. Con un solo r, el bloom salia redondo.
+        fh.write("  halo: { x: %.4f, y: %.4f, rx: %.4f, ry: %.4f },\n" % HALO["oscuro"])
+        fh.write("  haloClaro: { x: %.4f, y: %.4f, rx: %.4f, ry: %.4f }\n" % HALO["claro"])
         fh.write("};\n")
     print("capa-datos.js con las dos posiciones del halo")
 

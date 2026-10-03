@@ -50,19 +50,47 @@ def pedir(url):
 
 
 def main():
-    # Los repos vienen del propio projects.js, para no tener la lista escrita
-    # dos veces y que se !!
-    ruta = os.path.join(AQUI, "assets", "projects.js")
-    repos = []
-    with open(ruta, encoding="utf-8") as f:
-        texto = f.read()
-    for trozo in texto.split("repo:")[1:]:
-        nombre = trozo.split('"')[1]
-        if nombre:
-            repos.append(nombre)
+    # De donde sale la lista de repos.
+    #
+    # Antes se leia de assets/projects.js, que ya no existe:.projects.js se
+    # borro cuando se quito la lista de repos de la pagina (commit da167d0, "El
+    # reloj al centro, y la seccion en dos columnas"), y el recolector se quedo
+    # apuntando a un fichero que no estaba. No se ha ejecutado desde entonces, asi
+    # que data/github.js tenia los datos viejos.
+    #
+    # Ahora la lista sale de una variable: es la unica copia y se lee aqui, no en
+    # dos sitios. Si algun dia vuelve a haber una lista en la pagina, esto es lo
+    # que hay que volver a enganchar.
+    REPOS = [
+        "rhythmcreative/hyprland",
+        "rhythmcreative/rust-dock",
+        "rhythmcreative/wallpapers",
+        "rhythmcreative/tiktok",
+        "rhythmcreative/lineageos-flame-ota",
+        "rhythmcreative/lineageos-akita-ota",
+        "rhythmcreative/lineageos-husky-ota",
+        "rhythmcreative/lineage-launcher",
+        "rhythmcreative/motion-assist",
+        "rhythmcreative/AppStore",
+        "rhythmcreative/lineage-scripts",
+        "rhythmcreative/lineage-build-scripts",
+        "rhythmcreative/android",
+        "rhythmcreative/Info",
+        "rhythmcreative/Kiosk-chromium",
+        "rhythmcreative/Kiosk-waydroid",
+        "rhythmcreative/voice-satellite-card-llm-tools",
+        "rhythmcreative/wakey",
+        "rhythmcreative/apps-repository",
+    ]
+    repos = list(REPOS)
 
     fallos = []
     datos = {}
+    # Cuantas releases se buscan. Con token da igual (5000 por hora), pero sin
+    # token la cuota son 60 y buscar una release en cada repo son 20 peticiones
+    # mas: se puede apagar con SIN_RELEASES=1.
+    SIN_RELEASES = os.environ.get("SIN_RELEASES", "").strip() not in ("", "0", "no", "false")
+
     for nombre in repos:
         try:
             d = pedir("https://api.github.com/repos/" + nombre)
@@ -77,6 +105,23 @@ def main():
             fallos.append("%s (%d)" % (nombre, e.code))
         except Exception as e:
             fallos.append("%s (%s)" % (nombre, e))
+
+    # La ultima release de cada repo: la version que tiene ahora mismo.
+    #
+    # No hay forma de saber si un repo tiene releases sin preguntar, asi que son
+    # 20 llamadas. El 404 NO cuenta como fallo a proposito: la mayoria de estos
+    # repos no ha publicado nunca una release, y meterlos en "fallos" haria que
+    # la pagina dijera que algo va mal cuando lo unico que pasa es que no hay.
+    if not SIN_RELEASES:
+        for nombre, d in datos.items():
+            try:
+                r = pedir("https://api.github.com/repos/" + nombre + "/releases/latest")
+                d["release"] = r.get("tag_name")
+            except HTTPError as e:
+                if e.code != 404:
+                    fallos.append("%s release (%d)" % (nombre, e.code))
+            except Exception as e:
+                fallos.append("%s release (%s)" % (nombre, e))
 
     # ── Los commits recientes, que son las gotas de la lluvia ────────────────
     #

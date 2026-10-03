@@ -36,6 +36,26 @@
   --gris:     #6b828c;
   --linea:      rgba(153, 186, 201, 0.14);
   --linea-alta: rgba(153, 186, 201, 0.30);
+  /* Los dos polvos, solo los tres canales: la opacidad la pone cada particula.
+     --ceniza es la que flota por la escena y --chispa la de la rafaga del clic.
+     No pueden ser lo mismo: en claro la flotante tiene que ser un susurro o el
+     papel blanco se llena de motas, y la chispa tiene que verse. */
+  --ceniza: 206, 222, 231;
+  --chispa: 244, 250, 254;
+  /* Los topes de las dos animaciones van aqui y no en los keyframes. Estaban
+     fijos (0.42/0.72 y 0.5/1) y el keyframe gana sobre la regla del tema, asi
+     que en claro el halo respiraba a 0.72 con mix-blend-mode: multiply, que no
+     es iluminar: es oscurecer. Cada tema pone los suyos y la animacion los lee.
+     Ojo: si uno de los dos falta, el keyframe entero se queda invalido y el
+     opacity cae al valor inicial, que es 1 — el bloom entero a tope. */
+  --halo-min: 0.50;
+  --halo-max: 0.82;
+  --aro-min: 0.78;
+  /* Cuanto sube el aro al pinchar. En oscuro sube mas que en claro porque ahi
+     aclarar es encender y en claro multiplicar: medido sobre la foto, al 1.0 fijo
+     el anillo cae a un gris 66 y lo que sale es un aro de tinta duro, cuando la
+     foto sola esta en 163. Ni 1.0 ni --aro-min: un tope. */
+  --aro-alto: 0.88;
   --f: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --r: 10px;
   --r-isla: 16px;
@@ -53,8 +73,19 @@
 /* El tamano de la raiz. Todo lo demas esta en rem, asi que esto decide si la
    pagina se lee en un movil o en un 4K. Antes eran 16 px fijos y el cuerpo se
    quedaba en 13.8 px en cualquier parte: en 2560x1440 y en 3840x2160 era
-   ilegible, no pequeno, ilegible. */
-html { font-size: clamp(15px, 0.5vw + 10px, 21px); }
+   ilegible, no pequeno, ilegible.
+
+   El minimo era 15 px, y aqui esta lo que pasaba: con el liquido en 0.5vw + 10, la
+   raiz se queda en 15 px en TODO lo que va de 0 a 1000 px de ancho. O sea que en
+   un movil de 360 el texto corriente caia a 11,1 px y el rotulo mas pequeno a 8,2.
+   Todo el sitio estaba medido con una raiz de 17 a 21 px —la de un monitor— y en
+   el movil no habia compensacion ninguna.
+
+   Por eso el minimo sube a 19 px. En movil el texto corriente pasa de 11,1 a
+   14,1 px y el rotulo mas pequeno de 8,2 a 10,5. A 1440 la raiz era 17,2 y ahora
+   es 19: un 10% mas, que tambien es una mejora. A partir de 1920 el liquido manda
+   y no cambia nada: 19,6 y 21 px, igual que antes. */
+html { font-size: clamp(19px, 0.5vw + 10px, 21px); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
@@ -74,6 +105,20 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 
 .cola { max-width: var(--ancho); margin: 0 auto;
         padding: 0 clamp(1rem, 0.5rem + 2vw, 2rem); }
+
+/* En movil la caja se abre.
+   --ancho tiene un minimo de 330 px que esta puesto para que en un monitor
+   grande el contenido no se haga una tira. En un movil ese minimo gana siempre:
+   a 320, 360, 390 y 430 de pantalla el contenido medía EXACTAMENTE lo mismo,
+   292 px, porque el 330 del clamp mas el padding de .cola se comian 68 px de
+   los 360. El video de 1280x720 salia de 292 x 164, y con el margen del contenu
+   atado a un ancho fijo la pagina no respiraba: se veia ajustada.
+
+   Aqui el ancho maximo se quita y el margen lo pone el padding, que es lo que
+   tiene que hacerlo. */
+@media (max-width: 700px) {
+  .cola { max-width: none; padding-left: 0.7rem; padding-right: 0.7rem; }
+}
 
 /* ══ LA BARRA ══════════════════════════════════════════════════════════════ */
 
@@ -283,6 +328,17 @@ html.claro {
   --gris:     #71767a;
   --linea:      rgba(20, 22, 24, 0.14);
   --linea-alta: rgba(20, 22, 24, 0.30);
+  /* En claro, con el halo en multiply, subir el opacity lo OSCURECE, y el bloom
+     va mas bajo y mas corto que en oscuro: la foto ya es clara y con un bloom
+     fuerte se come la cabeza. Estos dos iban aqui y se perdieron al quitar las
+     variables del panel del instalador; sin ellos el tema claro heredaba los
+     topes del oscuro y el bloom le salia con la fuerza del otro. */
+  --halo-min: 0.34;
+  --halo-max: 0.58;
+  --aro-min: 0.62;
+  --aro-alto: 0.84;
+  --ceniza: 138, 146, 152;
+  --chispa: 30, 36, 42;
 }
 html.claro .isla { box-shadow: 0 8px 26px rgba(30, 28, 24, 0.16); }
 html.claro .nombre { color: #16181a; text-shadow: 0 2px 24px rgba(255, 255, 255, 0.92); }
@@ -300,7 +356,16 @@ html.claro .pieza:hover { background: rgba(20, 22, 24, 0.04); }
 html.claro .b { color: #16181a; border-color: var(--linea-alta); }
 html.claro .b:hover { background: #16181a; color: #f6f5f2; }
 html.claro .nota-menu { color: rgba(30, 32, 34, 0.5) !important; }
-html.claro .motas { opacity: 0.55; }
+/* La escena de claro es casi toda blanca: con 0,55 la rafaga del clic se
+   quedaba sin verse y parecia que no pasaba nada. */
+html.claro .motas { opacity: 0.85; }
+
+/* Los creditos y la linea de abajo, en claro. Van con `!important` como el resto
+   del bloque, porque su color lo fija una regla propia con !important para poder
+   ganar al `html.claro .marca-menu p`. */
+html.claro .creditos-menu { color: rgba(30, 32, 34, 0.62) !important; }
+html.claro .creditos-menu a, html.claro .pie-fin a { color: var(--gris); }
+html.claro .pie-fin { color: rgba(30, 32, 34, 0.6); }
 
 /* En claro el velo va con menos presencia: el fondo ya es claro y la niebla
    blanca se perderia. */
@@ -325,9 +390,6 @@ html.claro .luz { mix-blend-mode: multiply; opacity: 0.55;
                    rgba(104, 124, 140, 0.8), transparent 76%); }
 html.claro .velo { mix-blend-mode: multiply; opacity: 0.32; }
 html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
-html.claro .brillo {
-  background: linear-gradient(105deg, transparent 42%,
-              rgba(24, 28, 32, 0.18) 50%, transparent 58%); }
 
 /* El halo de la cabeza. Su color es el termometro. */
 .halo { position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
@@ -343,34 +405,82 @@ html.claro .brillo {
 @media (prefers-reduced-motion: no-preference) {
   .halo { animation: respirar 5.5s ease-in-out infinite; }
 }
-@keyframes respirar { 0%, 100% { opacity: 0.42; } 50% { opacity: 0.72; } }
+/* Los topes vienen de --halo-min / --halo-max: ver donde estan definidos. */
+@keyframes respirar {
+  0%, 100% { opacity: var(--halo-min); }
+  50%      { opacity: var(--halo-max); }
+}
 
 /* La luz que sigue al raton. Es un disco con blur y blend, no un degradado:
    por eso de verdad ilumina por un lado. */
-.luz { position: absolute; left: 50%; top: 42%; z-index: 2;
+/* La luz que sigue al raton.
+   left/top en 0 y SIN margen: el centro lo pone capa.js restando la mitad de su
+   propia caja a la posicion del cursor. Antes estaba en left:50%/top:42% con un
+   margen negativo, y al mixes eso con coordenadas del viewport la luz se
+   separaba del cursor segun bajabas. */
+.luz { position: absolute; left: 0; top: 0; z-index: 2;
        /* 38vw y 16 px de desenfoque, no 62vw y 28. A 1440 de ancho eso son 893 px
           de lado desenfocados por 28, y ademas se mueve en cada movimiento del
           raton: era lo mas caro de la pagina. Con 547 y 16 se ve igual y el
           coste baja a menos de la mitad, que es al cuadrado. */
-       width: 38vw; height: 38vw; margin: -19vw 0 0 -19vw;
+       width: 38vw; height: 38vw;
        pointer-events: none; mix-blend-mode: soft-light; opacity: 0.8;
        background: radial-gradient(closest-side, rgba(214, 232, 240, 0.6), transparent 72%);
        filter: blur(16px); will-change: transform; }
 
-/* El barrido al pinchar. */
-.brillo { position: absolute; inset: 0; z-index: 4; pointer-events: none;
-          background: linear-gradient(105deg, transparent 42%,
-                      rgba(226, 240, 246, 0.16) 50%, transparent 58%);
-          opacity: 0; }
-.brillo.pasando { animation: pasar 1.1s ease-out; }
-@keyframes pasar { 0% { opacity: 0; transform: translateX(-42%); }
-                  22% { opacity: 1; } 100% { opacity: 0; transform: translateX(42%); } }
+/* El aro de la cabeza, en su propia imagen.
+   scripts/preparar-angel.py la saca del perfil radial medido de la foto: el
+   brillo del halo tiene el pico a 0,032 del ancho, y eso es el radio del aro.
 
-/* Al pinchar, las alas se abren un pelo. */
-.angelabriendo { animation: abrir 0.85s cubic-bezier(0.22, 1, 0.36, 1); }
-@keyframes abrir { 0% { transform: scale(1, 1); }
-                  40% { transform: scale(1.03, 1.022); }
-                  100% { transform: scale(1, 1); } }
+   En reposo esta apagado casi del todo; pincharlo lo enciende. El color va en la
+   propia imagen porque en claro hay que MULTIPLICAR (multiplicar con blanco no
+   hace nada, ahi el aro va en tinta oscura), y eso no se puede pedir con un
+   mix-blend-mode y un opacity.
+*/
+/* El aro va SIN mix-blend-mode, y es lo que hace que sea dorado en los dos
+   temas. Con screen en oscuro y multiply en claro no se podia: el aro de la foto
+   ya es claro, y screen no puede pintar de nada lo que ya es claro —el dorado se
+   iba a un blanco—; y en claro, multiply sobre el papel ya daba el dorado, pero
+   entonces los dos temas lo hacian de forma distinta.
+
+   Sin mezcla, la imagen pinta su propio dorado con su propio alfa y ya esta. El
+   borde suave del aro es lo que evita que se vea la costura cuando el parallax
+   lo separa un poco de la foto: en el centro es opaco y encima esta el aro de la
+   foto, y hacia fuera el alfa se va a cero. */
+.aro {
+  background-image: url("aro-oscuro.webp");
+  opacity: var(--aro-min);
+}
+html.claro .aro {
+  background-image: url("aro-claro.webp");
+}
+
+/* Pinchar: el aro se enciende y se pone BLANCO.
+
+   El color se cambia con un filtro y no con otra imagen ni con otra capa: el aro
+   es un dorado con su alfa, y `brightness(0) invert(1)` lo deja blanco con el
+   MISMO alfa sin tocar la imagen. Asi no hay un aro-blanco.webp que mantener
+   igual que el dorado, ni una capa mas que el parallax tenga que mover.
+
+   En tema claro el blanco no se veria sobre el papel, asi que ahi el destello es
+   un dorado SATURADO en vez de blanco: el aro se pone mas fuerte, que es lo que
+   se puede ver sobre un fondo claro.
+
+   SOLO el opacity en la animacion. El transform lo escribe el parallax en cada
+   fotograma con un estilo en linea, y un estilo en linea gana a una animacion:
+   por eso la animacion de las alas no se notaba nunca. El filtro va en la misma
+   regla y no se anima, asi que no tiene ese problema. */
+.capa.aro.pulsando {
+  animation: aro-enciende 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: brightness(0) invert(1);
+}
+html.claro .capa.aro.pulsando { filter: brightness(0.62) saturate(1.9); }
+/* El pico es --aro-alto y no un 1 fijo: ver donde esta definido. */
+@keyframes aro-enciende {
+  0%   { opacity: var(--aro-min); }
+  18%  { opacity: var(--aro-alto); }
+  100% { opacity: var(--aro-min); }
+}
 
 .motas { position: absolute; inset: 0; z-index: 5; width: 100%; height: 100%;
          pointer-events: none; }
@@ -411,6 +521,147 @@ html.claro .brillo {
                    50% { opacity: 1; transform: scaleY(1); } }
 @media (max-width: 560px) { .bajar { display: none; } }
 
+/* ══ LA ESCENA, VIVA O DORMIDA ═════════════════════════════════════════════
+   El parallax, la luz del raton y las motas viven dentro de .campo, que es
+   justo lo que se deja de ver al bajar por la pagina. Con esto, al salir de
+   pantalla la escena se duerme: no se escribe nada y no se repinta. Quien lo
+   para es capa.js, quitando la clase "viva" DEL .escena, que es el elemento que
+   el observer vigila; aqui solo se pinta lo que implica estar dormida.
+
+   Sin esto pasaba lo que Mas te decia: bajar no era dejar de ver la escena, era
+   tenerla corriendo por debajo, con el raton todavia moviendo capas que ya no
+   se ven. */
+.escena:not(.viva) .capa,
+.escena:not(.viva) .frente,
+.escena:not(.viva) .luz,
+.escena:not(.viva) .halo,
+.escena:not(.viva) .motas { pointer-events: none; }
+
+/* Las motas se apagan en vez de desaparecer de golpe. El canvas se queda ahi,
+   con su ultimo fotograma, que es lo que evita el parpadeo al volver a mirar. */
+.escena:not(.viva) .motas { opacity: 0; }
+.escena .motas { transition: opacity 0.35s ease; }
+
+/* Ni el aro ni el halo se encienden con la escena dormida: si pinchas abajo,
+   donde no se ve nada, no tiene que pasar nada. */
+.escena:not(.viva) .aro,
+.escena:not(.viva) .halo { animation: none; }
+
+/* ── Instalar ──────────────────────────────────────────────────────────────
+   Debajo del clip y de los dos botones, con mas aire que el resto de la pagina:
+   es la accion y va precedida de un rato de mirar el video, asi que no tiene que
+   competir por la atencion.
+
+   Lo unico que va en caja es el comando. El bloque entero NO: un panel de color
+   alrededor era la cuarta vez que se intentaba y tapaba el comando en vez de
+   standout. El corte lo hace el filete de arriba, como en el resto de la pagina.
+
+   El rotulo lleva el punto azul de las cabeceras de seccion —el mismo punto, el
+   mismo radio y el mismo azul que .punto-mini— para que el bloque se lea como la
+   tercera seccion y no como algo pegado debajo del clip.
+
+   El comando va en una caja DENTRO, con el "copy" tambien dentro y sin verse
+   hasta que se busca. Se pincha el comando entero, no solo el boton: el
+   subrayado sale al pasar el raton y eso ya lo dice.
+
+   Todas las reglas llevan .instalar delante a proposito. Las de .comando y .copiar
+   estan mas ABAJO en la hoja (vienen del instalador, dentro de la seccion de
+   hyprland) y con la misma especificidad se las comian: el borde, el fondo, el
+   text-indent negativo del "$" y el borde del boton. Con el prefijo ganan. */
+.instalar {
+  margin-top: 3.4rem; padding-top: 2.4rem;
+  border-top: 1px solid var(--linea);
+}
+.instalar-titulo {
+  display: flex; align-items: center; gap: 0.6rem;
+  font: 600 0.8rem/1 var(--f); letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--hielo); margin: 0 0 1rem;
+}
+.instalar-titulo::before {
+  content: ""; flex: none; align-self: center;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--azul-4);
+}
+.instalar-texto {
+  font-size: 0.78rem; color: var(--gris); max-width: 58ch;
+  margin: 0 0 1.4rem;
+}
+
+.instalar .instalar-cmd {
+  position: relative;
+  /* SIN flex-wrap. El boton de copiar va en absolute, asi que no hay nada que
+     repartir, y con wrap el comando se iba a una linea nueva con el "$" solo
+     delante: al elegir linea el navegador usa el tamaño hipotetico del item, o
+     sea el comando entero en una linea, y eso es mas ancho que la caja. */
+  display: flex; align-items: baseline; gap: 0.15rem;
+  margin: 0;
+  padding: 0.95rem 4.8rem 0.95rem 1.1rem;
+  border: 1px solid var(--linea); border-radius: var(--r);
+  background: var(--cristal-opaco);
+  transition: border-color 0.18s;
+}
+.instalar .instalar-cmd:hover { border-color: var(--linea-alta); }
+
+/* El "$" va en un pseudo de la caja y no pegado al texto: si estuviera en el
+   code, el subrayado pasaria por encima y al copiar el comando saldria con el
+   "$" delante. Asi el code se queda con el texto limpio. */
+.instalar .instalar-cmd::before {
+  content: "$"; flex: none;
+  color: var(--gris); opacity: 0.6;
+  font: 0.78rem/1.8 var(--f);
+}
+.instalar .instalar-cmd code::before { content: none; }
+
+.instalar .instalar-cmd code {
+  flex: 1 1 auto; min-width: 0;
+  padding: 0; border: 0; background: none;
+  font-size: 0.78rem; line-height: 1.8;
+  color: var(--azul-4);
+  text-indent: 0;
+  cursor: pointer;
+  /* Se pincha el comando, no solo el boton, asi que el subrayado tiene que salir
+     al pasar el raton. Con text-decoration-color y no con un fondo porque el
+     comando se parte en varias lineas en un movil, y con un fondo el subrayado
+     solo saldria en una de ellas. */
+  text-decoration: underline; text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em; text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s, color 0.18s;
+}
+.instalar .instalar-cmd:hover code { text-decoration-color: currentColor; color: var(--hielo); }
+
+/* El boton, DENTRO de la caja y sin verse hasta que se busca. En el movil no hay
+   raton, pero sigue estan ahi: por eso esta oculto y no quitado. */
+.instalar .instalar-cmd .copiar {
+  position: absolute; right: 0.55rem; top: 50%;
+  transform: translateY(-50%);
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent; border-radius: 7px;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.18s, color 0.18s, border-color 0.18s, background 0.18s;
+}
+.instalar .instalar-cmd:hover .copiar,
+.instalar .instalar-cmd:focus-within .copiar { opacity: 1; border-color: var(--linea-alta); }
+.instalar .instalar-cmd .copiar:hover { color: var(--hielo); border-color: var(--hielo); }
+/* Cuando ha copiado se ve siempre un momento: con opacity 0 no se sabria que ha
+   pasado nada. El texto lo pone el copiador. */
+.instalar .instalar-cmd .copiar.hecho {
+  opacity: 1; color: #7fb08a; border-color: #7fb08a;
+  background: rgba(127, 176, 138, 0.12);
+}
+html.claro .instalar .instalar-cmd .copiar.hecho {
+  color: #2f7a45; border-color: #2f7a45;
+  background: rgba(47, 122, 69, 0.10);
+}
+
+@media (max-width: 620px) {
+  /* En un movil el comando se parte en varias lineas y el boton, en el centro
+     vertical, caeria encima del texto. Se va arriba a la derecha y el texto
+     deja de hueco solo arriba. */
+  .instalar .instalar-cmd { padding: 2.5rem 1.1rem 1rem; }
+  .instalar .instalar-cmd .copiar { top: 0.55rem; transform: none; }
+}
+
 /* ══ LA SECCION DE HYPRLAND ═══════════════════════════════════════════════
    El mismo lenguaje que el resto: fila que se abre en su sitio, sin recuadros.
 
@@ -446,6 +697,19 @@ html.claro .brillo {
 .cabecera-seccion .meta { margin-left: auto; font-size: 0.6rem; letter-spacing: 0.12em;
                     text-transform: uppercase; color: var(--gris); white-space: nowrap; }
 
+/* El logotipo de Arch, a la izquierda de la version. Sin relleno y con trazo,
+   para que tome el color de la linea con currentColor y no haya que tener dos.
+   El alto va en em porque la linea de la cabecera es de 0.6rem: asi el logo
+   escala con la fuente y en un movil, donde la linea crece, crece con ella. */
+.logo-arch {
+  width: 0.78em; height: 0.72em;
+  margin-right: 0.42em;
+  vertical-align: -0.04em;
+  fill: none; stroke: currentColor; stroke-width: 2.1;
+  stroke-linecap: square; stroke-linejoin: miter;
+  overflow: visible;
+}
+
 .lema { margin-top: 1.4rem; font-size: clamp(1.15rem, 2.1vw, 1.5rem); line-height: 1.35;
         color: var(--hielo); letter-spacing: -0.015em; text-wrap: balance; }
 .intro { margin-top: 0.9rem; font-size: 0.8rem; color: var(--gris); }
@@ -468,7 +732,82 @@ html.claro .brillo {
 .etiquetas span + span::before { content: "·"; margin-right: 0.75rem;
                                 color: rgba(107, 130, 140, 0.45); }
 
-.acciones-seccion { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+/* ── Los botones de la seccion ────────────────────────────────────────────
+   Antes no tenian regla base: solo estaba html.claro .b, que es un tema
+   encima de algo. Salian como texto pelado, sin caja ni borde, y por eso el
+   ennegrecido se notaba raro. Aqui la caja entera, con el mismo radio que el
+   resto de superficies de la pagina (--r). */
+.b {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.48rem 0.85rem;
+  border: 1px solid var(--linea-alta);
+  border-radius: var(--r);
+  color: var(--hielo);
+  font-size: 0.72rem; letter-spacing: 0.05em;
+  text-decoration: none; white-space: nowrap;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.b:hover { background: rgba(153, 186, 201, 0.07); border-color: var(--gris); }
+.b:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 2px; }
+
+/* El boton de Github, ENTERO en blanco. No el gris azulado de --hielo: el
+   logo, el texto y el borde son blancos puros en el tema oscuro, y negros puros
+   en el claro. Es el color del logo de verdad, no un tono de la pagina.
+
+   El fondo de la caja del mark se queda transparente. Con la caja invertida el
+   icono salia del color de la caja y no blanco, que es justo lo que no
+   queria. */
+.b-gh {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.b-gh:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.b-gh .marca {
+  width: 1.35rem; height: 1.35rem; flex: none;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  background: transparent;
+  color: #ffffff;
+  transition: background 0.18s;
+}
+.b-gh .marca svg { width: 0.95rem; height: 0.95rem; display: block; }
+
+html.claro .b-gh {
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.3);
+}
+html.claro .b-gh:hover {
+  color: #000000;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.55);
+}
+html.claro .b-gh .marca { color: #000000; }
+
+.acciones-seccion {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem;
+  /* El de github a la izquierda y el del manual a la derecha, con el hueco en
+     medio. Antes eran dos enlaces juntos en una esquina y con space-between se
+     quedan en los dos extremos, que es lo que se ha pedido. En un movil, que no
+     cabe la separacion, se vuelven a juntar y se alinean a la izquierda. */
+  justify-content: space-between; align-items: center;
+}
+
+/* El boton del manual, con la flecha dibujada con bordes y no con un glifo: la
+   de la derecha tiene que ser la misma en los dos temas y en cualquier fuente,
+   y el glifo cambiaba de peso entre sistemas. */
+.b-flecha { display: inline-flex; align-items: center; gap: 0.6rem; }
+.b-flecha i { width: 0.5rem; height: 0.5rem; flex: none;
+              border-top: 1px solid currentColor; border-right: 1px solid currentColor;
+              transform: rotate(45deg); transition: transform 0.18s; }
+.b-flecha:hover i { transform: rotate(45deg) translate(2px, -2px); }
+
+@media (max-width: 560px) {
+  .acciones-seccion { justify-content: flex-start; }
+}
 
 /* ── Las piezas ─────────────────────────────────────────────────────────────
    Una fila, con un filo a la izquierda que se enciende al abrirla. Sin caja:
@@ -541,12 +880,43 @@ html.claro .brillo {
 }
 @media (max-width: 860px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 460px) { .pie-menu { grid-template-columns: 1fr; gap: 1.6rem; } }
+/* En una columna, la linea de abajo se apila: separadas por un hueco de 1,5 rem
+   a izquierda y derecha ya no estan ni cerca, y quedan mas separadas de lo que
+   deben. */
+@media (max-width: 460px) { .pie-fin { flex-direction: column; gap: 0.35rem; } }
 
 .rotulo-menu { font: 600 0.78rem/1 var(--f); letter-spacing: 0.22em;
                text-transform: uppercase; color: var(--hielo); }
 .rotulo-menu:hover { color: #fff; }
 .marca-menu p { margin-top: 0.6rem; font-size: 0.74rem; color: var(--gris);
-                max-width: 22ch; }
+                max-width: 24ch; }
+
+/* Los creditos: donde sale la pagina y que usa para no pedir nada. Con su propio
+   bloque y no pegado al lema, porque el lema es el del proyecto y esto es lo de
+   la pagina. Los enlaces heredan el color de los de las columnas para que se lean
+   como enlaces y no como texto suelto. */
+.creditos-menu {
+  margin-top: 1.1rem !important; padding-top: 0.85rem;
+  border-top: 1px solid var(--linea);
+  font-size: 0.66rem !important; line-height: 1.75;
+  color: rgba(107, 130, 140, 0.8) !important; max-width: 26ch;
+}
+.creditos-menu a { color: var(--gris); transition: color 0.18s; }
+.creditos-menu a:hover { color: var(--hielo); }
+
+/* La linea de abajo, de lado a lado como en el pie de omarchy.org. Va con
+   grid-column para ocupar las cuatro columnas del grid de arriba, y con su
+   propio filete: es el cierre del pie, no una columna mas. */
+.pie-fin {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between; gap: 0.5rem 1.5rem;
+  margin-top: 0.6rem; padding-top: 1.1rem;
+  border-top: 1px solid var(--linea);
+  font-size: 0.64rem; color: rgba(107, 130, 140, 0.72);
+}
+.pie-fin a { color: var(--gris); transition: color 0.18s; }
+.pie-fin a:hover { color: var(--hielo); }
 
 .col-menu { display: flex; flex-direction: column; gap: 0.34rem; }
 /* El rotulo de cada columna, pequeno y apagado, para que se lea como seccion y
@@ -567,6 +937,172 @@ html.claro .brillo {
 .nota-menu { margin-top: 0.5rem !important; font-size: 0.66rem !important;
              color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
              line-height: 1.6; }
+
+/* El clip. Ocupa todo el ancho del contenido y va sin sangria: es el elemento
+   principal de la seccion, y con 1.4rem de margen se quedaba corto al lado de
+   una cabecera que si va de borde a borde. */
+.clip { margin: 1.4rem 0 0; }
+
+/* La caja del video y el boton grande. El boton va de HERMANO, no dentro: por
+   una regla de HTML, dentro de un <video> solo se admite <source>, <track> y
+   texto plano, y cualquier otra cosa se saca al padre. */
+.escena-clip { position: relative; line-height: 0; }
+
+.clip video {
+  display: block; width: 100%; height: auto;
+  background: var(--suelo);
+  border: 1px solid var(--linea);
+  /* Abajo a la derecha, para que al hacer la foto redondeada no se corte el
+     pie de la imagen contra el marco. */
+  border-radius: 10px 10px 3px 3px;
+  outline: none;
+}
+.clip video:focus-visible { box-shadow: 0 0 0 2px var(--azul-4); }
+
+/* El boton grande de play, en el centro, hasta que el clip se toca. En cuanto
+   arranca se apaga del todo: si se queda encima tapa el contenido, que es
+   justo lo que se quiere ver. */
+.clip-play {
+  position: absolute; inset: 0; margin: auto;
+  width: 4.4rem; height: 4.4rem; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  background: rgba(11, 13, 15, 0.55);
+  color: #f2efe9;
+  cursor: pointer;
+  transition: opacity 0.22s, transform 0.22s, background 0.22s;
+}
+.clip-play svg { width: 1.7rem; height: 1.7rem; margin-left: 0.18rem; }
+.clip-play:hover { background: rgba(11, 13, 15, 0.72); transform: scale(1.04); }
+.escena-clip.sonando .clip-play { opacity: 0; pointer-events: none; transform: scale(0.9); }
+/* Y NO vuelve al pasar el raton por encima. Lo que se esta viendo es el clip, y
+   un boton de play en medio tapa justo lo que se ha pinned para verlo. Para
+   parar esta el boton de la barra, que siempre esta a la vista. */
+
+/* ── La barra: la del reproductor ──────────────────────────────────────────
+   Va DEBAJO del video y no encima. Encima tendria que ir semitransparente y
+   aparecer al mover el raton, y eso aqui no aporta nada: el clip son 33
+   segundos y no hay nada mas en la pagina a lo que saltar. */
+.clip-barra {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.2rem 0;
+}
+
+.clip-btn {
+  width: 1.9rem; height: 1.9rem; flex: none; padding: 0;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: transparent; color: var(--gris);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+.clip-btn:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.08); }
+.clip-btn:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
+.clip-btn svg { width: 1.05rem; height: 1.05rem; }
+
+/* Solo se ve el icono que toca: los dos estan en el DOM y se cambian por
+   clase, para no tener que andar con innerHTML en cada play/pause.
+
+   El selector lleva ".clip-btn svg" delante a proposito. Con solo
+   ".ico-mudo { display: none }" no cabia: ".clip-btn svg" tiene mas
+   especificidad (una clase y un elemento) que ".ico-mudo" (una clase), asi que
+   ganaba el display: block de siempre y los DOS iconos se veian a la vez. El
+   boton de play tenia el triangulo y las dos barras de pausa encima, y el del
+   sonido el altavoz y el altavoz tachado. */
+.clip-btn svg.ico-pausa, .clip-btn svg.ico-mudo { display: none; }
+.clip-barra.sonando .clip-btn svg.ico-pausa { display: block; }
+.clip-barra.sonando .clip-btn svg.ico-play { display: none; }
+.clip-barra.sin-sonido .clip-btn svg.ico-mudo { display: block; }
+.clip-barra.sin-sonido .clip-btn svg.ico-son { display: none; }
+
+/* La pista. Es un role="slider", asi que el relleno se dibuja con el ancho y
+   el mando se posiciona en porcentaje: sin JS el ancho va en 0 y el mando al
+   principio, que es lo que corresponde a un clip que no ha empezado. */
+.clip-pista {
+  position: relative; flex: 1; height: 1.1rem;
+  cursor: pointer; touch-action: none;
+}
+.clip-pista::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%;
+  height: 2px; transform: translateY(-50%);
+  background: var(--linea-alta);
+}
+.clip-barra-rota {
+  position: absolute; left: 0; top: 50%; height: 2px;
+  transform: translateY(-50%);
+  background: var(--oxido);
+  width: 0;
+}
+.clip-mando {
+  position: absolute; top: 50%; left: 0;
+  width: 0.6rem; height: 0.6rem; margin-left: -0.3rem;
+  transform: translateY(-50%) scale(0.72);
+  border-radius: 50%; background: var(--oxido);
+  transition: transform 0.15s;
+}
+.clip-pista:hover .clip-mando, .clip-pista:focus-visible .clip-mando { transform: translateY(-50%) scale(1); }
+.clip-pista:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 3px; border-radius: 2px; }
+
+.clip-tiempo {
+  flex: none; font-size: 0.66rem; color: var(--gris);
+  font-variant-numeric: tabular-nums;
+}
+.clip-tiempo b { font-weight: 400; color: var(--hielo); }
+.clip-tiempo i { font-style: normal; margin: 0 0.3rem; opacity: 0.5; }
+
+/* El volumen. El altavoz y la barrita van juntos, y la barrita se abre de lado
+   como la de Omarchy: oculta ocupa 0 y con el raton encima, o con el foco por
+   teclado, se abre a 4.6rem. En un movil no cabe y se queda solo el altavoz.
+
+   Antes era un <input type="range"> y el pulgar se centraba con margin-top y
+   ::-webkit-slider-thumb. El numero que lo centra bien no es el mismo en cada
+   navegador, y en Firefox no se toca igual: de ahi que saliera descentrado. Con
+   el mismo markup que la pista de progreso, las dos barras se comportan igual.
+
+   El ancho se anima en la PISTA y no en el relleno: si se animara el relleno, en
+   cada fotograma de la apertura se recolocarian el relleno y la bolita, y la
+   bolita se veria "corriendo" al abrirse. */
+.clip-vol { display: flex; align-items: center; gap: 0.15rem; flex: none; }
+
+.clip-vol-pista {
+  width: 0; opacity: 0; flex: none;
+  transition: width 0.2s ease, opacity 0.2s ease;
+}
+.clip-vol:hover .clip-vol-pista,
+.clip-vol:focus-within .clip-vol-pista { width: 4.6rem; opacity: 1; }
+.clip-vol-pista:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 3px; border-radius: 2px; }
+
+/* Su bolita es algo mas pequena que la de la pista: el volumen se cambia de una
+   vez y una bola grande ahi invita a saltarse puntos sin querer. */
+.clip-vol-pista .clip-mando {
+  width: 0.5rem; height: 0.5rem; margin-left: -0.25rem;
+  transform: translateY(-50%) scale(0.6);
+}
+.clip-vol:hover .clip-vol-pista .clip-mando,
+.clip-vol:focus-within .clip-vol-pista .clip-mando { transform: translateY(-50%) scale(0.9); }
+
+@media (max-width: 560px) {
+  /* En un movil el tiempo y el volumen no caben juntos: se va el tiempo, que el
+     navegador ya pone si el visitante quiere saberlo. */
+  .clip-tiempo { display: none; }
+  .clip-vol:hover .clip-vol-pista,
+  .clip-vol:focus-within .clip-vol-pista { width: 3.6rem; }
+}
+
+/* El pie del clip es una nota de datos mas, con su sangria como las demas. */
+.clip figcaption { font-size: 0.68rem; color: var(--gris); opacity: 0.7;
+                   margin: 0.6rem 0 0; }
+
+@media (max-width: 480px) {
+  .clip-tiempo { font-size: 0.62rem; }
+}
+
+/* El fondo del video va en --suelo, el color del papel del sitio, y no en un
+   gris fijo. Es el unico elemento que puede salir claro: el angel del fondo es
+   un cielo muy claro, y en el tema blanco un recuadro negro al lado de una caja
+   clara canta mas que el rectangulo gris del tema negro. */
 
 /* ══ LOS CUATRO BLOQUES DE DATOS VIVOS ════════════════════════════════════
    La paleta, la salida del doctor, el comando de instalar y las pantallas.
@@ -663,6 +1199,16 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
 
 /* En movil el padding izquierdo de 1.4rem, que venia de la sangria del filo,
    se come el ancho. Se quita. */
+/* En movil los bloques de la seccion van con algo mas de aire: con la caja
+   abierta el contenido ya no va pegado a los bordes, y el vertical se leia
+   justo. */
+@media (max-width: 700px) {
+  .clip { margin-top: 1.9rem; }
+  .acciones-seccion { margin-top: 1.9rem; }
+  .instalar { margin-top: 4.2rem; padding-top: 2.8rem; }
+  .clip-nota { margin-top: 1rem; }
+}
+
 @media (max-width: 560px) {
   .terminal, .comando, .muestras, .pantallas,
   .abierta .nota-dato, .abierta .sin-datos { padding-left: 0; }

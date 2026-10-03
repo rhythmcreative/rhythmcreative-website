@@ -63,8 +63,6 @@
 
   // ── La seccion de Hyprland ─────────────────────────────────────────────────
 
-  var abierto = null;
-
   function datoDelRepo() {
     return (G && G.repos && G.repos[H.repo]) || null;
   }
@@ -78,101 +76,106 @@
     return S[campo] === undefined ? null : S[campo];
   }
 
+  // El logotipo de Arch Linux, dibujado aqui en vez de traer un fichero.
+  //
+  // Son tres trazos y un hueco: las dos piernas del triangulo y la base, con un
+  // corte entre la base y la pierna derecha. Ese corte es lo que hace que se
+  // reconozca como el logo de Arch y no como un triangulo cualquiera.
+  //
+  // Va en currentColor, sin relleno y con trazo, para que tome el color de la
+  // linea de la cabecera en los dos temas. Y con aria-hidden: al lado del numero
+  // no le anade nada a quien no lo ve, y el nombre de la distribucion ya esta en
+  // el titulo de la seccion y en el pie.
+  var LOGO_ARCH = '<svg class="logo-arch" viewBox="0 0 24 22" aria-hidden="true" ' +
+    'focusable="false"><path d="M12 1.8 L3 20.2" /><path d="M12 1.8 L21 20.2" />' +
+    '<path d="M3 20.2 L13.4 20.2" /></svg>';
+
   function pintarHyprland() {
     if (!H) return;
     var d = datoDelRepo();
-    var izq = [];
 
-    // ── La identidad: lo que dice que es esto ────────────────────────────
-    izq.push('<div class="cabecera-seccion">');
-    izq.push('<span class="punto-mini"></span>');
-    izq.push("<h2>hyprland</h2>");
-    izq.push('<span class="meta">' +
-      (d ? "★ " + esc(d.stars) + (d.lenguaje ? "  ·  " + esc(d.lenguaje) : "") +
-           (d.push ? "  ·  " + esc(hace(d.push)) : "")
-           : "no github data") + "</span>");
-    izq.push("</div>");
-    izq.push('<p class="lema">' + esc(H.lema) + "</p>");
-    izq.push('<p class="intro">' + esc(H.intro) + "</p>");
+    // ── La seccion, que ahora es una sola columna ───────────────────────
+    //
+    // Antes esto era un grid de dos: la identidad a la izquierda y las piezas
+    // desplegables a la derecha. Ahora son cuatro cosas en este orden, en una
+    // sola columna y con el ancho del contenido: la cabecera con los numeros
+    // del repo, el clip, y los dos botones. Ni lema, ni intro, ni bloques de
+    // datos vivos, ni las piezas. El clip dice lo que el lema decia, y lo dice
+    // en movimiento.
+    var out = [];
 
-    // ── Lo que hay vivo ahora mismo ──────────────────────────────────────
-    var vivos = (H.enVivo || []).map(function (v) {
-      var x = valorEnVivo(v.de);
-      return '<div class="vivo"><b>' + (x === null ? "—" : esc(String(x))) +
-             "</b><span>" + esc(v.etiqueta) + "</span></div>";
-    }).join("");
-    if (vivos) izq.push('<div class="vivos">' + vivos + "</div>");
+    out.push('<div class="cabecera-seccion">');
+    out.push('<span class="punto-mini"></span>');
+    out.push("<h2>hyprland</h2>");
+    // La version que tiene el repo AHORA, no el lenguaje en el que esta
+    // escrito. "Shell" no le dice nada a quien llega: el repo entero es un
+    // script de shell, eso ya se ve. Lo que interesa es que release es, que es
+    // lo que dice si lo tienes al dia.
+    //
+    // La release la recoge scripts/collect-github.py en data/github.js. Si aun
+    // no hay ninguna, se enseña el lenguaje: la cabecera no puede quedarse con un
+    // hueco raro en mitad de la linea.
+    // El logotipo de Arch va pegado a la version y NO separado por el punto medio:
+    // es de la release, no un dato mas de la linea. Por eso entra en el mismo
+    // elemento de la lista, delante del numero.
+    var meta = ["★ " + esc(d.stars)];
+    if (d.release) meta.push(LOGO_ARCH + esc(d.release));
+    else if (d.lenguaje) meta.push(LOGO_ARCH + esc(d.lenguaje));
+    if (d.push) meta.push(esc(hace(d.push)));
+    out.push('<span class="meta">' + meta.join("  ·  ") + "</span>");
+    out.push("</div>");
 
-    if ((H.base || []).length) {
-      izq.push('<div class="etiquetas">' + H.base.map(function (b) {
-        return "<span>" + esc(b) + "</span>";
-      }).join("") + "</div>");
-    }
+    out.push(video(H.clip || {}));
 
-    // Solo el repo. Los enlaces al resto ya estan en el menu del pie, y aqui
-    // estaban las dos veces.
-    izq.push('<div class="acciones-seccion">' +
-      '<a class="b" href="https://github.com/' + esc(H.repo) +
-      '" target="_blank" rel="noopener">el repo ↗</a></div>');
+    // Los dos botones. El de github a la izquierda y el del manual a la
+    // derecha, tirados del ancho con justify-content: space-between, para que
+    // en una pantalla ancha no se queden juntos en una esquina.
+    //
+    // El de github lleva el mark de verdad (el octocat del set oficial, que es
+    // una sola ruta SVG) en un cuadrado con radio. Va en currentColor, asi que
+    // no hay dos iconos que mantener ni que cambiar con el tema.
+    out.push('<div class="acciones-seccion">' +
+      '<a class="b b-gh" href="https://github.com/' + esc(H.repo) +
+      '" target="_blank" rel="noopener">' +
+      '<span class="marca" aria-hidden="true"><svg viewBox="0 0 16 16" fill="currentColor">' +
+      '<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 ' +
+      '0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 ' +
+      '1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 ' +
+      '0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 ' +
+      '0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>' +
+      '</svg></span>Github</a>' +
+      '<a class="b b-flecha" href="' + esc(H.manual || "#hyprland") +
+      '" target="_blank" rel="noopener"><span>' + esc(H.manualTexto || "the manual") +
+      '</span><i aria-hidden="true"></i></a>' +
+      "</div>");
 
-    // ── Las piezas, a la derecha ─────────────────────────────────────────
-    var der = ['<div class="piezas">'];
-    (H.piezas || []).forEach(function (p) { der.push(pieza(p)); });
-    der.push("</div>");
+    // Instalar. Va DEBAJO del clip y de los botones, y es lo ultimo de la
+    // seccion: es lo que se viene a hacer cuando ya se ha visto que esto es de
+    // fiar.
+    //
+    // Una sola linea, y el boton de copiar dentro de la caja. Lo de las banderas
+    // no va aqui: lo cuenta el manual, que ya esta enlazado un par de lineas mas
+    // arriba.
+    out.push('<div class="instalar">' +
+      '<h3 class="instalar-titulo">' + esc(H.instalar.titulo) + "</h3>" +
+      '<p class="instalar-texto">' + esc(H.instalar.texto) + "</p>" +
+      '<div class="comando instalar-cmd"><code>' + esc(H.instalar.comando) + "</code>" +
+      '<button class="copiar" type="button" data-copiar="' + esc(H.instalar.comando) +
+      '">copy</button></div>' +
+      "</div>");
+
 
     var caja = $("#hyprland-caja");
-    if (caja) {
-      caja.innerHTML = '<div class="rejilla-seccion">' +
-        '<div class="identidad">' + izq.join("") + "</div>" +
-        '<div class="columna">' + der.join("") + "</div></div>";
-    }
+    if (caja) caja.innerHTML = out.join("");
   }
 
-  function pieza(p) {
-    var h = '<button class="pieza" type="button" data-id="' + esc(p.id) +
-            '" aria-expanded="' + (abierto === p.id) + '">' +
-            '<span class="filo"></span>' +
-            '<span class="cuerpo"><b>' + esc(p.titulo) + "</b>" +
-            "<i>" + esc(p.resumen) + "</i></span>" +
-            // Ojo con los parentesis: el ternario se come lo que venga detras
-            // mientras no esten entre parentesis. Sin ellos, la rama false se
-            // comia el "+" del resto de la concatenacion, con lo que el boton,
-            // su contenido y el </button> desaparecian de la fila y solo
-            // quedaban los chips sueltos.
-            ((p.chips || []).slice(0, 2).length
-              ? '<span class="chips-fila">' +
-                (p.chips || []).slice(0, 2).map(function (c) {
-                  return '<span class="chip-mini">' + esc(c) + "</span>";
-                }).join("") + "</span>"
-              : "") +
-            '<span class="mas" aria-hidden="true">' + (abierto === p.id ? "−" : "+") + "</span>" +
-            "</button>";
 
-    if (abierto !== p.id) return h;
-
-      var dentro = '<div class="abierta">';
-      (p.filas || []).forEach(function (f) {
-        dentro += "<p>" + esc(f) + "</p>";
-      });
-      if (p.tipo) dentro += vivo(p);
-      if ((p.banderas || []).length) {
-        dentro += '<div class="banderas">' + p.banderas.map(function (b) {
-          return "<div><code>" + esc(b[0]) + "</code><span>" + esc(b[1]) + "</span></div>";
-        }).join("") + "</div>";
-      }
-      if ((p.chips || []).length > 2) {
-        dentro += '<div class="etiquetas">' + p.chips.map(function (c) {
-          return "<span>" + esc(c) + "</span>";
-        }).join("") + "</div>";
-      }
-      dentro += "</div>";
-      return h + dentro;
-  }
-
-// ── Los cuatro bloques de datos vivos ───────────────────────────────────
+// ── Los bloques de datos vivos ─────────────────────────────────────────
     //
     // Todos leen de data/system.js, que escribe el recolector en la maquina
-    // del sitio. `tipo` en assets/hyprland.js elige cual se pinta.
+    // del sitio. Ya no se pintan en la pagina: la seccion se quedo en la
+    // cabecera, el clip y los dos botones. Se dejan aqui porque son lo que
+    // haria falta si algun dia vuelven.
     //
     // Si el dato no esta, sale una linea de aviso. Nunca un numero inventado:
     // una pagina que se inventa un dato es peor que una que no lo tiene.
@@ -182,7 +185,324 @@
       if (p.tipo === "comando") return comando(p);
       if (p.tipo === "pantallas") return pantallas();
       if (p.tipo === "atajos") return atajos();
+      if (p.tipo === "video") return video(p);
       return "";
+    }
+
+    // El clip del escritorio.
+    //
+    // Lo importante aqui es que NO baja al abrir la pagina. Son 1,4 MB, y la
+    // pagina pesa 242 KB: si el <video> fuera un atributo normal, el navegador
+    // lo pediria en cuanto parsea el HTML, y el visitante estaria pagando 1,4 MB
+    // de los que no ha pedido. Se pone preload="none" y el src se asigna al
+    // abrirse la pieza, que es el momento en que alguien ha dicho que lo quiere.
+    //
+    // El poster son 22 KB y va si, porque es lo que se ve en el hueco antes de
+    // que se abra: sin el, el rectangulo sale negro.
+    //
+    // width/height van puestos para que el navegador reserve la caja antes de
+    // tener el metadato. Sin eso la pieza crece al cargar y todo lo de debajo
+    // baja de golpe.
+    function video(p) {
+      if (!p.src) return '<p class="sin-datos">No clip recorded yet.</p>';
+      var id = "clip-" + esc(p.id || "video");
+      // Sin `controls`: los del navegador son una barra gris del sistema, que
+      // en una pagina con este cuidado queda como un trozo pegado encima. El
+      // reproductor de abajo es el del sitio.
+      //
+      // El <button> de play va DENTRO del <video>, no al lado. Por una regla de
+      // HTML, dentro de un <video> solo se permite <source>, <track> y texto
+      // plano; cualquier otra cosa se saca al padre y se pierde el boton.
+      // Por eso el overlay del play es un hermano, y el video se apila debajo
+      // con position: absolute.
+      return '<figure class="clip">' +
+        '<div class="escena-clip">' +
+          '<video id="' + id + '" width="1280" height="720" ' +
+          'poster="' + esc(p.poster || "") + '" preload="none" playsinline ' +
+          'loop aria-label="' + esc(p.titulo || "clip") + '">' +
+          '<source data-src="' + esc(p.src) + '" type="video/mp4">' +
+          "Tu navegador no sabe reproducir MP4. El clip son 33 segundos del " +
+          "escritorio, con el launcher, el panel de control y el final." +
+          "</video>" +
+          '<button class="clip-play" type="button" data-play="' + id +
+          '" aria-label="Reproducir el clip"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+          '<path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"/></svg></button>' +
+        "</div>" +
+        '<div class="clip-barra">' +
+          '<button class="clip-btn" type="button" data-accion="play" aria-label="Reproducir">' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico-play"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"/></svg>' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico-pausa"><path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"/></svg>' +
+          "</button>" +
+          '<div class="clip-pista" role="slider" tabindex="0" aria-label="Posicion" ' +
+            'aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
+            '<span class="clip-barra-rota"></span><span class="clip-mando"></span>' +
+          "</div>" +
+          '<span class="clip-tiempo"><b class="clip-actual">0:00</b>' +
+            '<i>/</i><span class="clip-total">0:33</span></span>' +
+          // El volumen, como en Omarchy: el altavoz con una barrita al lado.
+          //
+          // Es el mismo markup que la pista de progreso y por el mismo motivo:
+          // el <input type="range"> nativo hay que centrarle el pulgar con
+          // margin-top y ::-webkit-slider-thumb, y el numero que lo centra bien
+          // no es el mismo en cada navegador. Con dos piezas de markup las dos
+          // barras se comportan igual.
+          '<div class="clip-vol">' +
+            '<button class="clip-btn" type="button" data-accion="mute" aria-label="Quitar el sonido">' +
+              '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico-son"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>' +
+              '<path d="M16 8.5a4.5 4.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
+              '<svg viewBox="0 0 24 24" aria-hidden="true" class="ico-mudo"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>' +
+              '<path d="m16 9 5 6M21 9l-5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
+            "</button>" +
+            '<div class="clip-pista clip-vol-pista" role="slider" tabindex="0" ' +
+              'aria-label="Volumen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">' +
+              '<span class="clip-barra-rota"></span><span class="clip-mando"></span>' +
+            "</div>" +
+          "</div>" +
+        "</div>" +
+        '<figcaption class="nota-dato">' + esc(p.nota || "") + "</figcaption>" +
+        "</figure>";
+    }
+
+    // El src se asigna aqui y no antes. Cada vez que el clip va a entrar en
+    // pantalla se comprueba si tiene un <source data-src> al que le falte el src.
+    function montarVideos() {
+      document.querySelectorAll("video source[data-src]").forEach(function (s) {
+        if (s.getAttribute("src")) return;
+        s.setAttribute("src", s.getAttribute("data-src"));
+        var v = s.parentNode;
+        if (v) v.load();
+      });
+    }
+
+    // ── El reproductor ───────────────────────────────────────────────────
+    //
+    // Todo lo que hace el control nativo, pero con el estilo del sitio: play y
+    // pausa, barra de progreso con arrastre, tiempo, y el sonido.
+    //
+    // Lo unico que no tiene es el picture-in-picture y el fullscreen. El
+    // fullscreen lo pone el propio navegador con F11 y con el menu del
+    // contenedor, asi que no hacia falta un boton mas.
+    function reproductor(video) {
+      if (!video) return;
+      var arrastrando = false;
+      var barra = video.parentNode.parentNode.querySelector(".clip-barra");
+      if (!barra) return;
+      var btnPlay = barra.querySelector('[data-accion="play"]');
+      var btnMute = barra.querySelector('[data-accion="mute"]');
+      var pista = barra.querySelector(".clip-pista");
+      var relleno = pista.querySelector(".clip-barra-rota");
+      var mando = pista.querySelector(".clip-mando");
+      var actual = barra.querySelector(".clip-actual");
+      var total = barra.querySelector(".clip-total");
+
+      function reloj(s) {
+        if (!isFinite(s)) return "0:00";
+        var m = Math.floor(s / 60);
+        var r = Math.floor(s % 60);
+        return m + ":" + (r < 10 ? "0" : "") + r;
+      }
+
+      function pintar() {
+        var d = video.duration || 0;
+        var pct = d ? (video.currentTime / d) * 100 : 0;
+        relleno.style.width = pct + "%";
+        // Y la BOLITA se mueve con el relleno. Esto faltaba: se movia el
+        // relleno y la bolita se quedaba clavada en el principio. Se veia en
+        // cuanto pinchabas en la barra para saltar: la linea iba a donde
+        // hubieras pinchado y el punto seguia en el borde izquierdo.
+        mando.style.left = pct + "%";
+        pista.setAttribute("aria-valuenow", Math.round(pct));
+        pista.setAttribute("aria-valuetext", reloj(video.currentTime) + " de " + reloj(d));
+        actual.textContent = reloj(video.currentTime);
+        // Antes de que llegue el metadato no se pinta nada: poner el ancho a
+        // NaN% deja la barra en un estado que hay que deshacer.
+        if (d) total.textContent = reloj(d);
+      }
+
+      function alternar() {
+        // El primer play necesita un play() dentro de un gesto del usuario, y
+        // este lo es: el boton. A partir de ahi se puede pausar y reanudar.
+        if (video.paused) {
+          var p = video.play();
+          if (p && p.catch) p.catch(function () { });
+        } else video.pause();
+      }
+
+      video.addEventListener("timeupdate", pintar);
+      video.addEventListener("loadedmetadata", pintar);
+      video.addEventListener("play", function () {
+        // La clase va en los dos sitios: la del boton grande (que esta en la caja
+        // del video) y la de los iconos de la barra. Con una sola no se
+        // cambiaria ninguno de los dos.
+        video.parentNode.classList.add("sonando");
+        barra.classList.add("sonando");
+        btnPlay.setAttribute("aria-label", "Pausar");
+      });
+      video.addEventListener("pause", function () {
+        video.parentNode.classList.remove("sonando");
+        barra.classList.remove("sonando");
+        btnPlay.setAttribute("aria-label", "Reproducir");
+      });
+
+      btnPlay.addEventListener("click", alternar);
+      // El boton grande del overlay. Es el mismo play: si el clip ya esta
+      // sonando, lo para, que es lo que espera cualquiera que pulse ahi.
+      var grande = video.parentNode.querySelector(".clip-play");
+      if (grande) {
+        grande.addEventListener("click", function (ev) {
+          // Sin esto el clic llegaria dos veces al contenedor de mas abajo, que
+          // tambien alterna: uno pondria en marcha y el otro pararia, y el
+          // boton grande no haria nada.
+          ev.stopPropagation();
+          alternar();
+          video.focus();
+        });
+      }
+
+      // Pinchar en el clip lo para y lo reanuda. Antes no habia nada: como el
+      // boton grande se apaga en cuanto arranca y ademas con pointer-events:
+      // none, la unica manera de parar era el boton de la barra de abajo. En un
+      // reproductor de verdad, pinchar en el video es lo primero que pruebas.
+      //
+      // El manejador va en la CAJA (que es .escena-clip) y no en el <video>, para
+      // que el clic del boton grande, que esta dentro, tambien cuente; ese se
+      // para antes con stopPropagation.
+      //
+      // La barra de controles esta FUERA de la caja, asi que pulsar play, el
+      // tiempo o el volumen aqui no toca la reproduccion.
+      var caja = video.parentNode;
+      caja.addEventListener("click", function () {
+        alternar();
+        video.focus();
+      });
+
+      // El sonido va ON. El <video> no lleva el atributo muted a proposito: el clip
+      // tiene musica y quien le da a play quiere oirla. Sin atributo muted el
+      // boton arranca enseñando el altavoz, que es lo que hay. Para poder
+      // autoplay en silencio habria que ponerlo, y aqui no hay autoplay: el play
+      // solo pasa dentro de un clic, que es un gesto, y ahi el navegador lo
+      // deja sonar sin problema.
+      barra.classList.toggle("sin-sonido", video.muted);
+
+      // El volumen. La pista va de 0 a 100 y el <video> va de 0 a 1, asi que hay
+      // que convertir en los dos sentidos.
+      var volPista = barra.querySelector(".clip-vol-pista");
+      var volRelleno = volPista.querySelector(".clip-barra-rota");
+      var volMando = volPista.querySelector(".clip-mando");
+      var volumenAntesDeMutar = 1;
+
+      function marcarSonido() {
+        barra.classList.toggle("sin-sonido", video.muted || video.volume === 0);
+        btnMute.setAttribute("aria-label", video.muted || video.volume === 0
+          ? "Poner el sonido" : "Quitar el sonido");
+      }
+
+      function pintarVolumen() {
+        var pct = Math.round(video.volume * 100);
+        volRelleno.style.width = pct + "%";
+        // La bolita tambien, que es el mismo forget que en la pista.
+        volMando.style.left = pct + "%";
+        volPista.setAttribute("aria-valuenow", pct);
+        volPista.setAttribute("aria-valuetext", pct + " de 100");
+      }
+
+      function ponerVolumen(pct) {
+        pct = Math.max(0, Math.min(100, pct));
+        video.volume = pct / 100;
+        // Mover la barrita a algo que no sea cero quita el mute: es lo que
+        // espera cualquiera que la toque, y si no habia que pulsar dos veces.
+        if (pct > 0) video.muted = false;
+        marcarSonido();
+        pintarVolumen();
+      }
+
+      // Clic y arrastre, igual que la pista de progreso.
+      function saltarVolumen(evt) {
+        var r = volPista.getBoundingClientRect();
+        var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - r.left;
+        if (!r.width) return;
+        ponerVolumen((x / r.width) * 100);
+      }
+      var arrastrandoVol = false;
+      volPista.addEventListener("click", saltarVolumen);
+      volPista.addEventListener("mousedown", function (ev) {
+        if (ev.button !== 0) return;
+        ev.preventDefault();
+        arrastrandoVol = true;
+        saltarVolumen(ev);
+      });
+      addEventListener("mousemove", function (ev) {
+        if (arrastrandoVol) saltarVolumen(ev);
+      });
+      addEventListener("mouseup", function () { arrastrandoVol = false; });
+
+      // Doble clic para volver al maximo, como en cualquier reproductor.
+      volPista.addEventListener("dblclick", function () { ponerVolumen(100); });
+
+      // Con el teclado, de cinco en cinco, que es lo que hace la de progreso.
+      volPista.addEventListener("keydown", function (ev) {
+        var salta = ev.key === "ArrowRight" || ev.key === "ArrowUp" ? 5
+                  : ev.key === "ArrowLeft" || ev.key === "ArrowDown" ? -5 : 0;
+        if (!salta) return;
+        ev.preventDefault();
+        ponerVolumen(video.volume * 100 + salta);
+      });
+
+      btnMute.addEventListener("click", function () {
+        if (!video.muted && video.volume > 0) {
+          // Guardar el volumen antes de callar, para que el siguiente clic lo
+          // devuelva a donde estaba en vez de a 1.
+          volumenAntesDeMutar = video.volume;
+          video.muted = true;
+        } else if (video.muted) {
+          video.muted = false;
+          if (video.volume === 0) video.volume = volumenAntesDeMutar || 1;
+        }
+        marcarSonido();
+        pintarVolumen();
+      });
+
+      marcarSonido();
+      pintarVolumen();
+
+      // La pista: clic para saltar, y arrastre con el raton y con el dedo.
+      function saltar(evt) {
+        var r = pista.getBoundingClientRect();
+        var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - r.left;
+        var pct = Math.max(0, Math.min(1, x / r.width));
+        if (video.duration) video.currentTime = pct * video.duration;
+        pintar();
+      }
+      pista.addEventListener("click", saltar);
+      pista.addEventListener("mousedown", function (ev) {
+        if (ev.button !== 0) return;
+        ev.preventDefault();
+        arrastrando = true;
+        saltar(ev);
+      });
+      window.addEventListener("mousemove", function (ev) {
+        if (arrastrando) saltar(ev);
+      });
+      window.addEventListener("mouseup", function () { arrastrando = false; });
+
+      // Con el teclado la pista va de cinco en cinco segundos, que es lo que
+      // hace el control nativo y lo que espera cualquiera que la mueva.
+      pista.addEventListener("keydown", function (ev) {
+        if (!video.duration) return;
+        var salta = ev.key === "ArrowRight" ? 5 : ev.key === "ArrowLeft" ? -5 : 0;
+        if (!salta) return;
+        ev.preventDefault();
+        video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + salta));
+        pintar();
+      });
+
+      // Espacio y k sobre el video, sin capturar la tecla en la pagina entera.
+      video.setAttribute("tabindex", "0");
+      video.addEventListener("keydown", function (ev) {
+        if (ev.key === " " || ev.key === "k") { ev.preventDefault(); alternar(); }
+      });
+
+      pintar();
     }
 
     // La paleta que pywal ha generado ahora mismo. Es la del sistema de quien
@@ -306,17 +626,29 @@
 
     // El boton de copiar. Va por delegacion, asi que sirve para todos los
     // comandos que se anadan despues sin tocar nada mas.
+    //
+    // Tambien copia el comando de instalar al pinchar EN el comando, no solo en
+    // el boton: sin caja, el comando sale subrayado al pasar el raton y eso ya
+    // esta diciendo que se puede pinchar. El aviso va al boton en los dos casos,
+    // que es donde esta la palabra "copied".
     document.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest(".copiar");
-      if (!b) return;
-      var txt = b.getAttribute("data-copiar") || "";
+      var cod = !b && ev.target.closest && ev.target.closest(".instalar-cmd code");
+      if (!b && !cod) return;
+      var caja = b ? b : cod.closest(".instalar-cmd");
+      // El texto del code es el comando entero y solo el: el "$" va en un
+      // pseudo de la caja, precisamente para que esto salga limpio.
+      var txt = b ? (b.getAttribute("data-copiar") || "")
+                  : (cod.textContent || "").replace(/\s+/g, " ").trim();
       var listo = function () {
-        var antes = b.textContent;
-        b.textContent = "copied";
-        b.classList.add("hecho");
+        var aviso = caja.querySelector(".copiar");
+        if (!aviso) return;
+        var antes = aviso.textContent;
+        aviso.textContent = "copied";
+        aviso.classList.add("hecho");
         setTimeout(function () {
-          b.textContent = antes;
-          b.classList.remove("hecho");
+          aviso.textContent = antes;
+          aviso.classList.remove("hecho");
         }, 1600);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -443,30 +775,61 @@
       });
     }
 
-    var caja = $("#hyprland-caja");
-    if (caja) {
-      caja.addEventListener("click", function (ev) {
-        var b = ev.target.closest(".pieza");
-        if (!b) return;
-        var id = b.getAttribute("data-id");
-        abierto = abierto === id ? null : id;
-        pintarHyprland();
-      });
+    // La seccion se pinta ANTES de mirar el clip. Antes estaba al reves, y el
+    // observer se montaba sobre un DOM que todavia no tenia el <video>: no
+    // observaba nada y el clip no se montaba hasta la red de seguridad de los
+    // cuatro segundos. Cuatro segundos de poster por ir looking for un elemento
+    // que ya estaba ahi.
+    interruptor();
+    sellos();
+    ficha();
+    pintarHyprland();
+
+    // El clip no espera a que nadie pulse nada: ya no hay una pieza que abrir.
+    // Espera a que este a punto de entrar en pantalla, que es el momento en que
+    // bajar 2,7 MB deja de molestar. Con rootMargin se adelanta 600 px para que
+    // llegue empezado en vez de esperar a que se vea el borde.
+    //
+    // El reproductor se engancha aqui y no antes, para que no se quede
+    // escuchando eventos de un <video> al que todavia no le han puesto el src.
+    //
+    // clipMontado evita hacerlo dos veces: el src se pondria otra vez y el
+    // <video> recargaria desde el principio, que es lo que mas se nota.
+    var clipMontado = false;
+    function arrancarClip() {
+      if (clipMontado) return;
+      clipMontado = true;
+      montarVideos();
+      $$("#hyprland-caja video").forEach(reproductor);
     }
 
-    document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && abierto) { abierto = null; pintarHyprland(); }
-      else if (ev.key === "j" && H && H.piezas && H.piezas.length) {
-        var p0 = H.piezas[0].id;
-        abierto = abierto === p0 ? null : p0;
-        pintarHyprland();
-      }
-    });
+    if ("IntersectionObserver" in window) {
+      var obs = new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          arrancarClip();
+          obs.disconnect();
+        });
+      }, { rootMargin: "600px 0px" });
+      var pendiente = $$("video source[data-src]");
+      if (pendiente.length) obs.observe(pendiente[0].parentNode);
+      // Red de seguridad. El observer deberia disparar siempre, pero si no lo
+      // hace el clip se queda en el poster para siempre y no hay ningun boton
+      // fallado que diga que lo que falta es el src. A los cuatro segundos se
+      // monta igual; todavia esta fuera de pantalla, asi que solo se adelanta
+      // la descarga.
+      setTimeout(arrancarClip, 4000);
+    } else {
+      arrancarClip();
+    }
 
-      interruptor();
-      sellos();
-      ficha();
-      pintarHyprland();
+    // La tecla "j" abria la primera pieza. Ya no hay piezas, asi que baja al
+    // clip, que es lo que se abre ahora.
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "j") return;
+      var v = $("#hyprland-caja video");
+      if (v) v.scrollIntoView({ block: "center" });
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);

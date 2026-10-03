@@ -204,8 +204,12 @@ def elegir_halo(im):
     # centro de arriba.
     if float(suave.max()) - float(suave.mean()) < 9:
         x, y = 0.5, 0.17
-    r = 0.10
-    return {"x": round(float(x), 4), "y": round(float(y), 4), "r": r}
+    # rx es fraccion del ancho y ry de la altura. Aqui no hay un aro real que
+    # majar, asi que el resplandor se deja redondo de verdad: ry se compensa con
+    # la proporcion de la foto para que en pixeles siga siendo un circulo.
+    rx = 0.10
+    ry = round(rx * w / h, 4)
+    return {"x": round(float(x), 4), "y": round(float(y), 4), "rx": rx, "ry": ry}
 
 
 def guardar_webp(im, nombre, ancho_destino):
@@ -268,10 +272,10 @@ def preparar(ruta, salida=None):
         fh.write("  origen: %s,\n" % json.dumps(os.path.abspath(ruta)))
         fh.write("  receta: %s,\n" % json.dumps(huella_receta()))
         fh.write("  w: %d,\n  h: %d,\n" % (w, h))
-        fh.write("  halo: { x: %.4f, y: %.4f, r: %.4f },\n" % (halos["oscuro"]["x"],
-               halos["oscuro"]["y"], halos["oscuro"]["r"]))
-        fh.write("  haloClaro: { x: %.4f, y: %.4f, r: %.4f }\n" % (halos["claro"]["x"],
-               halos["claro"]["y"], halos["claro"]["r"]))
+        fh.write("  halo: { x: %.4f, y: %.4f, rx: %.4f, ry: %.4f },\n" % (halos["oscuro"]["x"],
+               halos["oscuro"]["y"], halos["oscuro"]["rx"], halos["oscuro"]["ry"]))
+        fh.write("  haloClaro: { x: %.4f, y: %.4f, rx: %.4f, ry: %.4f }\n" % (halos["claro"]["x"],
+               halos["claro"]["y"], halos["claro"]["rx"], halos["claro"]["ry"]))
         fh.write("};\n")
 
     return salida, w, h, halos

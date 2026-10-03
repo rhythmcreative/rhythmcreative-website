@@ -14,6 +14,41 @@
 
 window.RHYTHM_HYPRLAND = {
   repo: "rhythmcreative/hyprland",
+
+  // El clip. Va suelto en la seccion, no como pieza desplegable: son 2,7 MB y
+  // son lo primero que hay que ver, asi que no tiene sentido esconderlo detras
+  // de un "+". El src se pone cuando el clip va a entrar en pantalla; el
+  // poster son 23 KB y es lo que se ve hasta entonces.
+  clip: {
+    id: "hyprland",
+    titulo: "hyprland, the desktop",
+    src: "assets/hyprland-demo.mp4",
+    poster: "assets/hyprland-poster.webp",
+    nota: "Recorded off a real session."
+  },
+
+  // Los dos botones de abajo. El del manual va con flecha porque abre el
+  // README, que es donde esta el "manual install" de verdad.
+  manual: "https://github.com/rhythmcreative/hyprland#manual-install",
+  manualTexto: "Manual",
+
+  // Instalar. Va DEBAJO del clip y de los botones, que es donde toca: primero se ve
+  // como es, y luego ya se decide si se copia.
+  //
+  // Sin la nota de las banderas: era un parrafo entero debajo de la caja y, con
+  // el comando entero arriba, el bloque ocupaba mas que el clip. Lo cuenta el
+  // manual, que esta enlazado dos lineas mas arriba.
+  instalar: {
+    titulo: "Install",
+    texto: "One line. It asks before it changes anything, and it stops if this " +
+           "isn't Arch.",
+    comando: 'bash -c "$(curl -fsSL --connect-timeout 10 --max-time 60 ' +
+             'https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh)"'
+  },
+
+  // Lo que habia aqui antes (lema, intro, bloques de datos vivos y las piezas
+  // desplegables) ya no se pinta. Se queda en el fichero de datos por si hay
+  // que volver, pero la seccion es: cabecera, clip y los dos botones.
   lema: "An Arch desktop that doesn't break.",
   intro: "An installer that works the first time, updates that don't touch your " +
          "distro, and a doctor that tells you what's broken. You can have " +
