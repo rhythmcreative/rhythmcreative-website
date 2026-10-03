@@ -1252,6 +1252,7 @@
     // se pinta desde PLANO, no desde las secciones, asi que el orden entre estas
     // dos llamadas solo importa para que marcarIndice() encuentre los enlaces.
     pintarIndice();
+    altoBarra();
     indicePanel();
     montarBuscador();
     marcarIndice();
@@ -1342,6 +1343,29 @@
     var derecha = tira.scrollLeft + (a.right - t.left) - tira.clientWidth + 24;
     if (izquierda > 0) tira.scrollLeft = izquierda;              // esta a la derecha
     else if (derecha > 0) tira.scrollLeft = derecha;              // esta a la izquierda
+  }
+
+  // La altura de la barra, en una variable de CSS.
+  //
+  // El menu que baja desde arriba tiene que apoyarse JUSTO debajo de la barra, y
+  // esa altura no es un numero: medido, en un movil de 390 px son 65 px, no los
+  // 44 del objetivo tactil, porque la barra lleva el relleno del safe-area y el
+  // borde de la isla por encima. Escribi 65 a mano y a la semana siguiente, con
+  // otro movil, el menu se comia media barra.
+  //
+  // Asi que se mide. Un ResizeObserver y ya esta: cuando la barra cambia de alto
+  // —que pasa al girar el movil, o al pasar de dedo a raton— la variable se
+  // actualiza sola y el menu baja con ella.
+  function altoBarra() {
+    var barra = $(".barra-z");
+    if (!barra) return;
+    var fijar = function () {
+      var alto = Math.round(barra.getBoundingClientRect().height);
+      if (alto > 0) document.documentElement.style.setProperty("--alto-barra", alto + "px");
+    };
+    if ("ResizeObserver" in window) new ResizeObserver(fijar).observe(barra);
+    addEventListener("resize", fijar, { passive: true });
+    fijar();
   }
 
   // El panel de contenido de movil.

@@ -2244,6 +2244,19 @@ html.claro .salida .linea-ok { color: var(--hielo); }
 .contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
 .contenidos[aria-expanded="true"] { color: var(--azul-4); }
+/* La flechita. Se dibuja con dos bordes en vez de con un SVG, para no meter un
+   fichero de imagen ni una etiqueta mas en el HTML, y gira al abrirse con una
+   transicion de 0.2s que con reduced-motion se apaga sola. Es lo que hace que el
+   boton se lea como algo que se pliega y no como algo que te lleva a otra pagina. */
+.contenidos::after {
+  content: ""; width: 0; height: 0; align-self: center;
+  margin-left: 0.45rem;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  transition: transform 0.2s;
+}
+.contenidos[aria-expanded="true"]::after { transform: rotate(180deg); }
 /* Dos nombres y uno se esconde. Medido a 390 px: con "contents" el boton pisa
    el reloj por 15 px, porque en la barra solo queda para el nombre 126 px, el
    reloj 98 y el interruptor 44, y "contents" con su relleno se come el hueco
@@ -2278,9 +2291,18 @@ html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
        titulos se parten en dos lineas porque la columna se queda estrecha. */
     display: block;
     position: fixed;
-    top: auto;
+    /* Se apoya en la barra con top: auto, no con un numero. La variable la
+       escribe altoBarra() con la altura medida, porque esa altura cambia con el
+       movil y con el relleno del safe-area. */
+    top: var(--alto-barra, 65px);
     left: 0; right: 0;
+    /* bottom:0 y no bottom:auto con max-height: el menu llega hasta abajo aunque
+       su contenido sea mas corto. Con bottom:auto el elemento mide lo que miden
+       las trece lineas y debajo se ve la pagina —que aqui es la portada, con la
+       MISMA lista de secciones—, y se lee como si el menu estuviera duplicado.
+       Medido: el menu ocupaba 714 de 779 y por debajo salia la portada. */
     bottom: 0;
+    max-height: calc(100dvh - var(--alto-barra, 65px));
     /* La altura de la barra, medida: son 44 px con dedo y 41 con raton. Se usa la
        misma medida que el resto de la pagina para que el panel no tape la hora
        ni el boton de tema. */
@@ -2288,9 +2310,12 @@ html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     z-index: 40;
-    border-radius: 0;
-    border-left: 0; border-right: 0; border-bottom: 0;
-    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+    /* Solo las esquinas de abajo: arriba esta la barra, que es la que sostiene el
+       menu, y redondear las dos de arriba le daria un aspecto de tarjeta
+       pegada al techo en vez de algo que sale de debajo. */
+    border-radius: 0 0 var(--r) var(--r);
+    border-left: 0; border-right: 0; border-top: 0;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
     /* Un fondo casi opaco: es un menu encima del texto, y con el cristal de la
        barra se leeria el texto de debajo a traves de cada fila. */
     background: var(--suelo);
@@ -2372,4 +2397,5 @@ html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
 
 @media (prefers-reduced-motion: reduce) {
   .siguiente i { transition: none; }
+  .contenidos::after { transition: none; }
 }
