@@ -59,6 +59,10 @@ SITIO = os.path.dirname(AQUI)
 RAIZ_REPO = os.path.expanduser(os.environ.get("RHYTHM_HYPR", os.path.join("~", "hyprland")))
 ORIGEN = os.path.join(RAIZ_REPO, "assets")
 DESTINO = os.path.join(SITIO, "assets", "manual")
+# El directorio del tema del login dentro del repo, que guarda sus propios
+# previews. Va como constante y no como un trozo de ruta escrito en el for, para
+# que se vea de un vistazo que es lo que se esta añadiendo a la busqueda.
+TEMA_LOGIN = os.path.join(RAIZ_REPO, "sddm", "sddm-astronaut-theme")
 MANIFIESTO = os.path.join(SITIO, "data", "imagenes.js")
 
 # El ancho maximo de cada tipo de foto, en pixeles de la captura original.
@@ -103,6 +107,21 @@ SIN_COMPRIMIR = {".gif"}
 # se lee debajo, y por eso son dos palabras. Poner lo mismo en los dos hace que
 # un lector de pantalla lea la frase entera dos veces seguidas.
 FIGURAS = [
+    ("hyprland/empezar", ".config/hypr/wallpapers/default.jpg", ANCHO_PANTALLA,
+     "The wallpaper on a fresh install, before you change anything: a painted "
+     "mountain valley with a windmill on the ridge.",
+     "The first wallpaper you get"),
+
+    ("hyprland/login", "Previews/preview1.png", ANCHO_PANTALLA,
+     "The login theme in daylight, with the clock, the user field and the "
+     "password field over the Earth.",
+     "The theme by day"),
+
+    ("hyprland/login", "Previews/preview5.png", ANCHO_PANTALLA,
+     "The same login theme at night: darker, with the background almost gone. "
+     "The theme reads the clock and changes with it.",
+     "The same theme at night"),
+
     ("hyprland/atajos", "rofi_hotkeys_crop.png", ANCHO_RECORTE,
      "The hotkey browser, open over the desktop, with every shortcut in the "
      "config listed and searchable.",
@@ -175,6 +194,29 @@ FIGURAS = [
 ]
 
 
+def resuelve(fichero):
+    """Donde esta un fichero del repo, o None si no esta en ningun sitio.
+
+    Se prueban tres sitios, en este orden: assets/, que es donde vive casi todo;
+    la raiz del repo, para el papel pintado por defecto que esta en
+    .config/hypr/wallpapers; y el directorio del tema del login, que es donde
+    estan sus previews.
+
+    Con estos tres la lista se escribe con la ruta corta —"Previews/preview1.png"—
+    en vez del camino entero, que en la lista de abajo occupies cuatro lineas por
+    imagen y no dice nada que no se vea con abrir el repo.
+
+    Si un dia aparece una imagen en un cuarto sitio, el fallo no es silencioso:
+    sale un aviso con el nombre del fichero que falta y el script no escribe
+    nada. Se comprobó letting el fallo pasar.
+    """
+    for base in (ORIGEN, RAIZ_REPO, TEMA_LOGIN):
+        ruta = os.path.join(base, fichero)
+        if os.path.exists(ruta):
+            return ruta
+    return None
+
+
 def dimensiones(ruta):
     """(ancho, alto) de una imagen, o None si no se puede leer.
 
@@ -245,12 +287,15 @@ def main():
     os.makedirs(DESTINO, exist_ok=True)
     os.makedirs(os.path.dirname(MANIFIESTO), exist_ok=True)
 
-    faltan = [f for _, f, _, _, _ in FIGURAS if not os.path.exists(os.path.join(ORIGEN, f))]
+    faltan = [f for _, f, _, _, _ in FIGURAS if not resuelve(f)]
     if faltan:
         print("  en el repo no estan: %s" % ", ".join(faltan))
         return 1
 
-    limpia_sin_usar(set(os.path.splitext(f)[0] for _, f, _, _, _ in FIGURAS))
+    # El nombre, no la ruta: el fichero de salida es plano y se compara con el
+    # nombre, no con la ruta de donde vino.
+    limpia_sin_usar(set(os.path.splitext(os.path.basename(f))[0]
+                        for _, f, _, _, _ in FIGURAS))
 
     cuerpo = {}
     lineas = []
@@ -258,7 +303,7 @@ def main():
     despues = 0
 
     for seccion, fichero, ancho, alt, pie in FIGURAS:
-        origen = os.path.join(ORIGEN, fichero)
+        origen = resuelve(fichero)
         ext = os.path.splitext(fichero)[1].lower()
         peso_origen = os.path.getsize(origen)
         antes += peso_origen
@@ -271,7 +316,7 @@ def main():
             dim = dimensiones(destino) or (0, 0)
             motivo = "gif, sin webp animado en esta maquina"
         else:
-            nombre = os.path.splitext(fichero)[0] + ".webp"
+            nombre = os.path.splitext(os.path.basename(fichero))[0] + ".webp"
             destino = os.path.join(DESTINO, nombre)
             peso, w, h = convierte(origen, destino, ancho)
             dim = (w, h)

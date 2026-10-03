@@ -845,6 +845,16 @@
     var D = window.RHYTHM_DOCS || null;
     var a = (D && D.arbol) || {};
     if (!a.scripts) return '<p class="sin-datos">No tree in <code>data/documentacion.js</code>.</p>';
+    var entrada = "<p>The repository is mostly a pile of scripts with nothing to " +
+      "compile, which is why installing it takes one command and not a build " +
+      "system. Almost all of it lands in <code>~/.local/bin</code>, which is " +
+      "already on your PATH, so a script is installed by being copied and made " +
+      "executable.</p>" +
+      "<p>The files that are <em>not</em> yours are the ones under " +
+      "<code>/etc</code> and <code>/usr</code>: the login screen has to be " +
+      "written as root, so those go in a directory under <code>sddm/</code> and " +
+      "a deploy script copies them into place. Editing them by hand works until " +
+      "the next update, which puts them back.</p>";
     var filas = [
       ["~/.local/bin", a.scripts, "every helper script, all on PATH"],
       [".config/hypr", a.conf, "the compositor config"],
@@ -853,7 +863,7 @@
       [".config/quickshell", a.quickshell, "the island, in QML"],
       ["sddm/", a.sddm, "the login screen, installed to /usr and /etc"]
     ].filter(function (f) { return f[1]; });
-    return '<div class="arbol">' + filas.map(function (f) {
+    return entrada + '<div class="arbol">' + filas.map(function (f) {
       return '<div class="fila-arbol"><span class="ruta">' + esc(f[0]) + "</span>" +
         '<span class="cifra">' + f[1] + "</span>" +
         '<span class="nota">' + esc(f[2]) + "</span></div>";
@@ -949,6 +959,52 @@
       "the answer is in that directory.</p>";
   }
 
+  // ── Desde un movil ──────────────────────────────────────────────────────────
+  //
+  // Esta seccion casi toda son cosas que NO funcionan, y esa es la razon de que
+  // este. Hyprland es un compositor de Wayland que necesita una GPU, asi que no
+  // corre en Android ni en iOS y ningun sitio de este repo finge que si.
+  //
+  // Comprobado en la maquina el 2026-10-03, no de memoria:
+  //
+  //   si      ssh, cliphist.service, grim, slurp
+  //   no      wtype, wlrctl, ydotool, syncthing, kdeconnect
+  //
+  // Ese "no" es el contenido de la seccion. Un movil puede entrar por ssh y ya
+  // esta; no puede tocar la pantalla porque las tres herramientas que lo hacen
+  // posibles no estan instaladas, y no hay nada que las instale.
+  function seccionMovil() {
+    return '<p class="destacado">Hyprland needs a GPU and a Wayland session, so ' +
+      "it does not run on Android or iOS. This desktop is on the laptop. What " +
+      "follows is what does and does not cross over.</p>" +
+      '<div class="filas">' +
+      fila("This page", "Works on a phone. The index along the side becomes one " +
+        "row you slide sideways, the screenshots stack in a single column, and " +
+        "the bar at the top drops its links so the clock and the theme switch " +
+        "have room. Measured at 390 px wide.") +
+      fila("Getting in", "ssh is installed. From a phone you can open a session " +
+        "and drive the machine from the command line: hyprctl, the wallpaper " +
+        "script, the doctor. What you cannot do from there is see what you are " +
+        "doing.") +
+      fila("The clipboard", "cliphist.service is running, so anything copied on " +
+        "the desktop is still waiting when you get in. That is the easiest way " +
+        "to move text in either direction, and it needs nothing else installed.") +
+      fila("A phone as a trackpad", "Not set up. It takes one of wtype, wlrctl " +
+        "or ydotool to turn a phone into a pointer and a keyboard, and none of " +
+        "the three is here. Nothing in the installer adds them.") +
+      fila("Files and clipboard, automatically", "No syncthing and no KDE Connect. " +
+        "The two desktops do not talk to each other on their own; you move " +
+        "things over ssh or by hand.") +
+      "</div>" +
+      "<h4>The one place touch is handled</h4>" +
+      "<p>On a touchscreen laptop — not a phone, a laptop with a screen you can " +
+      "touch — the bar is handled properly. It matches on <code>(hover: none)</code> " +
+      "and then gives every control a 44 px target instead of the 28 px it " +
+      "gives a mouse, and moves the clock up in size so it is the thing you can " +
+      "read from an arm's length away. It is the only part of the desktop that " +
+      "was built with a finger in mind.</p>";
+  }
+
   function fila(a, b) {
     return '<div class="fila"><span class="k">' + esc(a) + "</span>" +
       '<span class="v">' + esc(b) + "</span></div>";
@@ -1001,36 +1057,75 @@
     // leer antes de saber de que esta hablando.
     var foto = figuras(idDe(proy, sub));
 
-    // Las secciones cuyo texto no sale de las piezas: sale del dato generado, o
-    // esta escrito aqui. Van por id y no por `pieza` porque las piezas son
-    // contenido de hyprland.js y estas son de las dos cosas.
+    // Lo que anade la seccion encima de las piezas: el dato generado —los
+    // atajos, la tabla de componentes— o un texto escrito aqui.
+    //
+    // NO se devuelve aqui con un return temprano. Antes se hacia, y por eso la
+    // seccion de "what's installed" se comia su propio texto: tenia pieza
+    // asignada y el return la impedia llegar a ella. Las dos cosas se pintan,
+    // piezas primero y luego esto.
     var propias = {
       atajos: atajos,
       instalado: componentes,
       actualizar: seccionActualizar,
       arbol: arbol,
       problemas: seccionProblemas,
-      barra: seccionBarra
+      barra: seccionBarra,
+      movil: seccionMovil
     };
-    if (propias[sub.id]) return foto + propias[sub.id]();
 
-    // Y las que salen de una pieza de hyprland.js.
-    var p = sub.pieza ? piezaPorId(sub.pieza) : null;
-    if (!p) {
-      return foto + '<p class="sin-datos">This section points at <code>' +
-        esc(sub.pieza || sub.id) + "</code>, which is not in the data.</p>";
-    }
+    // Y las que salen de una pieza de hyprland.js. Puede haber mas de una: la
+    // seccion del tema es el tema y la paleta, y con una sola se perdia una de
+    // las dos. Se pintan en el orden en que estan en la lista.
+    var ids = sub.pieza
+      ? (Array.isArray(sub.pieza) ? sub.pieza : [sub.pieza])
+      : [];
     var out = "";
-    if (p.resumen) out += '<p class="destacado">' + esc(p.resumen) + "</p>";
-    if (p.filas && p.filas.length) {
-      out += '<ul class="prosa">' + p.filas.map(function (f) {
-        return "<li>" + esc(f) + "</li>";
-      }).join("") + "</ul>";
-    }
-    if (p.tipo === "comando") out += comando(p);
-    // La tabla de banderas va con el instalador, que es de donde salen.
+    ids.forEach(function (id, i) {
+      var p = piezaPorId(id);
+      if (!p) {
+        out += '<p class="sin-datos">This section points at <code>' + esc(id) +
+          "</code>, which is not in the data.</p>";
+        return;
+      }
+      // La segunda pieza y siguientes llevan su propio subtitulo, porque si no
+      // sus frases se pegan a las de la primera y se leen como una sola lista
+      // con el resumen en medio.
+      if (i > 0) out += "<h4>" + esc(p.titulo) + "</h4>";
+      if (p.resumen) out += '<p class="destacado">' + esc(p.resumen) + "</p>";
+      if (p.filas && p.filas.length) {
+        out += '<ul class="prosa">' + p.filas.map(function (f) {
+          return "<li>" + esc(f) + "</li>";
+        }).join("") + "</ul>";
+      }
+      if (p.tipo === "comando") out += comando(p);
+      // La salida real del doctor. Se commitea con la pieza en vez de leerse de
+      // la maquina: data/system.js no se publica, asi que leerla de ahi dejaria
+      // el bloque vacio en la web y el texto de arriba diria "esta es su salida
+      // de verdad" sin ninguna salida debajo.
+      if (p.tipo === "terminal" && p.salida) out += salidaTerminal(p.salida);
+    });
+    // Y por ultimo lo de la seccion: las banderas del instalador, que salen
+    // del --help y no de este fichero.
     if (sub.id === "empezar") out += "<h4>Every flag</h4>" + banderas();
+    if (propias[sub.id]) out += propias[sub.id]();
     return foto + out;
+  }
+
+  // La salida de un comando, como bloque de texto pegado.
+  //
+  // Se marca cada linea que empieza por "ok" con una clase, y no se pintan los
+  // codigos de color ANSI del terminal: en una pagina web son texto invisible y
+  // rompen el ancho de la linea. El prefijo "ok" lo escribe el propio doctor, no
+  // lo pone este codigo, asi que si manana el doctor deja de usarlo lo que sale
+  // es un bloque gris sin verde, que es feo pero no mentira.
+  function salidaTerminal(texto) {
+    var lineas = String(texto).split("\n");
+    return '<pre class="salida">' + lineas.map(function (l) {
+      var esOk = /^\s*ok\s/.test(l);
+      return '<span class="' + (esOk ? "linea-ok" : "linea") + '">' +
+        (esc(l) || "&nbsp;") + "</span>";
+    }).join("") + "</pre>";
   }
 
   // ── El indice ──────────────────────────────────────────────────────────────

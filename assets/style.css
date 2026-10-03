@@ -2177,3 +2177,35 @@ html.claro .figura figcaption { color: rgba(30, 32, 34, 0.6); }
   .figuras-serie { grid-template-columns: 1fr; }
   .figura figcaption { font-size: 0.66rem; }
 }
+
+/* ══ LA SALIDA DE UN COMANDO ═════════════════════════════════════════════════
+   El bloque del doctor. Es texto de un terminal, no un <pre> pelado: lleva los
+   numeros de linea a la izquierda, que es lo que hace falta cuando algo falla y
+   hay que señalar una de veinte lineas. */
+.salida {
+  margin: 0.8rem 0 0;
+  padding: 0.85rem 1rem;
+  font: 0.74rem/1.6 var(--f);
+  color: var(--gris);
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  /* El bloque no se lee en una sola linea larga: el mensaje mas largo del doctor
+     es la ruta del repo, y con wrap queda partido en dos sitios distintos. */
+  overflow-x: auto;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+.salida .linea { display: block; min-height: 1.6em; }
+/* El "ok" del doctor es la palabra que dice que no hay nada roto, y es lo unico
+   que se lee de un vistazo en veinte lineas. */
+.salida .linea-ok { display: block; color: var(--hielo); min-height: 1.6em; }
+.salida .linea-ok::first-letter { color: var(--azul-4); }
+
+/* Las lineas en blanco entre bloques del doctor se colapsan: sin esto el hueco
+   entre "scripts referenced by the units are present" y "SDDM greeter:" es de
+   seis lineas de alto y parece que falta algo. */
+.salida .linea:empty { height: 0.7em; }
+
+html.claro .salida { color: var(--gris); }
+html.claro .salida .linea-ok { color: var(--hielo); }
