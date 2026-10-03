@@ -27,6 +27,19 @@
   color-scheme: dark;
   --suelo:    #07090b;
   --cristal:  rgba(16, 21, 25, 0.80);
+  /* El cristal de la barra va un punto mas opaco que el general, y los enlaces de
+     su nav un punto mas claros. Las dos cosas van juntas por una razon: con el
+     desenfoque puesto, el fondo de la barra deja pasar mas luz que antes (0.84 en
+     vez de 0.92), y --gris se queda en 2.69:1, por debajo de lo que se puede leer.
+     Medido sobre el pixel mas claro que hay detras de la barra, que es el cielo de
+     las alas:
+         0.80 con --gris              2.69:1   no se lee
+         0.84 con --enlace-barra      4.58:1   lo que lleva ahora
+         0.92 con --gris              3.98:1   el color de antes tampoco llegaba
+     El nombre y el reloj, con --hielo, se quedan en 5.3:1 y no ha hecho falta
+     tocarlos. */
+  --cristal-barra: rgba(16, 21, 25, 0.84);
+  --enlace-barra:  #85a2af;
   --cristal-opaco: rgba(13, 17, 20, 0.92);
   --hielo:    #99bac9;
   --oxido:    #ba5f44;
@@ -50,12 +63,13 @@
      opacity cae al valor inicial, que es 1 — el bloom entero a tope. */
   --halo-min: 0.50;
   --halo-max: 0.82;
-  --aro-min: 0.78;
-  /* Cuanto sube el aro al pinchar. En oscuro sube mas que en claro porque ahi
-     aclarar es encender y en claro multiplicar: medido sobre la foto, al 1.0 fijo
-     el anillo cae a un gris 66 y lo que sale es un aro de tinta duro, cuando la
-     foto sola esta en 163. Ni 1.0 ni --aro-min: un tope. */
-  --aro-alto: 0.88;
+  /* El aro NO va en tema oscuro. A cero, aqui y en el pico: con los dos a cero el
+     keyframe del pinchazo sale plano y pinchando tampoco enciende nada. Si el
+     pico tuviera valor propio, la animacion (que gana a cualquier declaracion
+     normal) lo volveria a encender un ratito.
+     Ver la nota de .aro, que explica por que el aro va solo en el tema claro. */
+  --aro-min: 0;
+  --aro-alto: 0;
   --f: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --r: 10px;
   --r-isla: 16px;
@@ -145,17 +159,43 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
            align-items: center;
   max-width: var(--ancho); margin: 0 auto;
-  /* Sin backdrop-filter. Debajo de la barra hay capas que se mueven en cada
-     fotograma, y el desenfoque de fondo hay que recalcularlo cada vez que pasa
-     algo por ahi. Con lo que hay debajo —niebla oscura— un cristal algo mas
-     opaco se ve igual. */
-  background: var(--cristal-opaco);
+  /* La barra lleva cristal y desenfoque de fondo DESDE EL PRIMER PIXEL, y no solo
+     al bajar. Se probo al reves —arriba sin fondo y con el cristal apareciendo al
+     pasar de 24 px de scroll, que es lo que hace omarchy.org— y aqui no es lo que
+     hacia falta: en la portada el nombre va contra el fondo del heroe, y con la
+     barra sin cristal el texto compite con las alas justo en la imagen buena. Con
+     el fondo puesto desde el principio el nombre se lee igual de bien se este
+     donde se este, que es lo unico que importa.
+
+     Con el cristal puesto de continuo, el fondo y el color de los enlaces van en
+     sus propias variables, --cristal-barra y --enlace-barra, y estan medidos para
+     esto. Sin fondo no harian falta; con fondo de siempre si. La nota de esas dos,
+     en :root, tiene los numeros: con --gris a 0.80 los enlaces se quedan en
+     2.69:1, por debajo de lo que se lee.
+
+     Lo que no se anima es el fondo, y a proposito: no cambia nunca, y una
+     transicion para algo que no se mueve solo anade retardo al primer pintado de la
+     pagina. La que si hay, la del transform, es la de cuando la barra se esconde
+     sola. */
+  background: var(--cristal-barra);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
   border: 0;
   border-radius: var(--r-isla);
   padding: 0.4rem 0.55rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+
+  /* Sin soporte de backdrop-filter, --cristal se queda a 0.80 y el fondo deja el
+     texto con el contraste corto contra la foto de las alas. Se vuelve al opaco,
+     que es lo que lleva usando la barra desde siempre. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .isla { background: var(--cristal-opaco); }
+  }
+
+
 
 /* El punto de la temperatura se fue de la barra: sobra a la izquierda del todo,
    con su aro, y la temperatura ya se enseña en el halo, que es donde el color
@@ -167,8 +207,12 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
                 text-transform: uppercase; color: var(--hielo); padding-left: 0.15rem;
                 white-space: nowrap; }
 .isla nav { justify-self: end; display: flex; gap: 0.15rem; }
+/* El color es --enlace-barra y no --gris por el contraste con el fondo
+   translucido: ver la nota de --enlace-barra en :root. En tema claro esa
+   variable vale --gris, asi que aqui no hay excepcion. */
 .isla nav a { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
-             color: var(--gris); padding: 0.34rem 0.58rem; border-radius: var(--r);
+             color: var(--enlace-barra); padding: 0.34rem 0.58rem;
+             border-radius: var(--r);
              transition: color 0.2s, background 0.2s; white-space: nowrap; }
 .isla nav a:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
 /* El interruptor de tema. Va en la barra y no escondido en el pie: si esta
@@ -319,6 +363,12 @@ html.claro {
   color-scheme: light;
   --suelo:    #eceae5;
   --cristal:  rgba(255, 255, 255, 0.76);
+  /* En claro los enlaces de la barra ya llegaban a 4.59:1 con el cristal general y
+     no les hace falta el tono aclarado: detras de la barra el angel en blanco y
+     negro esta en 252 y el blanco del cristal tapa casi todo. Se deja --
+     gris a proposito, para que este valor no sea una excepcion sin motivo. */
+  --cristal-barra: rgba(255, 255, 255, 0.76);
+  --enlace-barra:  var(--gris);
   --cristal-opaco: rgba(252, 251, 249, 0.94);
   --hielo:    #1b1d1f;
   --oxido:    #9a5638;
@@ -335,8 +385,17 @@ html.claro {
      topes del oscuro y el bloom le salia con la fuerza del otro. */
   --halo-min: 0.34;
   --halo-max: 0.58;
-  --aro-min: 0.62;
-  --aro-alto: 0.84;
+  /* El aro va solo aqui, en el tema claro, y es DORADO. Medido sobre la foto en
+     blanco y negro, en el sitio exacto donde cae el anillo: el fondo esta en 233
+     sobre 255, o sea casi papel. Con este dorado el anillo queda en 232,179,84 a
+     0.78, que es un contraste de 1.55:1 y se ve. Con el aro de 0.62 de antes
+     eran 1.42:1, justo por encima del 1.3 a partir del cual se distingue, y con
+     blanco no habia nada: 1.0:1, porque un blanco sobre un 233 no cambia. Por eso
+     el aro va dorado y no blanco, y por eso en el oscuro no va: en la foto a
+     color el anillo esta en 147 y ahi si se veria el blanco, pero el aro solo se
+     pone en un sitio. */
+  --aro-min: 0.78;
+  --aro-alto: 0.94;
   --ceniza: 138, 146, 152;
   --chispa: 30, 36, 42;
 }
@@ -350,12 +409,11 @@ html.claro .bajo, html.claro .col-menu h3 { color: rgba(30, 32, 34, 0.56); }
 html.claro .bajar { color: rgba(30, 32, 34, 0.66); }
 html.claro .marca-menu p, html.claro .col-menu a, html.claro .pieza .cuerpo i,
 html.claro .intro, html.claro .abierta p, html.claro .banderas span,
-html.claro .datos-menu span, html.claro .chip-mini, html.claro .etiquetas span,
+html.claro .chip-mini, html.claro .etiquetas span,
 html.claro .vivo span { color: var(--gris); }
 html.claro .pieza:hover { background: rgba(20, 22, 24, 0.04); }
 html.claro .b { color: #16181a; border-color: var(--linea-alta); }
 html.claro .b:hover { background: #16181a; color: #f6f5f2; }
-html.claro .nota-menu { color: rgba(30, 32, 34, 0.5) !important; }
 /* La escena de claro es casi toda blanca: con 0,55 la rafaga del clic se
    quedaba sin verse y parecia que no pasaba nada. */
 html.claro .motas { opacity: 0.85; }
@@ -437,45 +495,52 @@ html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
    hace nada, ahi el aro va en tinta oscura), y eso no se puede pedir con un
    mix-blend-mode y un opacity.
 */
-/* El aro va SIN mix-blend-mode, y es lo que hace que sea dorado en los dos
-   temas. Con screen en oscuro y multiply en claro no se podia: el aro de la foto
-   ya es claro, y screen no puede pintar de nada lo que ya es claro —el dorado se
-   iba a un blanco—; y en claro, multiply sobre el papel ya daba el dorado, pero
-   entonces los dos temas lo hacian de forma distinta.
+/* El aro va SIN mix-blend-mode y va SOLO en el tema claro.
 
-   Sin mezcla, la imagen pinta su propio dorado con su propio alfa y ya esta. El
-   borde suave del aro es lo que evita que se vea la costura cuando el parallax
+   Con screen en oscuro y multiply en claro no se podia: el aro de la foto ya es
+   claro y screen no puede pintar de nada lo que ya es claro, y en claro el oro
+   multiplicado sobre el papel salia apagado. Sin mezcla, el alfa lo pone la
+   propia imagen y ya esta.
+
+   Solo en el tema claro, y es lo que se pidio. El aro cae sobre la cabeza del
+   angel, y ahi el fondo mide 233 sobre 255 en la foto en blanco y negro y 147 en
+   la foto a color. Eso decide el color y el tema de golpe:
+
+     - sobre el 233, un aro BLANCO no existe: se queda en 251, que es 1.0:1 de
+       contraste, o sea nada. Un dorado si se ve, y a 0.78 el anillo queda en
+       232,179,84, que es 1.55:1.
+     - sobre el 147, el blanco si se veria (llega a 213, 3.1:1). Por eso el aro
+       podria haber ido blanco en oscuro, pero como solo se pone en un sitio, se
+       pone en el que lo ha pedido quien lo mira.
+
+   El dorado va en la propia imagen y no con un filtro, al reves que antes, que si
+   lo ponia blanco: para aclarar hace falta el color, no solo el alfa.
+
+   Por eso se dibuja una sola vez, con HALO["claro"], y no una por tema. Ver
+   scripts/preparar-angel.py.
+
+   El borde suave del aro es lo que evita que se vea la costura cuando el parallax
    lo separa un poco de la foto: en el centro es opaco y encima esta el aro de la
    foto, y hacia fuera el alfa se va a cero. */
 .aro {
-  background-image: url("aro-oscuro.webp");
+  background-image: url("aro-claro.webp");
   opacity: var(--aro-min);
 }
-html.claro .aro {
-  background-image: url("aro-claro.webp");
-}
 
-/* Pinchar: el aro se enciende y se pone BLANCO.
+/* Pinchar: el aro se enciende.
 
-   El color se cambia con un filtro y no con otra imagen ni con otra capa: el aro
-   es un dorado con su alfa, y `brightness(0) invert(1)` lo deja blanco con el
-   MISMO alfa sin tocar la imagen. Asi no hay un aro-blanco.webp que mantener
-   igual que el dorado, ni una capa mas que el parallax tenga que mover.
-
-   En tema claro el blanco no se veria sobre el papel, asi que ahi el destello es
-   un dorado SATURADO en vez de blanco: el aro se pone mas fuerte, que es lo que
-   se puede ver sobre un fondo claro.
+   Solo el alpha: el color es el dorado de la imagen y no se toca. En tema oscuro
+   no hay regla propia porque el aro no esta ahi: --aro-min y --aro-alto valen 0 y
+   el keyframe los lee, asi que la animacion sale plana en 0 y no enciende nada.
 
    SOLO el opacity en la animacion. El transform lo escribe el parallax en cada
    fotograma con un estilo en linea, y un estilo en linea gana a una animacion:
-   por eso la animacion de las alas no se notaba nunca. El filtro va en la misma
-   regla y no se anima, asi que no tiene ese problema. */
+   por eso la animacion de las alas no se notaba nunca. */
 .capa.aro.pulsando {
   animation: aro-enciende 1.5s cubic-bezier(0.22, 1, 0.36, 1);
-  filter: brightness(0) invert(1);
 }
-html.claro .capa.aro.pulsando { filter: brightness(0.62) saturate(1.9); }
-/* El pico es --aro-alto y no un 1 fijo: ver donde esta definido. */
+/* El pico es --aro-alto y no un 1 fijo: ver donde esta definido. En oscuro los
+   dos estan a 0, asi que el keyframe entero sale plano. */
 @keyframes aro-enciende {
   0%   { opacity: var(--aro-min); }
   18%  { opacity: var(--aro-alto); }
@@ -690,24 +755,37 @@ html.claro .instalar .instalar-cmd .copiar.hecho {
 
 .cabecera-seccion { display: flex; align-items: baseline; gap: 0.6rem;
                     padding-bottom: 0.55rem; border-bottom: 1px solid var(--linea); }
-.cabecera-seccion .punto-mini { width: 8px; height: 8px; border-radius: 50%;
-                    background: var(--azul-4); flex: none; align-self: center; }
+/* El punto azul de los titulos. Clase suelta y no descendiente de
+   .cabecera-seccion: la cabecera del manual esta fuera de esa clase, y con el
+   selector descendiente el punto de ahi salia sin pintar — un <span> vacio, que
+   no se ve pero ocupa el hueco y separa la palabra de donde tocaba. */
+.punto-mini { width: 8px; height: 8px; border-radius: 50%;
+              background: var(--azul-4); flex: none; align-self: center;
+              display: inline-block; }
 .cabecera-seccion h2 { font: 600 0.86rem/1 var(--f); letter-spacing: 0.3em;
                     text-transform: uppercase; color: var(--hielo); }
 .cabecera-seccion .meta { margin-left: auto; font-size: 0.6rem; letter-spacing: 0.12em;
                     text-transform: uppercase; color: var(--gris); white-space: nowrap; }
 
-/* El logotipo de Arch, a la izquierda de la version. Sin relleno y con trazo,
-   para que tome el color de la linea con currentColor y no haya que tener dos.
-   El alto va en em porque la linea de la cabecera es de 0.6rem: asi el logo
-   escala con la fuente y en un movil, donde la linea crece, crece con ella. */
+/* El icono de Arch, a la izquierda de la version.
+   El tamano va en em porque la linea de la cabecera es de 0.6rem: asi escala con
+   la fuente y en un movil, donde la linea crece, crece con ella. A 1.35em sale a
+   13 px en escritorio y a unos 17 en movil, que es donde el cuadrado azul con la
+   A blanca se lee todavia; el SVG que habia antes ocupaba 0.78em, o sea 7 px, y a
+   esa medida el corte que lo hacia logo de Arch se perdia.
+   El margen sube tambien porque un cuadrado tiene mas cuerpo que un trazo y con
+   el de antes se pegaba al numero. */
 .logo-arch {
-  width: 0.78em; height: 0.72em;
-  margin-right: 0.42em;
-  vertical-align: -0.04em;
-  fill: none; stroke: currentColor; stroke-width: 2.1;
-  stroke-linecap: square; stroke-linejoin: miter;
-  overflow: visible;
+  width: 1.35em; height: 1.35em;
+  /* Mas aire a la derecha que antes. El 0.5em de la primera version era poco:
+     la linea lleva letter-spacing 0.12em, que se suma al margen, pero entre el
+     cuadrado y la V se aun asiaban las dos y el icono parecia pegado al numero.
+     A 0.8em el hueco es de unos 7 px a tamano de escritorio y 9 en movil. */
+  margin-right: 0.8em;
+  /* El cuadrado tiene fondo y la linea no, asi que se baja mas que en un texto:
+     centrado se leeria como una linea mas alta que el resto. */
+  vertical-align: -0.3em;
+  border-radius: 22%;
 }
 
 .lema { margin-top: 1.4rem; font-size: clamp(1.15rem, 2.1vw, 1.5rem); line-height: 1.35;
@@ -872,14 +950,24 @@ html.claro .b-gh .marca { color: #000000; }
 
 .pie-menu {
   display: grid; gap: 1.8rem 2rem;
-  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  /* Dos columnas: la marca con su lema y los enlaces.
+     --
+     Esto ha ido cambiando y el final es el mas simple de todos. Hubo cuatro
+     columnas, luego tres con la de datos, y quedo en dos al irse esa columna. Con
+     dos columnas y pesos 1.3 y 1, a 872 px de pantalla la marca mide 351 px y los
+     enlaces 270, y el lema entero cabe en una linea en vez de partirse en dos.
+     Los pesos no son iguales por el texto: el lema es largo y los enlaces son
+     palabras cortas. */
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   align-items: start;
   padding-top: clamp(2.4rem, 6vh, 4.5rem);
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
   border-top: 1px solid var(--linea);
 }
-@media (max-width: 860px) { .pie-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 460px) { .pie-menu { grid-template-columns: 1fr; gap: 1.6rem; } }
+/* El pie se estrecha antes que el resto: con dos columnas, la marca y los enlaces
+   uno al lado del otro se quedan sin aire mucho antes de que la pagina se agobie.
+   A partir de aqui van en vertical. */
+@media (max-width: 560px) { .pie-menu { grid-template-columns: 1fr; gap: 1.6rem; } }
 /* En una columna, la linea de abajo se apila: separadas por un hueco de 1,5 rem
    a izquierda y derecha ya no estan ni cerca, y quedan mas separadas de lo que
    deben. */
@@ -895,11 +983,15 @@ html.claro .b-gh .marca { color: #000000; }
    bloque y no pegado al lema, porque el lema es el del proyecto y esto es lo de
    la pagina. Los enlaces heredan el color de los de las columnas para que se lean
    como enlaces y no como texto suelto. */
+/* El max-width va el mismo que el del lema de arriba (24ch) y no 26ch. Con 26 el
+   filete que dibuja el border-top llegaba mas alla del texto que tiene encima y
+   de debajo, y se leia como un ancho puesto a ojo en vez de como el separador de
+   un bloque con su propio ancho. */
 .creditos-menu {
   margin-top: 1.1rem !important; padding-top: 0.85rem;
   border-top: 1px solid var(--linea);
   font-size: 0.66rem !important; line-height: 1.75;
-  color: rgba(107, 130, 140, 0.8) !important; max-width: 26ch;
+  color: rgba(107, 130, 140, 0.8) !important; max-width: 24ch;
 }
 .creditos-menu a { color: var(--gris); transition: color 0.18s; }
 .creditos-menu a:hover { color: var(--hielo); }
@@ -924,19 +1016,23 @@ html.claro .b-gh .marca { color: #000000; }
 .col-menu h3 { font: 600 0.58rem/1 var(--f); letter-spacing: 0.2em;
                text-transform: uppercase; color: rgba(107, 130, 140, 0.72);
                margin-bottom: 0.35rem; }
+/* El segundo rotulo de la columna, el de "Elsewhere", va separado del primero:
+   los dos grupos viven en la misma columna y sin este margen el segundo se leeria
+   como otro enlace mas de la lista de arriba. */
+.col-menu h3.rotulo-segundo { margin-top: 1.1rem; }
 .col-menu a { font-size: 0.76rem; color: var(--gris); width: fit-content;
               transition: color 0.18s; }
+/* Los enlaces de "Around it" van dentro de un div para que app.js los pueda ir
+   pintando. El div tiene que ser una columna con su propio hueco, igual que la
+   columna que lo contiene, o los enlaces se quedarian todos en la misma linea. */
+.col-menu > div { display: flex; flex-direction: column; gap: 0.34rem; }
 .col-menu a:hover { color: var(--hielo); }
 
-.datos-menu span { font-size: 0.74rem; color: var(--gris); }
-/* La ficha de la maquina. Mas pequena y mas apagada que los dos sellos, porque es
-   el dato de relleno y no la headline. Y con max-width para que no se coma media
-   columna si los valores se alargan. */
-.datos-menu .ficha { display: block; margin-top: 0.35rem; font-size: 0.62rem;
-                     line-height: 1.65; opacity: 0.72; max-width: 34ch; }
-.nota-menu { margin-top: 0.5rem !important; font-size: 0.66rem !important;
-             color: rgba(107, 130, 140, 0.62) !important; max-width: 30ch;
-             line-height: 1.6; }
+/* nowrap SOLO en los dos sellos, y no en todos los span de la columna: la ficha de
+   la maquina es una linea larga a proposito ("kernel, uptime, load, disco,
+   servicios") y tiene que poder partirse por donde toque. Acotarlo a los sellos
+   es lo que evita dos cosas a la vez: que "4 min / ago" quede colgando, que
+   parece un fallo, y que la ficha se salga de la pantalla. */
 
 /* El clip. Ocupa todo el ancho del contenido y va sin sangria: es el elemento
    principal de la seccion, y con 1.4rem de margen se quedaba corto al lado de
@@ -1303,7 +1399,36 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
   .isla .rotulo { font-size: 0.78rem; letter-spacing: 0.12em; }
 }
 
-/* ── 44 px tambien en tableta ──────────────────────────────────────────────
+  /* ── Donde los enlaces de la barra dejan de caber ───────────────────────────
+     Hay tres reglas que esconden `.isla nav` en pantallas estrechas: una a 620 px
+     para raton, otra a 330 px para todos, y el bloque de tactil que la vuelve a
+     ensenar porque sin ella no queda nada pulsable a la derecha. Entre la de 620 y
+     la de 330 no habia ninguna, y ese hueco es el problema: el bloque de tactil
+     dice "se quedan SI CABEN" y en ninguna parte se comprueba si caben.
+
+     Medido el 2026-10-03, con la barra con los tres bloques puestos: nombre
+     126 px + reloj 98 px + nav con boton 195 px = 419 px, mas el relleno de la
+     barra, unos 440 en total. Repartido el hueco en tres columnas de
+     1fr-auto-1fr el reparto sale justo a 560 px: ahi no se solapa nada; a 500 el
+     reloj ya pisa la columna de la derecha. El corte va en 540, con margen por
+     delante de los 500 medidos y por detras de los 560 que no se solapaban.
+
+     Va aqui y no dentro del bloque de tactil porque es un problema de LAYOUT, no
+     de dedo: con raton ya lo cubre la regla de 620, pero el ancho pequeno es el
+     mismo en los dos casos y la cifra no depende de como se pulse. */
+  @media (max-width: 540px) {
+    .isla nav { display: none; }
+  }
+
+  /* Y por debajo de 370 el problema es el nombre, no los enlaces: con el nav ya
+     fuera, el reloj achicado se queda en 84 px pero el nombre sigue en 126, y las
+     columnas de 1fr quedan en 111, con el nombre saliendose 15 px encima del
+     reloj. Se achican los dos, y el nombre baja menos que el reloj porque es lo
+     que identifica la pagina. */
+  @media (max-width: 370px) {
+    .isla .rotulo { font-size: 0.72rem; letter-spacing: 0.1em; }
+    .isla .reloj { font-size: 0.76rem; letter-spacing: 0.02em; }
+  }
    El corte de los 620 px es de LAYOUT. El del objetivo tactil es otro: depende de
    como se esta usando la cosa, no de lo ancha que sea. Una tableta de 768 se
    toca con el dedo igual que un movil de 390, y sin esto su barra seguia en 41 px
@@ -1445,4 +1570,610 @@ html.claro .atajo .candado { color: rgba(30, 32, 34, 0.5); }
 @container pieza (max-width: 400px) {
   .atajo { grid-template-columns: 1fr auto; row-gap: 0.1rem; }
   .atajo .que { grid-column: 1 / -1; }
+}
+
+/* ══ LA ENTRADA ═════════════════════════════════════════════════════════════
+   Animaciones de entrada. Solo cuando la pagina se abre por ARRIBA: recargando con
+   la posicion restaurada no hay entrada, porque el visitante no ve la portada y
+   ademas la seccion de abajo se quedaria en opacidad 0 hasta que el observer la
+   marcara. Ver entrada() en app.js, que es donde se decide.
+
+   Los valores del nombre son los de omarchy.org, medidos en su CSS:
+
+       @keyframes hero-rise { 0% {opacity:0;transform:translateY(14px)}
+                             to {opacity:1;transform:translateY(0)} }
+       animation: .55s cubic-bezier(.21,.47,.32,.98) both hero-rise;
+
+   Lo que habia aqui era translateY(18px) con 1.1 s y un cubic-bezier(0.22,1,.36,1),
+   que es una curva que sale disparada y frena de golpe: se nota como un tirón. La de
+   omarchy es casi lineal al principio y se calma al final, y dura LA MITAD. Por
+   eso theirs no molesta y el mio si.
+
+   El cursor parpadeando tambien es suyo, con su misma curva:
+
+       @keyframes caret-blink { 0%,70%,to {opacity:1} 20%,50% {opacity:0} }
+       animation: 1.1s step-end infinite caret-blink;
+
+   step-end es lo que hace que el cursor se encienda y apague a golpes en vez de
+   desvanecerse, que es lo que hace un cursor de verdad.
+
+   Todo cuelga de html.entrando: si el JavaScript no corre, o no hay storage, o el
+   visitante ya esta mas abajo, la clase no se pone y la pagina se pinta normal. El
+   estado invisible esta DENTRO de la clase, nunca en las reglas de siempre. */
+
+html.entrando .isla,
+html.entrando .motas,
+html.entrando .cartel > * {
+  opacity: 0;
+  animation: entra-sube 0.55s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+html.entrando .isla   { animation-delay: 0.04s; }
+html.entrando .nombre { animation-delay: 0.1s; }
+html.entrando .bajo   { animation-delay: 0.2s; }
+html.entrando .bajar  { animation-delay: 0.3s; }
+/* Las motas van mucho mas lentas: son cientos de puntos y a velocidad de nombre se
+   veian caer como una lluvia. 1.6 s para que se disuelvan. */
+html.entrando .motas  { animation-delay: 0.35s; animation-duration: 1.6s; }
+
+/* La entrada de omarchy, con sus numeros: 14 px, no 18, y medio segundo. */
+@keyframes entra-sube {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* El cursor, pegado al nombre. Es decorativo: por eso aria-hidden y por eso el
+   <span> va dentro del <h1>, que es lo que hace un cursor de verdad. Con
+   prefers-reduced-motion, el bloque de abajo lo apaga. */
+/* El cursor va DENTRO del h1, detras de la ultima letra, como el de omarchy. Pero
+   el suyo cuelga de un wordmark SVG y este cuelga de texto, y eso cambia todo: una
+   barra vertical del mismo color y de la misma altura que las mayusculas, pegada
+   detras, SE LEE COMO UNA LETRA. Se vio: el nombre ponia "RHYTHMCREAI".
+   --
+   Asi que se differentiate en las dos cosas que lo separan de un glifo:
+     - Mas bajo que las mayusculas. 0.58em frente a una altura de mayuscula de unos
+       0.7em: no llega a tocarla, y asi no puede ser una I.
+     - Mas apagado. Al 55% del color del nombre, que es lo que hace un cursor de
+       verdad: esta ahi pero no compite con el texto.
+   Y algo mas estrecho, 0.045em, que una I en JetBrains Mono. */
+.cursor {
+  display: inline-block;
+  width: 0.045em;
+  height: 0.58em;
+  margin-left: 0.05em;
+  vertical-align: baseline;
+  background: currentColor;
+  opacity: 0.55;
+  border-radius: 1px;
+}
+/* Cuando esta encendida se ve al 55%; al apagarse del todo es lo que hace el
+   keyframe, asi que el 0.55 es el techo y no un valor constante. */
+/* El cursor parpadea SIEMPRE, y con la entrada puesta tambien.
+   --
+   Antes la animacion colgaba de html.entrando, con lo que el cursor se quedaba
+   quieto en cuanto pasaba la entrada: un cursor que no parpadea no es un cursor.
+   En omarchy el suyo es .hero-caret con "infinite" a pelo, sin condiciones.
+   --
+   Y no necesita su propia regla de entrada porque su padre ya la tiene: la
+   opacidad es una propiedad de grupo, asi que mientras el <h1> esta en opacidad 0
+   el cursor tambien lo esta, sin tocarlo. Esa es la razon de que este dentro del
+   h1 y no al lado. */
+.cursor { animation: cursor-parpadeo 1.1s step-end infinite; }
+@keyframes cursor-parpadeo {
+  0%, 70%, 100% { opacity: 1; }
+  20%, 50%      { opacity: 0; }
+}
+
+/* La seccion de hyprland entra al llegar, no al cargar. Sin observer se quedaria
+   en opacidad 0 para siempre, asi que el CSS la pone a la vista a los 4 s pase lo
+   que pase: mil pixeles de alto de nada es lo peor que puede pasar. */
+html.entrando #hyprland { opacity: 0; transform: translateY(20px);
+                          animation: hyprland-rescate 0s linear 4s forwards; }
+html.entrando #hyprland.hyprland-visto {
+  opacity: 1; transform: none;
+  transition: opacity 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98),
+              transform 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98);
+}
+@keyframes hyprland-rescate { to { opacity: 1; transform: none; } }
+
+/* Con reduced-motion no hay entrada: ni opacidad a 0, ni transform, ni cursor. Se
+   pone el estado final directamente. Ojo que el cursor es quien se apaga: con la
+   animacion puesta seguiria parpadeando aunque todo lo demas este quieto. */
+@media (prefers-reduced-motion: reduce) {
+  html.entrando .isla, html.entrando .motas, html.entrando .cartel > *,
+  html.entrando #hyprland {
+    opacity: 1 !important; transform: none !important;
+    animation: none !important; transition: none !important;
+  }
+  /* El cursor es lo primero que sobra con reduced-motion: un cursor que parpadea
+     es movimiento puro, sin nada que aporte. */
+  .cursor { animation: none !important; display: none !important; }
+}
+
+/* ══ EL MANUAL ═══════════════════════════════════════════════════════════════
+   La pagina del manual. Comparte la barra, el pie y los colores con la
+   principal, que es lo que hace que se lean como la misma pagina y no como dos
+   webs distintas. Lo unico que cambia es la disposicion: un indice fijo a la
+   izquierda y el texto a la derecha. */
+
+.manual-cuerpo { background: var(--suelo); }
+
+/* El hueco del contenido. La barra es fija y va arriba, asi que el texto tiene que
+   empezar por debajo de ella o el primer titulo se queda debajo del cristal. */
+.manual-envoltorio {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: start;
+  padding-top: clamp(6rem, 12vh, 9rem);
+  padding-bottom: clamp(3rem, 8vh, 6rem);
+}
+
+/* ── El indice ─────────────────────────────────────────────────────────────────
+   Sticky y no fixed: asi se queda pegado al recorrer el texto y se va solo con
+   el resto de la pagina al llegar al pie. Con fixed habria que recalcular donde
+   termina la columna a mano en cada redimensionado, y se despegaria a la
+   primera. */
+.indice {
+  position: sticky;
+  top: clamp(5rem, 11vh, 7.5rem);
+  max-height: calc(100vh - clamp(7rem, 16vh, 10rem));
+  overflow-y: auto;
+  font-size: 0.78rem;
+}
+.indice h2 {
+  font: 600 0.58rem/1 var(--f);
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(107, 130, 140, 0.72);
+  margin-bottom: 0.7rem;
+}
+.indice ol { list-style: none; margin: 0; padding: 0;
+             border-left: 1px solid var(--linea); }
+.indice li a {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.24rem 0 0.24rem 0.8rem;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  color: var(--gris);
+  text-decoration: none;
+  transition: color 0.16s, border-color 0.16s;
+}
+.indice li a:hover { color: var(--hielo); }
+/* La seccion en la que se esta. El borde se mueve en vez del color: con el color
+   solo no se distingue en el tema claro, y el indice es lo que dice donde estas
+   cuando el texto es largo. */
+.indice li a.activo { color: var(--hielo); border-left-color: var(--hielo); }
+.indice li a span { margin-left: auto; font-size: 0.66rem; color: rgba(107, 130, 140, 0.6); }
+.indice-sello { margin-top: 0.9rem; font-size: 0.62rem; color: rgba(107, 130, 140, 0.6); }
+
+/* ── El texto ───────────────────────────────────────────────────────────────── */
+.manual { min-width: 0; }
+.manual-cabecera { margin-bottom: clamp(2rem, 5vh, 3.5rem); }
+.manual-cabecera h1 {
+  font: 700 clamp(1.8rem, 5vw, 3rem)/1.05 var(--f);
+  letter-spacing: -0.02em; color: var(--hielo); margin: 0.4rem 0 0;
+}
+.manual-intro { margin-top: 0.7rem; font-size: 0.92rem; color: var(--gris);
+                max-width: 46ch; line-height: 1.55; }
+.manual-sello { margin-top: 0.5rem; font-size: 0.64rem; color: rgba(107, 130, 140, 0.65); }
+
+.seccion-manual { margin-bottom: clamp(2.6rem, 7vh, 4.5rem); scroll-margin-top: 6rem; }
+/* El h2 del manual va en frase, no en mayusculas como los titulos de la portada.
+   Esos llevan text-transform: uppercase y 0.3em de espaciado de la clase
+   .cabecera-seccion, y como el selector es igual de especifico (0,1,1) el que
+   gana es el ultimo: el mio. Sin esto el titulo salia en mayusculas con el
+   espaciado del otro, que es las dos cosas a la vez. */
+.seccion-manual h2 { font: 600 0.95rem/1.25 var(--f); letter-spacing: 0;
+                     text-transform: none; color: var(--hielo); }
+.seccion-manual h4 { font: 600 0.76rem/1 var(--f); letter-spacing: 0.1em;
+                     text-transform: uppercase; color: rgba(107, 130, 140, 0.8);
+                     margin: 1.6rem 0 0.6rem; }
+.seccion-manual p { font-size: 0.86rem; line-height: 1.65; color: var(--gris);
+                     max-width: 62ch; margin-top: 0.7rem; }
+.seccion-manual p.destacado { font-size: 0.95rem; color: var(--hielo); }
+.seccion-manual a { color: var(--hielo); }
+.seccion-manual code { font-size: 0.86em; }
+
+/* Las frases de la pieza. Es una lista y no un bloque de parrafos porque se
+   leen como puntos: cada uno es una cosa distinta que hace. */
+.prosa { margin: 0.7rem 0 0; padding-left: 1.1rem; max-width: 68ch; }
+.prosa li { font-size: 0.86rem; line-height: 1.6; color: var(--gris); margin-bottom: 0.4rem; }
+.prosa li::marker { color: rgba(107, 130, 140, 0.5); }
+
+/* Los chips de la cabecera de seccion. En el manual se pintan dentro de un div
+   con esta clase, y con hueco en el contenedor: los .chip sueltos, sin nada que
+   los separa, salian pegados ("install.sharchsinglepass"), porque .chip no tiene
+   margenes propios —solo los tiene dentro de .muestra, que es una muestra de
+   color—. El hueco va aqui y no en cada chip para que no haya que tocar el
+   marcado cada vez que se anade uno. */
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem 0.55rem; margin-left: auto; }
+.chips .chip {
+  font-size: 0.6rem; letter-spacing: 0.1em;
+  color: var(--gris);
+  padding: 0.16rem 0.42rem;
+  border: 1px solid var(--linea-alta);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* El buscador. Con 78 atajos en diez grupos, buscar es la unica manera practica
+   de encontrar uno. */
+.buscador { display: flex; align-items: center; gap: 0.7rem; margin: 0.8rem 0 0.2rem; }
+.buscador input {
+  flex: 1; min-width: 0;
+  font: 0.8rem/1 var(--f);
+  color: var(--hielo);
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  padding: 0.55rem 0.7rem;
+}
+.buscador input::placeholder { color: rgba(107, 130, 140, 0.7); }
+.buscador input:focus-visible { outline: 2px solid var(--hielo); outline-offset: 1px; }
+.buscador-conteo { font-size: 0.68rem; color: rgba(107, 130, 140, 0.7);
+                   white-space: nowrap; }
+
+/* Las banderas del instalador. */
+.banderas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
+.bandera { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+           gap: 0.5rem 1.2rem; padding: 0.42rem 0;
+           border-top: 1px solid var(--linea); }
+.bandera:first-child { border-top: 0; }
+.bandera .nombres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.bandera code { font-size: 0.74rem; color: var(--hielo); white-space: nowrap; }
+.bandera .que { font-size: 0.82rem; color: var(--gris); line-height: 1.5; }
+
+/* Los componentes: definicion y descripcion, en dos columnas. */
+.componentes { margin-top: 0.7rem; display: grid;
+               grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+               gap: 0.42rem 1.4rem; }
+.componentes dt { font-size: 0.8rem; color: var(--hielo); }
+.componentes dd { margin: 0; font-size: 0.8rem; color: var(--gris); line-height: 1.5; }
+
+/* El arbol: ruta, cifra y para que sirve. */
+.arbol { margin-top: 0.7rem; }
+.fila-arbol { display: grid; grid-template-columns: minmax(0, 16rem) 4rem minmax(0, 1fr);
+              gap: 0.5rem 1rem; padding: 0.42rem 0; border-top: 1px solid var(--linea);
+              align-items: baseline; }
+.fila-arbol:first-child { border-top: 0; }
+.fila-arbol .ruta { font-size: 0.76rem; color: var(--hielo); }
+.fila-arbol .cifra { font-size: 0.8rem; color: var(--hielo); text-align: right; }
+.fila-arbol .nota { font-size: 0.78rem; color: var(--gris); }
+
+/* Las filas de "cuando algo va mal": el sintoma a la izquierda, lo que hacer a
+   la derecha. */
+.filas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
+.fila { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+        gap: 0.4rem 1.4rem; padding: 0.45rem 0; border-top: 1px solid var(--linea); }
+.fila:first-child { border-top: 0; }
+.fila .k { font-size: 0.78rem; color: var(--hielo); }
+.fila .v { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
+
+.manual-fin { margin-top: 2.5rem; padding-top: 1.1rem; border-top: 1px solid var(--linea);
+              font-size: 0.68rem; color: rgba(107, 130, 140, 0.7); max-width: 60ch; }
+
+/* ── El tema claro ───────────────────────────────────────────────────────────── */
+html.claro .indice h2,
+html.claro .manual-sello,
+html.claro .buscador-conteo { color: rgba(30, 32, 34, 0.55); }
+html.claro .indice li a { color: var(--gris); }
+html.claro .indice li a.activo { color: var(--hielo); border-left-color: var(--hielo); }
+html.claro .buscador input { color: var(--hielo); }
+html.claro .seccion-manual p,
+html.claro .seccion-manual .prosa li,
+html.claro .fila .v,
+html.claro .bandera .que,
+html.claro .componentes dd,
+html.claro .fila-arbol .nota { color: var(--gris); }
+html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
+
+/* ── En movil ─────────────────────────────────────────────────────────────────
+   El indice no se puede quedar a la izquierda: no cabe. Pasa arriba del texto,
+   plegado, y se despliega al tocarlo. Con once secciones en vertical ocuparia
+   media pantalla antes de leer nada. */
+@media (max-width: 860px) {
+  .manual-envoltorio { grid-template-columns: 1fr; gap: 1.6rem;
+                       padding-top: clamp(5.5rem, 12vh, 7rem); }
+  /* El indice pasa a ser una tira horizontal que se desliza, y no una lista de
+     once lineas encima del texto.
+     --
+     Se probo primero como lista de dos columnas y ocupaba 471 px de los 844 de
+     la pantalla, mas de medio scroll antes de leer nada. Plegado con un details
+     ocupaba poco pero necesita JavaScript para decidir si empieza abierto, y sin
+     JavaScript se queda cerrado y no hay forma de abrirlo.
+     --
+     La tira no necesita nada de eso: es la misma lista con display:flex y un
+     overflow-x. Ocupa una linea, funciona sin JavaScript y con once elementos
+     mas de los que caben, que es justo cuando mas se agradece poder deslizar. */
+  .indice { position: static; max-height: none; order: -1;
+            border: 1px solid var(--linea); border-radius: var(--r);
+            padding: 0.55rem 0.7rem; background: var(--cristal-opaco); }
+  .indice h2 { margin-bottom: 0.45rem; }
+  .indice ol { display: flex; gap: 0.25rem; overflow-x: auto;
+               border-left: 0; padding-bottom: 0.15rem;
+               scrollbar-width: thin; }
+  .indice li { flex: none; }
+  .indice li a { white-space: nowrap; border-left: 0;
+                 border-bottom: 2px solid transparent;
+                 padding: 0.2rem 0.5rem; border-radius: var(--r); }
+  .indice li a.activo { border-bottom-color: var(--hielo); border-left-color: transparent; }
+  .indice li a span { margin-left: 0.3rem; }
+  .indice-sello { margin-top: 0.5rem; }
+  .seccion-manual h2 { font-size: 0.86rem; }
+  .bandera, .fila, .fila-arbol, .componentes { grid-template-columns: 1fr; }
+  .fila-arbol .cifra { text-align: left; }
+  .componentes { gap: 0.1rem 0; }
+  .componentes dt { margin-top: 0.5rem; }
+}
+
+
+/* Con reduced-motion el indice se marca igual: no es una animacion, es un
+   estado. Lo que se apaga es el salto del enlace. */
+@media (prefers-reduced-motion: reduce) {
+  .indice li a { transition: none; }
+}
+
+/* ══ EL MANUAL, POR PROYECTOS ═══════════════════════════════════════════════
+   Segunda tanda. Lo de arriba es el indice de una sola lista; esto es el de dos
+   niveles —proyecto, y sus subsecciones—, que es lo que permite anadir otro
+   proyecto sin tocar nada mas. Comparte la barra, el pie y los colores con la
+   principal, que es lo que hace que se lean como la misma pagina. */
+
+/* ── El indice de dos niveles ─────────────────────────────────────────────────
+   El proyecto es un encabezado y sus subsecciones cuelgan debajo. El numero va
+   delante de cada enlace y con ancho fijo: si el ancho depende del numero, los
+   titulos no alinean en vertical y la lista se lee como dos columnas en vez de
+   como una. */
+.indice .grupo-indice { margin-bottom: 1rem; }
+.indice .grupo-indice:last-of-type { margin-bottom: 0.3rem; }
+.indice h3 {
+  font: 600 0.66rem/1 var(--f);
+  letter-spacing: 0.16em; text-transform: lowercase;
+  color: var(--hielo);
+  margin: 0 0 0.35rem;
+  padding-left: 0.8rem;
+  display: flex; align-items: baseline; gap: 0.45rem;
+}
+.indice h3::before {
+  content: ""; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--azul-4); flex: none; transform: translateY(-1px);
+}
+.indice ol.subs { list-style: none; margin: 0; padding: 0;
+                  border-left: 1px solid var(--linea); }
+.indice ol.subs li a { padding-left: 0.8rem; }
+.indice .n {
+  font-style: normal; font-size: 0.62rem; font-variant-numeric: tabular-nums;
+  color: rgba(107, 130, 140, 0.55); min-width: 1.35em; flex: none;
+  transition: color 0.16s;
+}
+.indice li a.activo .n { color: var(--hielo); }
+.indice li a b { font-weight: 400; }
+.indice li a span { margin-left: auto; font-size: 0.6rem;
+                    color: rgba(107, 130, 140, 0.6); white-space: nowrap; }
+/* El proyecto en el que se esta: el encabezado se aviva. No lleva borde propio
+   porque el borde de la linea de la izquierda ya marca donde acaba cada uno. */
+.indice .grupo-indice.activo h3 { color: var(--azul-4); }
+.indice .grupo-indice.activo ol.subs { border-left-color: var(--linea-alta); }
+
+/* ── La portada: los proyectos y lo que hay dentro ─────────────────────────────
+   El mismo dato que el indice, en grande. En el manual de omarchy esta lista es
+   la pagina entera; aqui esta arriba del todo y el cuerpo sigue debajo, porque
+   con doce secciones en una sola pagina caben las dos cosas sin que una tape a
+   la otra. */
+/* Tarjetas separadas y no el truco de "gap: 1px sobre un fondo de linea".
+   Ese truco se ve bien mientras la rejilla se llena justo, y en cuanto sobran
+   celdas —tres proyectos en una rejilla de cuatro columnas— las celdas vacias
+   se pintan del color de la linea y sale un bloque gris suelto al lado de la
+   ultima tarjeta. Con hueco de verdad no hay celdas vacias que se vean. */
+.portada {
+  display: grid; gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+  /* align-items: start y no el estirado por defecto de la rejilla: si no, las
+     tres tarjetas salen con la altura de la mas larga —que son diez lineas de
+     hyprland— y rust-dock y k4 quedan con medio cuerpo de vacio debajo. */
+  align-items: start;
+  margin-bottom: clamp(2.5rem, 6vh, 4rem);
+}
+.proyecto {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  padding: 0.95rem 1.05rem 1.05rem;
+}
+.proyecto h2 {
+  font: 600 0.8rem/1 var(--f); letter-spacing: 0.1em;
+  color: var(--hielo); margin: 0;
+}
+.proyecto-res { font-size: 0.76rem; line-height: 1.5; color: var(--gris);
+                margin-top: 0.5rem; }
+.proyecto-repo {
+  display: inline-block; margin-top: 0.5rem;
+  font-size: 0.66rem; letter-spacing: 0.04em;
+  color: rgba(107, 130, 140, 0.75);
+  text-decoration: none; border-bottom: 1px solid var(--linea);
+}
+.proyecto-repo:hover { color: var(--hielo); border-bottom-color: var(--azul-4); }
+.proyecto-subs { list-style: none; margin: 0.7rem 0 0; padding: 0; }
+
+/* Con un solo proyecto la tarjeta ocupa toda la fila y las doce subsecciones se
+   reparten en tres columnas. Sin esto la tarjeta se queda estrecha, con doce
+   lineas en una columna y medio cuerpo de vacio al lado. */
+.portada-una { grid-template-columns: 1fr; }
+.portada-una .proyecto-subs { columns: 3; column-gap: 1.6rem; }
+.portada-una .proyecto-subs li { break-inside: avoid; }
+@media (max-width: 860px) { .portada-una .proyecto-subs { columns: 2; } }
+@media (max-width: 560px) { .portada-una .proyecto-subs { columns: 1; } }
+.proyecto-subs li { margin: 0; }
+.proyecto-subs a {
+  display: flex; gap: 0.45rem; align-items: baseline;
+  font-size: 0.76rem; color: var(--gris);
+  text-decoration: none; padding: 0.16rem 0;
+}
+.proyecto-subs a:hover { color: var(--hielo); }
+.proyecto-subs .n { font-style: normal; font-size: 0.62rem;
+                    font-variant-numeric: tabular-nums; min-width: 1.35em;
+                    color: rgba(107, 130, 140, 0.5); }
+
+/* ── El encabezado de cada proyecto, ya dentro del texto ──────────────────────
+   Separate de los titulos de seccion porque es otro tamano: si se hiciera con
+   el mismo, en un scroll largo no se distingue donde acaba un repo y empieza el
+   siguiente. */
+.bloque-proyecto { margin-bottom: clamp(2rem, 5vh, 3rem); }
+.cabecera-proyecto {
+  margin: clamp(2.2rem, 6vh, 3.6rem) 0 1.4rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--linea);
+}
+.bloque-proyecto:first-child .cabecera-proyecto { margin-top: 0; }
+.cabecera-proyecto h2 {
+  font: 700 1.35rem/1.1 var(--f); letter-spacing: -0.01em;
+  color: var(--hielo); margin: 0;
+}
+.cabecera-proyecto p { font-size: 0.82rem; color: var(--gris); margin-top: 0.4rem;
+                       max-width: 54ch; }
+.cabecera-proyecto a { display: inline-block; margin-top: 0.45rem;
+                       font-size: 0.66rem; letter-spacing: 0.04em;
+                       color: rgba(107, 130, 140, 0.75); text-decoration: none;
+                       border-bottom: 1px solid var(--linea); }
+.cabecera-proyecto a:hover { color: var(--hielo); border-bottom-color: var(--azul-4); }
+
+/* El numero de capitulo al lado del titulo. Va en la cabecera y no delante del
+   texto porque en el indice ya esta, y aqui solo hace falta para saber cuanto
+   llevas leido. */
+.seccion-n {
+  font: 600 0.62rem/1 var(--f); font-variant-numeric: tabular-nums;
+  color: rgba(107, 130, 140, 0.6);
+  margin-right: 0.15rem;
+}
+
+/* ── "Next", al final de cada seccion ─────────────────────────────────────────
+   El manual de omarchy cierra cada capitulo con el siguiente. Es de las pocas
+   cosas de ahi que si que Buckyan bien: un texto largo se lee peor cuando cada
+   pantalla te obliga a decidir como seguir. */
+.siguiente {
+  display: inline-flex; align-items: baseline; gap: 0.55rem;
+  margin-top: 1.6rem; padding-top: 0.7rem;
+  border-top: 1px solid var(--linea);
+  font-size: 0.8rem; color: var(--gris); text-decoration: none;
+}
+.siguiente span { font-size: 0.6rem; letter-spacing: 0.16em;
+                  text-transform: uppercase; color: rgba(107, 130, 140, 0.65); }
+.siguiente:hover { color: var(--hielo); }
+.siguiente:hover span { color: var(--azul-4); }
+.siguiente i { width: 0; height: 0; align-self: center;
+               border-left: 5px solid currentColor;
+               border-top: 3.5px solid transparent;
+               border-bottom: 3.5px solid transparent;
+               transition: transform 0.2s; }
+.siguiente:hover i { transform: translateX(3px); }
+
+.fin-manual { margin-top: 1.6rem; padding-top: 0.7rem;
+              border-top: 1px solid var(--linea);
+              font-size: 0.78rem; color: rgba(107, 130, 140, 0.7); }
+.fin-manual a { color: var(--hielo); }
+
+/* ── El tema claro ───────────────────────────────────────────────────────────── */
+html.claro .indice h3 { color: var(--hielo); }
+html.claro .indice .n,
+html.claro .seccion-n { color: rgba(30, 32, 34, 0.5); }
+html.claro .indice .grupo-indice.activo h3 { color: var(--azul-4); }
+html.claro .proyecto-repo,
+html.claro .cabecera-proyecto a,
+html.claro .siguiente span,
+html.claro .fin-manual { color: rgba(30, 32, 34, 0.55); }
+html.claro .proyecto-res,
+html.claro .cabecera-proyecto p,
+html.claro .siguiente { color: var(--gris); }
+html.claro .proyecto-subs a { color: var(--gris); }
+html.claro .proyecto-subs .n { color: rgba(30, 32, 34, 0.45); }
+
+/* ── En movil ─────────────────────────────────────────────────────────────────
+   La portada se apila: tres tarjetas de 13 rem no caben en 390 px, y con
+   minmax(13rem, 1fr) el auto-fit las deja en una columna sola sin que haga
+   falta una regla aparte. El indice sigue siendo la tira deslizable de antes. */
+@media (max-width: 860px) {
+  .cabecera-proyecto h2 { font-size: 1.15rem; }
+  .indice h3 { padding-left: 0.5rem; }
+  .indice ol.subs li a { padding-left: 0.5rem; }
+  .siguiente i { display: none; }
+
+  /* Una sola tira deslizable, sin un bloque por proyecto.
+     --
+     Se probo primero guardando el encabezado de proyecto dentro de la tira. Con
+     tres proyectos eran tres titulos y tres tiras, 380 px de indice antes de leer
+     nada, que es peor que la lista de once lineas de la que se salio. Con
+     display:contents el proyecto y su <ol> dejan de ser cajas: todos los <li>
+     pasan a ser hijos directos de .indice, que es el unico flex. El titulo del
+     proyecto no cabe en una tira horizontal —no hay sitio para dos lineas de
+     texto con relleno— asi que en movil no se ensena; el proyecto se deduce de
+     la seccion en la que se esta leyendo. */
+  .indice .grupo-indice,
+  .indice ol.subs { display: contents; }
+  .indice .grupo-indice h3 { display: none; }
+  .indice { display: flex; gap: 0.25rem; overflow-x: auto; }
+  .indice h2 { flex: none; align-self: center; margin: 0 0.35rem 0 0.1rem; }
+  .indice li a { flex: none; white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siguiente i { transition: none; }
+}
+
+/* ══ LAS FOTOS DEL MANUAL ═════════════════════════════════════════════════════
+   Las capturas del repo de hyprland, comprimidas a WebP por
+   scripts/collect-imagenes.py. De 11 MB a 1.7 MB. */
+
+/* Una sola foto ocupa el ancho entero; varias se reparten en columnas. El numero
+   de columnas lo decide el HTML con la clase, no esta regla, porque depende de
+   cuantas hay y eso solo lo sabe quien las pinta. */
+.figuras {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.9rem 0 1.1rem;
+}
+.figuras-varias { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+/* Una serie son todas del mismo tamano y se compara de un vistazo: una fila, con
+   las tres a la misma altura. Con la rejilla de 13 rem minimos a 650 px de
+   columna caben dos y quedan 2+1, que se lee como si faltara una. */
+.figuras-serie { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.figuras-serie:has(> .figura:nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.figuras-serie:has(> .figura:nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.figura { margin: 0; }
+/* El height: auto con los width y height en el HTML es lo que mantiene la
+   proporcion: si el CSS pusiera una altura fija, al ampliar una foto horizontal
+   como la del dock (700x80) se deformaria. */
+.figura img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  background: var(--suelo);
+}
+.figura a { display: block; line-height: 0; }
+.figura a:hover img { border-color: var(--linea-alta); }
+.figura a:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 2px;
+                         border-radius: var(--r); }
+
+.figura figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.68rem; line-height: 1.4;
+  color: rgba(107, 130, 140, 0.85);
+}
+/* El texto de "New" y "Windows" de las capturas viene en la propia foto y es
+   blanco sobre fondo claro. El pie va debajo y no encima a proposito: encima
+   taparia justo lo que hay que leer. */
+html.claro .figura figcaption { color: rgba(30, 32, 34, 0.6); }
+
+/* Las tres capturas de tema son una serie: mismo tamano y misma escena, y solo
+   cambian los colores. Se les da la misma altura para que se comparen de un
+   vistazo, que es justo para lo que estan. */
+.figuras figure { min-width: 0; }
+
+@media (max-width: 620px) {
+  /* En una columna, las fotos no bajan de 13 rem de ancho: a 320 px de pantalla
+     eso serian 22 px de alto, y una captura ilegible no es una foto. Las
+     series tambien bajan a una: tres fotos de 208 px de ancho en una pantalla
+     de 390 se ven, pero no se leen. */
+  .figuras-varias,
+  .figuras-serie { grid-template-columns: 1fr; }
+  .figura figcaption { font-size: 0.66rem; }
 }

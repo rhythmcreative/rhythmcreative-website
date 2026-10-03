@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The manual — Rhythmcrea</title>
+<meta name="description" content="Everything in the Hyprland setup: the installer and its flags, all 78 keybindings, every component, and what to do when something breaks.">
+<!-- color-scheme "dark light" no dice cual de los dos se esta usando, solo que
+     los dos valen. El que vale es la propiedad CSS de mas abajo: --suelo ya lo
+     lleva el cambio de tema. Con esto el navegador pinta las barras de scroll y
+     los controles nativos del color que toca. Es el mismo bloque y el mismo orden
+     que en index.html: la clase va antes de la hoja para que no haya ningun
+     fotograma en el tema equivocado. La clave tiene que coincidir con la de
+     app.js; si se cambia una, hay que cambiar las dos. -->
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0b0d0f">
+
+<!-- El script del tema, en la cabecera y antes de la hoja. Copiado tal cual del
+     index.html: si divergen, uno de los dos deja de respetar el tema guardado. -->
+<script>
+  try {
+    if (localStorage.getItem("rhythm-crea-tema") === "claro") {
+      document.documentElement.classList.add("claro");
+    }
+  } catch (e) { /* sin storage: se queda en oscuro, que es el tema por defecto */ }
+</script>
+
+<link rel="preload" as="font" href="assets/fuentes/jetbrains-var.woff2" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/style.css">
+<!-- El mismo icono que la principal, y por el mismo motivo: va en un data URI
+     para no pedir una peticion mas y que se vea en la pestana antes de que la
+     pagina haya descargado nada. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230b0d0f'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ba5f44' stroke-width='4.5'/%3E%3C/svg%3E">
+</head>
+<body class="manual-cuerpo">
+
+<a class="saltar" href="#contenido">Skip to content</a>
+
+<!-- La barra. ES LA MISMA que la de index.html, con dos cambios y solo dos:
+       - el nombre enlaza a la pagina principal, porque aqui no hay sitio al que
+         volver con el logo si no
+       - los dos enlaces de la derecha son "home" y "install", no "hyprland" e
+         "install": en el manual no hay reproductor al que bajar, y un enlace que
+         apunta a algo que no esta en esta pagina es un enlace roto.
+     El reloj y el interruptor van igual, y el interruptor es el mismo elemento
+     con el mismo id, asi que el tema se cambia en las dos paginas y se recuerda
+     al saltar de una a otra. -->
+<div class="barra-z">
+  <div class="isla" tabindex="0" aria-label="Navigation">
+    <div class="izq">
+      <a class="rotulo rotulo-enlace" href="index.html">Rhythmcrea</a>
+    </div>
+    <span class="reloj" id="reloj">--:--:--</span>
+    <div class="der">
+      <nav>
+        <a href="index.html">home</a>
+        <a href="#hyprland/empezar">install</a>
+      </nav>
+      <!-- El boton de tema. El icono va DENTRO, en el HTML, y no lo pone app.js:
+           el JS solo lee el estado y engancha el click. Con el boton vacio se
+           ve un rectangulo en vez del icono, que es lo que pasaba aqui la primera
+           vez. Copiado tal cual del index.html para que las dos paginas tengan el
+           mismo dibujo y el mismo peso. -->
+      <button class="interruptor" id="interruptor" type="button"
+                    aria-pressed="false" title="Switch to the light theme">
+              <svg class="ic ic-luna" viewBox="0 0 24 24" aria-hidden="true"
+                   fill="none" stroke="currentColor" stroke-width="1.7"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+              </svg>
+              <svg class="ic ic-sol" viewBox="0 0 24 24" aria-hidden="true"
+                   fill="none" stroke="currentColor" stroke-width="1.7"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
+                         M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+              </svg>
+              <span class="sr">Switch theme</span>
+            </button>
+    </div>
+  </div>
+</div>
+
+<!-- El indice lateral y todo el cuerpo los pinta app.js desde H.proyectos, que
+     esta en assets/hyprland.js. El HTML de aqui solo tiene el hueco: ni una sola
+     seccion escrita a mano.
+
+     La razon de que sea asi es que la lista de secciones tiene que estar en un
+     solo sitio, y si estuviera aqui y en el indice habria dos que se pueden
+     desincronizar sin que nadie se entere. Anadir un proyecto es anadir un
+     objeto a H.proyectos y ya esta. -->
+<div class="manual-envoltorio cola">
+  <nav class="indice" id="indice" aria-label="On this page"></nav>
+
+  <main class="manual" id="contenido">
+    <!-- El titulo va en el HTML y no lo pone el script. Es lo primero que ve
+         alguien que entre por un enlace a #atajos sin pasar por aqui, y si lo
+         pone el JavaScript arrives tarde o no llega: sin conexion no se ve nada. -->
+    <header class="manual-cabecera">
+      <span class="punto-mini"></span>
+      <h1>The manual</h1>
+      <p class="manual-intro">The whole desktop, piece by piece: what each thing
+        is, what it does, and what to do when it stops working. Written from the
+        repository, not from memory.</p>
+      <p class="manual-sello" id="sello-docs"></p>
+    </header>
+
+    <!-- Las secciones las mete pintarManual() en app.js. -->
+    <div id="manual"></div>
+
+    <p class="manual-fin">This page is generated from the repository by
+      <code>scripts/collect-docs.py</code>. When you change a keybinding or a flag,
+      run it again and commit the file it writes.</p>
+  </main>
+</div>
+
+<footer class="cola pie-menu" id="fuera">
+  <div class="marca-menu">
+    <a class="rotulo-menu" href="index.html">Rhythmcrea</a>
+    <p>An Arch desktop that doesn&#8217;t break.</p>
+  </div>
+  <nav class="col-menu" aria-label="This page">
+    <h3>THIS PAGE</h3>
+    <a href="#hyprland/empezar">the installer</a>
+    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">Install</a>
+  </nav>
+  <div class="pie-fin">
+    <span class="pie-fin-izq">&copy; 2026 Rhythmcrea</span>
+    <span class="pie-fin-der">On GitHub Pages, from <a href="https://github.com/rhythmcreative/rhythm-site" target="_blank" rel="noopener">rhythmcreative/rhythm-site</a></span>
+  </div>
+</footer>
+
+<script src="data/github.js"></script>
+<script src="assets/hyprland.js"></script>
+<!-- El dato de la documentacion, ESTATICO y commiteado. No se carga system.js
+     aqui a proposito: ese es el estado de la maquina del autor y esta en
+     .gitignore, con lo que en GitHub Pages no estaria y los bloques de atajos,
+     paleta y pantallas le saldrian vacios. Lo de aqui sale del repo, que es lo
+     mismo para cualquiera. -->
+<script src="data/documentacion.js"></script>
+<!-- Las fotos, tambien estaticas y commiteadas: scripts/collect-imagenes.py las
+     copia del repo de hyprland y las deja en WebP. Van en un fichero aparte y no
+     dentro de documentacion.js porque son 1.7 MB de binarios y mezclarlas con el
+     texto haria que el navegador descargase las fotos para pintar el indice. -->
+<script src="data/imagenes.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

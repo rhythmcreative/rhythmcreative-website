@@ -39,6 +39,18 @@ class ConRangos(SimpleHTTPRequestHandler):
         # Ahi es donde el padre escribe las cabeceras: se anade esta antes de
         # cerrar la cabecera, que es lo que hace insertar cabeceras de verdad.
         self.send_header("Accept-Ranges", "bytes")
+        # Sin esto el navegador se guarda el CSS y el JS con su propio criterio y
+        # los vuelve a pintar sin preguntar al servidor. Como no hay Cache-Control
+        # ni ETag, el freshness es el que cada navegador se inventa, y recargar no
+        # siempre revalida: se ve el fichero viejo, se cambia el CSS y la
+        # pagina sigue igual, que es justo cuando uno cree que el cambio no ha
+        # surtido efecto. Pasa porque el Last-Modified solo, sin ETag, no obliga a
+        # revalidar nada.
+        #
+        # no-store y no max-age=0 a proposito: la primera no deja ni guardar la
+        # copia, y la segunda la deja guardar pero obliga a preguntar cada vez.
+        # En desarrollo da igual cual de las dos, y la segunda no evita el disco.
+        self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
     def send_head(self):

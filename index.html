@@ -41,6 +41,30 @@
 <!-- El angel es el elemento mas grande y el primero que se ve, y esta solo
      en el CSS: el navegador no lo descubre hasta que ha parseado la hoja, que
      va detras. Con la precarga empieza a bajar en cuanto ve la cabecera. -->
+  <!-- El tema, ANTES de la hoja de estilos y antes de pintar.
+
+       El script que aplica el tema estaba al final del body, con el resto. Eso
+       significa que el navegador pinta primero la pagina en oscuro y luego la
+       cambia a claro: un destello blanco en cada recarga de quien tenga el tema
+       claro guardado, que es justo lo que se nota al recargar.
+
+       Aqui, en la cabecera y sin esperar a la hoja, se lee la misma clave y se
+       pone la misma clase en el elemento html. Cuatro lineas, ningun script
+       externo, y es lo unico que hace falta para que no haya ni un fotograma en
+       el tema equivocado.
+
+       Va antes del <link> de la hoja a proposito: si el navegador ya tiene el CSS
+       en cache, ponerlo despues seria lo mismo, pero si no lo tiene, este bloque
+       se ejecuta mientras la hoja se descarga y gana. La clave y la clase tienen
+       que coincidir con las de app.js; si se cambia una, hay que cambiar las dos. -->
+
+<script>
+  try {
+    if (localStorage.getItem("rhythm-crea-tema") === "claro") {
+      document.documentElement.classList.add("claro");
+    }
+  } catch (e) { /* sin storage: se queda en oscuro, que es el tema por defecto */ }
+</script>
 <link rel="preload" as="image" href="assets/angel-oscuro.webp" fetchpriority="high">
 <link rel="stylesheet" href="assets/style.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
@@ -67,7 +91,7 @@
 <div class="barra-z">
   <!-- Tres zonas: el nombre a la izquierda y solo, el reloj en el medio, los
        enlaces a la derecha. El reloj va en una columna propia del grid para que
-       quede centrado de verdad, y no "mas o menos" centrado depending de lo que
+       quede centrado de verdad, y no "mas o menos" centrado segun lo que
        mida cada lado. -->
   <div class="isla" tabindex="0" aria-label="Navigation">
     <div class="izq">
@@ -85,7 +109,7 @@
     <div class="der">
       <nav>
         <a href="#hyprland">hyprland</a>
-        <a href="#fuera">elsewhere</a>
+        <a href="#instalar">install</a>
       </nav>
       <button class="interruptor" id="interruptor" type="button"
               aria-pressed="false" title="Switch to the light theme">
@@ -138,7 +162,14 @@
   </div>
 
   <div class="cartel">
-    <h1 class="nombre">RHYTHMCREA</h1>
+    <!-- El cursor va DENTRO del h1 y no al lado. Es lo que hace omarchy.org con su
+         wordmark, y no es un detalle: un cursor pegado al final del texto es la
+         señal de que la pagina se esta "escribiendo", y si va fuera del titular se
+         lee como un adorno suelto. aria-hidden porque no aporta nada a quien no lo
+         ve: el nombre ya esta entero en el h1 para el lector de pantalla.
+         Con prefers-reduced-motion el CSS lo quita entero (display: none), y con
+         el reduced-motion del sistema el cursor es justo lo primero que sobra. -->
+    <h1 class="nombre">RHYTHMCREA<span class="cursor" aria-hidden="true"></span></h1>
     <p class="bajo">a page for rhythmcrea&#8217;s repositories</p>
     <button class="bajar" id="bajar" type="button">repositories <i></i></button>
   </div>
@@ -159,54 +190,37 @@
     <a class="rotulo-menu" href="#campo">Rhythmcrea</a>
     <p>An Arch desktop that doesn&#8217;t break.</p>
 
-    <!-- Los creditos, como en el pie de omarchy.org: donde vive la pagina y que
-         usa para no pedir nada. Va en la columna de la marca y no en la ultima,
-         porque es de donde sale y no un dato de la maquina. -->
-    <p class="creditos-menu">Static files, no build, no framework.<br>
-      Served by <a href="https://pages.github.com/" target="_blank" rel="noopener">GitHub Pages</a>.</p>
   </div>
 
+  <!-- Esta pagina. Solo lo que hay dentro: hyprland, que es donde esta el
+       reproductor y los botones, y Install, que es la unica salida de la
+       pagina hacia fuera. Se quito el enlace "top", que estaba de mas: el logo de
+       arriba ya hace eso, y volver al principio desde el final es pulsar Inicio. -->
   <nav class="col-menu" aria-label="This page">
-    <h3>This page</h3>
-    <a href="#campo">top</a>
+    <h3>THIS PAGE</h3>
     <a href="#hyprland">hyprland</a>
-    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">the installer</a>
+    <a href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener">Install</a>
   </nav>
 
-  <nav class="col-menu" aria-label="Elsewhere">
-    <h3>Elsewhere</h3>
-    <a href="https://github.com/rhythmcreative" target="_blank" rel="noopener">github</a>
-    <a href="https://github.com/rhythmcreative/rust-dock" target="_blank" rel="noopener">rust-dock</a>
-    <a href="https://github.com/k4ditano/k4" target="_blank" rel="noopener">k4</a>
-  </nav>
 
-  <div class="col-menu datos-menu">
-    <h3>The data</h3>
-    <span id="sello-datos">&nbsp;</span>
-    <span id="sello-repos">&nbsp;</span>
-    <!-- La ficha de la maquina. Son valores que el recolector ya recogia y que no
-         se enseñaban en ninguna parte: se recogian en cada ejecucion y se tiraban.
-         Una sola linea y pequeña, porque esta columna ya es la que habla de los
-         datos; meterlos en otra parte seria mas ruido.
 
-         Aviso, porque esto va a estar en una pagina publica: el kernel con su
-         version exacta y las horas de uptime son huella digital de la maquina. No
-         es grave —el usuario ya sale en la ruta que enseña el doctor, y las dos
-         pantallas con su resolucion ya estaban— pero quien quiera quitarlo borra
-         de la lista FICHA en app.js lo que no quiera. -->
-    <span class="ficha" id="ficha">&nbsp;</span>
-    <span class="nota-menu">This page asks the network for nothing. The figures
-      above are from whenever the collector last ran.</span>
-  </div>
+    <!-- La linea de abajo: el copyright a la izquierda y de donde sale la pagina a
+         la derecha. Los dos lados van en el mismo <div> y el space-between del flex
+         los separa, asi que no hacen falta clases ni columnas para ponerlos a su
+         sitio.
 
-  <!-- La linea de abajo, que en el pie de omarchy.org lleva el aviso de
-       derechos y el correo de contacto. Aqui no hay ni una cosa ni la otra: la
-       pagina no tiene copyright porque no hay quien lo reclame, y el contacto ya
-       esta en el repo. Lo que si se dice es de donde sale todo. -->
-  <div class="pie-fin">
-    <span class="pie-fin-izq">&copy; 2026 Rhythmcrea</span>
-    <span class="pie-fin-der">On GitHub Pages, from <a href="https://github.com/rhythmcreative/rhythm-site" target="_blank" rel="noopener">rhythmcreative/rhythm-site</a></span>
-  </div>
+         Lo de "On GitHub Pages, from rhythmcreative/rhythm-site" es de donde sale de
+         verdad: el sitio es estatico, lo compila GitHub Pages, y el repo esta
+         abierto. Va aqui y no en la columna de la marca porque es de donde viene,
+         no del autor.
+
+         El bloque de creditos de antes, "Static files, no build, no framework.
+         Served by GitHub Pages.", no vuelve: decia casi lo mismo dos veces, y esta
+         linea ya lo dice. -->
+    <div class="pie-fin">
+      <span class="pie-fin-izq">&copy; 2026 Rhythmcrea</span>
+      <span class="pie-fin-der">On GitHub Pages, from <a href="https://github.com/rhythmcreative/rhythm-site" target="_blank" rel="noopener">rhythmcreative/rhythm-site</a></span>
+    </div>
 </footer>
 
 <script src="data/system.js"></script>

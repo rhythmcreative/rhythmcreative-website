@@ -12,7 +12,7 @@ la luna:
 
     fondo-oscuro.webp  angel-oscuro.webp  frente-oscuro.webp   tema negro
     fondo-claro.webp   angel-claro.webp   frente-claro.webp    tema blanco
-    aro-oscuro.webp    aro-claro.webp                        el aro, solo
+    aro-claro.webp                                           el aro, solo
 
 Los dos temas son MONOCROMOS. La version que habia antes era un gris oscuro que
 no era ni blanco ni negro, con los azules y los verdes todavia dentro.
@@ -59,7 +59,7 @@ UMBRAL_OSCURO = 160
 # SON DOS SEMIEJES Y NO UN RADIO porque el aro de la foto es una ELIPSE, no un
 # circulo: la estatua esta vista de lado y el aro se ve tumbado. Medido sobre
 # angel-claro.webp: el anillo va de x 943 a 1070 y de y 87 a 133, o sea 127 por
-# 46, un 2,8 a 1. Con un solo radio el dibujo salia CIRCULAR y se挂着 encima de
+# 46, un 2,8 a 1. Con un solo radio el dibujo salia CIRCULAR y se quedaba encima de
 # la elipse de la foto: dos aros que no coincidian, y al pinchar se encendia el
 # equivocado.
 #
@@ -210,7 +210,7 @@ def velo(W, H):
     return Image.fromarray(rgba, "RGBA")
 
 
-def aro(W, H, tema):
+def aro(W, H):
     """SOLO el aro de la cabeza, en su propia capa transparente.
 
     Va su propia imagen y no un div con un radial-gradient por dos razones.
@@ -221,19 +221,22 @@ def aro(W, H, tema):
     a escribir esas fracciones en el CSS, y basta con que se desplace un pixel la
     foto para que el aro se quede fuera de su sitio.
 
-    La segunda es la que mas se notaba: un div no se puede iluminar bien. Al
-    pinchar habia que subirle el opacity a un bloom, y con mix-blend-mode
-    screen en oscuro y multiply en claro, subir el opacity no es "encender": en
-    claro multiplica y lo que sale es mas oscuro, no mas luz. Una imagen con su
-    alfa propia se enciende igual en los dos temas: es lo mismo quecalar la foto.
+    La segunda es el difuminado del borde. Un div con un degradado enradial lo
+    resuelve con un solo radio, y este aro no es un circulo: es una elipse tumbada.
+    Ademas el borde tiene que quedarse en alfa 0 hacia fuera, que es lo que evita
+    que se vea la costura cuando el parallax separa el aro unos pixeles de la foto.
+    Eso en un div hay que escribirlo a mano y se nota en cuanto algo se mueve.
 
     El aro dibuja una ELIPSE con los dos semiejes de HALO, no un circulo: la foto
     lo tiene tumbado y hay que superimposedlo encima. Y no lleva un pelo
     brillante en el borde: el aro de la foto ya es una linea difusa, y aqui el
-    pelo lo convertia en un aro de neon dibujado, que en claro encima del papel
-    se leia como un circulo trazado a lapiz.
+    pelo lo convertia en un aro de neon dibujado.
+
+    Se dibuja UNA vez, con la geometria de HALO["claro"], porque el aro va solo en
+    el tema claro. En el oscuro no hay aro: --aro-min y --aro-alto valen 0 ahi y el
+    keyframe del pinchazo los lee, con lo que tampoco se enciende al pinchar.
     """
-    x, y, rx, ry = HALO[tema]
+    x, y, rx, ry = HALO["claro"]
     cx, cy = x * W, y * H
     semi_x, semi_y = rx * W, ry * H
 
@@ -254,38 +257,19 @@ def aro(W, H, tema):
     alfa = np.clip(alfa + np.exp(-((d - 1.0) / (ANCHO_ARO * 0.55)) ** 2) * 0.10, 0, 1)
     alfa[alfa < 0.004] = 0.0
 
-    if tema == "claro":
-        # En claro el aro se MULTIPLICA sobre la foto, y multiplicar con blanco no
-        # hace nada: sobre el papel sale el color del propio aro. Por eso es
-        # dorado y no un blanco de luz — un aro dorado se lee como halo en los dos
-        # temas, y en claro encaja con el aro de la estatua en vez de parecer un
-        # circulo trazado a lapiz.
-        #
-        # El dorado va bajito de saturacion a proposito: con el mix-blend a tope
-        # el anillo cae encima del marfil del angel y de las lapidas del fondo, y
-        # un dorado saturado ahi se lee como un pegamento.
-        # El mismo dorado, el que se mide arriba. Con (214,170,74) sobre el
-        # papel salia (226,205,158): otra vez apagado.
-        rgb = np.zeros((alto, ancho, 3), dtype=np.float32)
-        rgb[..., 0] = 232.0
-        rgb[..., 1] = 164.0
-        rgb[..., 2] = 44.0
-    else:
-        # En oscuro el aro va con screen, asi que lo que se ve es el color del
-        # aro aclarando el cielo. Tambien es dorado, y por el mismo motivo que en
-        # claro: un aro blanco o azul aqui se leia como un aro de neón, y con
-        # este tono el aro se lee como oro en los dos temas y el cambio de tema
-        # no lo cambia de color.
-        # Un dorado con MAS separacion entre canales de lo que parece. Con un
-        # dorado suave (255,212,130) la diferencia entre rojo y verde es de 43, y
-        # a la opacidad que lleva la capa (~0,6) sobre un fondo gris se queda en
-        # 20: medido sobre la foto, el aro salia (159,139,101), que es un tono
-        # apagado y no oro. Con 255,178,58 la diferencia es de 77 y el mismo
-        # pixel sale (218,155,58).
-        rgb = np.zeros((alto, ancho, 3), dtype=np.float32)
-        rgb[..., 0] = 255.0
-        rgb[..., 1] = 178.0
-        rgb[..., 2] = 58.0
+    # El color va en la imagen y no en un filtro del CSS. Antes seClarificaba con
+    # `brightness(0) invert(1)`, que solo tocaba el color y dejaba el alfa; pero el
+    # aro blanco sobre el angel en blanco y negro no se veia (medido: el anillo
+    # esta en 233 de 255 y con blanco solo sube a 251, 1.0:1). Para aclarar hay
+    # que poner el color aqui.
+    #
+    # Este es el dorado de claro, 232,164,44. A la opacidad que lleva la capa
+    # (0.78) el anillo sobre el 233 del fondo queda en 232,179,84: 1.55:1 de
+    # contraste, que es lo justo para que se distinga sobre el papel.
+    rgb = np.zeros((alto, ancho, 3), dtype=np.float32)
+    rgb[..., 0] = 232.0
+    rgb[..., 1] = 164.0
+    rgb[..., 2] = 44.0
 
     capa = np.dstack([rgb, alfa * 255.0]).astype(np.uint8)
     out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -339,21 +323,26 @@ def main():
         print("%-7s angel-%s-p.webp  %.0f KB  (el que se baja el movil)"
               % (tema, tema, os.path.getsize(p2) / 1024))
 
-        # El aro, en su propia capa. Va con la foto entera de lienzo y con el
-        # radio medido, que es lo que lo hace caer justo en la cabeza sin que
-        # haya que colocar nada desde el CSS.
-        capa_aro = aro(W, H, tema)
-        ruta_aro = os.path.join(DESTINO, "aro-%s.webp" % tema)
-        capa_aro.save(ruta_aro, "WEBP", quality=88, method=6)
-        print("%-7s aro-%s.webp  %.0f KB  (solo el anillo de la cabeza)"
-              % (tema, tema, os.path.getsize(ruta_aro) / 1024))
-
         fondo = cemetery(ruta_fondo, claro)
         fondo.save(os.path.join(DESTINO, "fondo-%s.webp" % tema), "WEBP",
                    quality=86, method=6)
         primer_plano(fondo, claro).save(os.path.join(DESTINO, "frente-%s.webp" % tema),
                                         "WEBP", quality=84, method=6)
         print("%-7s fondo-%s.webp / frente-%s.webp" % (tema, tema, tema))
+
+    # El aro, en su propia capa y UNA SOLA VEZ, fuera del bucle de temas.
+    #
+    # Va con la foto entera de lienzo y con el radio medido, que es lo que lo hace
+    # caer justo en la cabeza sin que haya que colocar nada desde el CSS.
+    #
+    # Solo se dibuja el de claro porque es el unico que se ve: en el oscuro
+    # --aro-min y --aro-alto valen 0. El fondo, el angel y el frente si se hacen
+    # por tema, porque esos se ven en los dos.
+    capa_aro = aro(W, H)
+    ruta_aro = os.path.join(DESTINO, "aro-claro.webp")
+    capa_aro.save(ruta_aro, "WEBP", quality=88, method=6)
+    print("aro-claro.webp  %.0f KB  (el anillo de la cabeza; en oscuro no va)"
+          % (os.path.getsize(ruta_aro) / 1024))
 
     # El velo a un tercio: es una niebla difusa a la que no se le ve el borde, y
     # a 1000 px de ancho pesaba 26 KB para nada.

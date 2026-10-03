@@ -85,15 +85,29 @@ def main():
     repos = list(REPOS)
 
     fallos = []
+    # Repos que se dejan fuera a proposito, en vez de fallos. Van aparte porque no
+    # son lo mismo: un fallo es que la API no respondio, y esto es una decision.
+    omitidos = []
     datos = {}
     # Cuantas releases se buscan. Con token da igual (5000 por hora), pero sin
     # token la cuota son 60 y buscar una release en cada repo son 20 peticiones
     # mas: se puede apagar con SIN_RELEASES=1.
     SIN_RELEASES = os.environ.get("SIN_RELEASES", "").strip() not in ("", "0", "no", "false")
 
+    #
+    # Un repo privado se SALTA, y esto es lo importante: la pagina es publica y
+    # el fichero que se recoge se publica entero. El timer lanza esto con el token
+    # de gh, que ve los repos privados del usuario, asi que sin este filtro en
+    # cuanto uno de estos repos pasara a privado su descripcion, sus estrellas y
+    # su ultimo push se quedaron escritos en data/github.js, que es un fichero
+    # publico del repo. Con el token se sigue pudiendo pedir a 5000 por hora; sin
+    # el serian 60 y esta recogida se los acabaria.
     for nombre in repos:
         try:
             d = pedir("https://api.github.com/repos/" + nombre)
+            if d.get("private"):
+                omitidos.append("%s (privado)" % nombre)
+                continue
             datos[nombre] = {
                 "stars": d.get("stargazers_count"),
                 "lenguaje": d.get("language"),
@@ -102,7 +116,14 @@ def main():
                 "issues": d.get("open_issues_count"),
             }
         except HTTPError as e:
-            fallos.append("%s (%d)" % (nombre, e.code))
+            # El 404 tampoco cuenta como fallo, por lo mismo que en las releases:
+            # es que no hay repo visible, no que la API este estropeada. Antes
+            # marcaba cuota_ok en falso y la pagina avisaba de un problema donde
+            # lo unico que habia pasado es que ese repo no se puede ver.
+            if e.code != 404:
+                fallos.append("%s (%d)" % (nombre, e.code))
+            else:
+                omitidos.append("%s (no existe o no es publico)" % nombre)
         except Exception as e:
             fallos.append("%s (%s)" % (nombre, e))
 
@@ -175,6 +196,7 @@ def main():
         "recogido": ahora,
         "cuota_ok": len(fallos) == 0,
         "fallos": fallos,
+        "omitidos": omitidos,
         "repos": datos,
         "commits": commits[:40],
         "total": sum(v["stars"] or 0 for v in datos.values()),

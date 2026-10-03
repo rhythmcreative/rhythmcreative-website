@@ -13,7 +13,7 @@ figura recortada con canal alfa, y sola sobre un lienzo gris sale con el cielo
 claro del papel y las alas cortadas por arriba: no es la portada, es una parte
 de la portada. La escena es fondo + angel, que es lo que se ve en la pagina.
 
-JPEG y no PNG: los客户服务 de social no saben leer webp, y PNG a 1200x630 de
+JPEG y no PNG: los clientes de las redes sociales no saben leer webp, y PNG a 1200x630 de
 una foto pesa el doble que lo mismo en JPEG con calidad 88. Comprobado: el PNG
 salia de 900 KB y el JPEG de 130.
 """

@@ -23,7 +23,7 @@ import re
 import sys
 
 # Las variables que hl.bind usa en el fichero, con su valor. Se resuelven aqui
-# en vez de評 evaluarlas: son cuatro y no cambian solas.
+# en vez de evaluarlas: son cuatro y no cambian solas.
 VARIABLES = {"mainMod": "SUPER", "terminal": "kitty", "fileManager": "thunar"}
 
 # Los grupos, en el orden en que salen en el fichero. Los comentarios que los

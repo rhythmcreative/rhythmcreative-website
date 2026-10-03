@@ -27,9 +27,15 @@ window.RHYTHM_HYPRLAND = {
     nota: "Recorded off a real session."
   },
 
-  // Los dos botones de abajo. El del manual va con flecha porque abre el
-  // README, que es donde esta el "manual install" de verdad.
-  manual: "https://github.com/rhythmcreative/hyprland#manual-install",
+  // Los dos botones de abajo. El del manual va con flecha porque abre el manual,
+  // que antes era el README del repo y ahora es manual.html: una pagina de esta
+  // misma web con los atajos, las banderas y los componentes.
+  //
+  // No es una URL absoluta a proposito: en local es "manual.html" y al publicar
+  // tambien, porque las dos estan en la raiz del repo y GitHub Pages sirve las
+  // dos desde el mismo sitio. Con una ruta absoluta habria que cambiarla el dia
+  // de publicar, y con un enlace al GitHub se perderia el diseno.
+  manual: "manual.html",
   manualTexto: "Manual",
 
   // Instalar. Va DEBAJO del clip y de los botones, que es donde toca: primero se ve
@@ -212,9 +218,54 @@ window.RHYTHM_HYPRLAND = {
   base: ["Hyprland", "Quickshell", "Rust", "Waybar", "Hyprlock", "Rofi",
          "Pywal", "SDDM", "bash", "QML"],
 
-  // The rest of the ecosystem, for the links. Only where it lives.
-  alrededor: [
-    { nombre: "rust-dock", repo: "rhythmcreative/rust-dock" },
-    { nombre: "k4", repo: "k4ditano/k4" }
-  ]
+  // ── El manual, por proyectos ───────────────────────────────────────────────
+  //
+  // Se llama `proyectos` y no `manual` porque `manual` ya lo usa el boton de la
+  // portada para su URL. Dos cosas distintas con el mismo nombre en el mismo
+  // objeto es un bug esperando: uno pisa al otro y no se ve hasta que el boton
+  // sale con "[object Object]" de href.
+  //
+  // Es la lista de verdad de lo que hay escrito. El indice y el cuerpo se pintan
+  // los dos desde aqui, asi que anadir un proyecto es anadir un objeto a esta
+  // lista, y anadirle una seccion es anadir una linea a su `subs`. Nada mas: el
+  // indice, el numero, el enlace "next" y el anclaje salen solos de ahi.
+  //
+  // El separador del anclaje es "/", no "-", para que el hash se lea como una
+  // ruta —#hyprland/atajos— y no como un id suelto. El id del elemento lleva la
+  // misma barra: los ids de HTML admiten "/", y asi dos proyectos pueden tener
+  // una subseccion con el mismo nombre sin chocar entre si.
+  //
+  // Solo hay un proyecto, y es a proposito. La barra y el dock tienen repos
+  // propio, pero son piezas que instala el instalador de hyprland y que se
+  // configuran desde su misma configuracion: documentarlos como proyectos
+  // sueltos los hacia parecer cosas aparte, y no lo son. Cuando haya un proyecto
+  // que se instale por su cuenta, se anade aqui como segundo objeto y el indice
+  // lo recoge sin tocar nada mas.
+  // Cada subseccion puede llevar `pieza`: el id de una entrada de `piezas` de
+  // arriba, de donde sale su texto. Las que no llevan `pieza` se pintan con una
+  // funcion propia (los atajos, la tabla de componentes), porque su texto sale
+  // de data/documentacion.js y no de aqui.
+  proyectos: [
+    {
+      id: "hyprland",
+      titulo: "hyprland",
+      repo: "rhythmcreative/hyprland",
+      resumen: "The installer, the config, and every piece of the desktop, " +
+        "written from the repository.",
+      subs: [
+        { id: "empezar",    t: "Getting started",    pieza: "instalador" },
+        { id: "atajos",     t: "Hotkeys" },
+        { id: "instalado",  t: "What's installed" },
+        { id: "isla",       t: "The island",         pieza: "isla" },
+        { id: "dock",       t: "The dock",           pieza: "dock" },
+        { id: "barra",      t: "The bar" },
+        { id: "tema",       t: "The theme",          pieza: "temas" },
+        { id: "login",      t: "The login screen",   pieza: "greeter" },
+        { id: "doctor",     t: "The doctor",         pieza: "doctor" },
+        { id: "actualizar", t: "Updating" },
+        { id: "arbol",      t: "The file tree" },
+        { id: "problemas",  t: "When something breaks" }
+      ]
+    }
+  ],
 };
