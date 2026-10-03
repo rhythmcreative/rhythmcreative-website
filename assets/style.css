@@ -206,6 +206,43 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 .isla .rotulo { font: 600 0.76rem/1 var(--f); letter-spacing: 0.2em;
                 text-transform: uppercase; color: var(--hielo); padding-left: 0.15rem;
                 white-space: nowrap; }
+/* El nombre, cuando es un enlace.
+   --
+   En la portada esto es un <span> y no tiene que hacer nada. En el manual es un
+   enlace a la portada, y hasta ahora no tenia NI UNA regla: la clase
+   .rotulo-enlace estaba en el HTML sin existir en el CSS. Medido con el raton
+   encima: mismo color, fondo transparente y una caja de 14 px de alto, o sea que
+   se pulsaba sin que se notara nada.
+   Lo de al lado, el enlace "home", si cambia: fondo rgba(153,186,201,0.09) y las
+   esquinas redondeadas. Esto es lo mismo, con el mismo color y la misma opacidad,
+   para que la barra se comporte igual de izquierda a derecha.
+   --
+   La caja pasa de 14 a 28 px de alto porque un enlace de 14 px no se acierta con
+   el dedo ni con el raton: el alto de la barra es 41 y el enlace ocupa un
+   tercio. Con el relleno negativo el texto no se mueve de sitio. */
+.isla .rotulo-enlace {
+  display: flex; align-items: center;
+  height: 28px;
+  padding: 0 0.6rem;
+  margin-left: -0.6rem;
+  border-radius: var(--r);
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
+}
+.isla .rotulo-enlace:hover { background: rgba(153, 186, 201, 0.09); color: #fff; }
+/* En claro el color se queda en --hielo, que ya es casi negro. La regla de
+   arriba pone #fff al pasar por encima, y aqui eso seria blanco sobre crema:
+   medido, el nombre se ponia rgb(255,255,255) sobre un suelo claro y
+   desaparecia justo en el momento en que se le iba a pulsar. En claro el aviso
+   es solo el fondo. */
+html.claro .isla .rotulo-enlace:hover { background: rgba(0, 0, 0, 0.06);
+                                        color: var(--hielo); }
+.isla .rotulo-enlace:focus-visible { outline: 2px solid var(--azul-4);
+                                    outline-offset: 1px; border-radius: var(--r); }
+/* Con dedo, los 28 px no valen: el mismo objetivo de 44 que los demas controles. */
+@media (hover: none) {
+  .isla .rotulo-enlace { height: 44px; }
+}
 .isla nav { justify-self: end; display: flex; gap: 0.15rem; }
 /* El color es --enlace-barra y no --gris por el contraste con el fondo
    translucido: ver la nota de --enlace-barra en :root. En tema claro esa
@@ -215,6 +252,12 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
              border-radius: var(--r);
              transition: color 0.2s, background 0.2s; white-space: nowrap; }
 .isla nav a:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
+/* En claro, el fondo del hover pasa a gris. El azul de arriba esta medido para
+   un suelo oscuro: sobre crema, #99bac9 al 9 % deja el color en #eaeae8 frente
+   a un suelo en #eceae5, o sea dos niveles de diferencia y un hover que no se
+   ve. El gris es lo que ya usaba el interruptor, asi que despues los tres
+   controles de la barra —nombre, enlaces e interruptor— responden igual. */
+html.claro .isla nav a:hover { background: rgba(0, 0, 0, 0.06); }
 /* El interruptor de tema. Va en la barra y no escondido en el pie: si esta
    abajo, nadie lo encuentra, y el cambio tiene que estar a un clic de donde ya
    se esta mirando la pagina.
@@ -1940,7 +1983,10 @@ html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
 .indice .grupo-indice:last-of-type { margin-bottom: 0.3rem; }
 .indice h3 {
   font: 600 0.66rem/1 var(--f);
-  letter-spacing: 0.16em; text-transform: lowercase;
+  /* Mayusculas y no minusculas: el nombre del repo es "hyprland" en el dato,
+     pero en el indice va como el titulo de un bloque, y en mayusculas se
+     distingue de un vistazo de las secciones de debajo, que van en frase. */
+  letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--hielo);
   margin: 0 0 0.35rem;
   padding-left: 0.8rem;
@@ -2232,41 +2278,52 @@ html.claro .salida .linea-ok { color: var(--hielo); }
    para abrirlo seria un boton que no hace nada. */
 .contenidos {
   display: none;
-  font: inherit; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  /* Cuadrado y sin texto. Las tres rayas son tres gradientes de 1.6 px en
+     currentColor, no un svg: asi el boton hereda el color del texto de la barra
+     y no hay un segundo dibujo que mantener cuando cambia el tema. */
+  width: 44px; height: 44px; min-width: 44px;
+  padding: 0; margin: 0;
+  position: relative;
   color: var(--enlace-barra);
-  background: none; border: 0; border-left: 1px solid var(--linea);
-  padding: 0.34rem 0.58rem; margin-left: 0.15rem;
+  background:
+    linear-gradient(currentColor 0 0) no-repeat center 34% / 17px 1.6px,
+    linear-gradient(currentColor 0 0) no-repeat center 50% / 17px 1.6px,
+    linear-gradient(currentColor 0 0) no-repeat center 66% / 17px 1.6px;
+  border: 0; border-left: 1px solid var(--linea);
   border-radius: var(--r); cursor: pointer;
-  min-height: 28px;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s, background-color 0.2s;
 }
 .contenidos:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
 .contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
 .contenidos[aria-expanded="true"] { color: var(--azul-4); }
-/* La flechita. Se dibuja con dos bordes en vez de con un SVG, para no meter un
-   fichero de imagen ni una etiqueta mas en el HTML, y gira al abrirse con una
-   transicion de 0.2s que con reduced-motion se apaga sola. Es lo que hace que el
-   boton se lea como algo que se pliega y no como algo que te lleva a otra pagina. */
+/* Abierto, las tres rayas se hacen una X.
+   --
+   Los tres gradientes se quitan con background:none y las dos diagonales entran
+   por los pseudoelementos, giradas 45 y -45 grados desde el centro. Es el patron
+   clasico y se ve aqui que compensa: la barra solo tiene 44 px de alto, y en
+   lugar de animar el giro —que en 44 px da un movimiento de menos de un
+   pixel— las rayas se van y la X aparece. Se lee mejor y no hay transicion que
+   un telefono viejo tenga que respectar. */
+.contenidos::before,
 .contenidos::after {
-  content: ""; width: 0; height: 0; align-self: center;
-  margin-left: 0.45rem;
-  border-left: 3.5px solid transparent;
-  border-right: 3.5px solid transparent;
-  border-top: 4px solid currentColor;
-  transition: transform 0.2s;
+  content: ""; position: absolute;
+  left: 50%; top: 50%;
+  width: 17px; height: 1.6px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.16s;
 }
-.contenidos[aria-expanded="true"]::after { transform: rotate(180deg); }
-/* Dos nombres y uno se esconde. Medido a 390 px: con "contents" el boton pisa
-   el reloj por 15 px, porque en la barra solo queda para el nombre 126 px, el
-   reloj 98 y el interruptor 44, y "contents" con su relleno se come el hueco
-   entero. Con "index" sobran 31 px. El largo se queda a partir de 430, que es
-   donde ya no hace falta. */
-.contenidos .corto { display: none; }
-@media (max-width: 430px) {
-  .contenidos .largo { display: none; }
-  .contenidos .corto { display: inline; }
-}
+.contenidos::before { transform: translate(-50%, -50%) rotate(45deg); }
+.contenidos::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.contenidos[aria-expanded="true"] { background: none; }
+.contenidos[aria-expanded="true"]::before,
+.contenidos[aria-expanded="true"]::after { opacity: 1; }
+/* Sin nombre largo ni corto: el boton son tres rayas de 17 px dentro de un
+   cuadrado de 44, y ocupa lo mismo a 320 que a 860. Lo que antes se media como
+   un solape de 15 px a 390 px era el texto "contents"; con el icono no hay
+   texto que colocar. */
+.contenidos .largo, .contenidos .corto { display: none; }
 
 /* Los dos enlaces de la barra se van en movil para dejarle sitio al boton.
    "home" sigue estando en el nombre de la izquierda, que va a lo mismo. */

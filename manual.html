@@ -59,12 +59,18 @@
              falta: en una pantalla estrecha el indice es una tira de dos mil
              pixeles dentro de trescientos, y sin esto no hay manera de saber
              donde estas ni de saltar a donde sea. El boton abre el indice
-             entero como un panel. En escritorio no aparece, porque ahi el
-             indice ya esta a la vista al lado y un boton para abrirlo seria
-             un boton que no hace falta. -->
+             entero, que baja desde debajo de la barra. En escritorio no
+             aparece, porque ahi el indice ya esta a la vista al lado y un boton
+             para abrirlo seria un boton que no hace falta.
+
+             Las tres rayas se dibujan en el CSS, con tres gradientes, y no hay
+             ni un svg ni un <i>. El texto va en un .sr: sin el, el boton es un
+             rectangulo con un dibujo dentro y un lector de pantalla no tiene
+             nada que leer. Con el, lee "contents, boton, pulsado". -->
+
         <button id="contenidos" class="contenidos" type="button"
                 aria-expanded="false" aria-controls="indice"
-                title="Show the contents"><span class="largo">contents</span><span class="corto">index</span></button>
+                title="Show the contents"><span class="sr">Contents</span></button>
       </nav>
       <!-- El boton de tema. El icono va DENTRO, en el HTML, y no lo pone app.js:
            el JS solo lee el estado y engancha el click. Con el boton vacio se
