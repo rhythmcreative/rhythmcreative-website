@@ -24,7 +24,30 @@ window.RHYTHM_HYPRLAND = {
     titulo: "hyprland, the desktop",
     src: "assets/hyprland-demo.mp4",
     poster: "assets/hyprland-poster.webp",
-    nota: "Recorded off a real session."
+    nota: "Recorded off a real session.",
+
+    // Por donde empieza el clip en vez de por el principio.
+    //
+    // El video abre con negro y un cartel de "HYPRLAND" que se desvanece sobre el
+    // fondo. El poster es un fotograma del propio video, del segundo ocho, asi que
+    // antes de darle a play se ve una escena y al pulsar de golpe salia un cartel
+    // en negro: eso era lo de "a la primera no se pone bien".
+    //
+    // El segundo no es deguess. Medido el 2026-10-04 mirando el brillo de la
+    // banda central, que es donde va el texto, a lo largo del arranque:
+    //
+    //     2.4 s  gris 66      el fondo empieza a entrar
+    //     2.8 s  gris 134     el cartel AUN se ve encima
+    //     3.0 s  gris 168     limpio
+    //     3.2 s  gris 168     limpio
+    //
+    // Con 2.7 se caia de lleno en el cartel. Se salta a 3.2, con margen para que
+    // el segundo que se busca no sea justo el ultimo del desvanecido.
+    //
+    // Va en los datos y no dentro del reproductor para que el segundo sea un
+    // numero que se cambia sin tocar codigo, y para que quede escrito que es una
+    // decision y no un descuido.
+    desde: 3.2
   },
 
   // Los dos botones de abajo. El del manual va con flecha porque abre el manual,

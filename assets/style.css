@@ -272,8 +272,38 @@ html.claro .isla nav a:hover { background: rgba(0, 0, 0, 0.06); }
 html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.06); }
 .interruptor .ic { width: 1.05rem; height: 1.05rem; grid-area: 1 / 1;
                    transition: opacity 0.25s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
-html:not(.claro) .ic-sol { opacity: 0; transform: rotate(-70deg) scale(0.6); }
-html.claro .ic-luna { opacity: 0; transform: rotate(70deg) scale(0.6); }
+/* Los tres iconos del tema, uno solo a la vez.
+   --
+   Antes eran dos y se elegian con la clase .claro del <html>: en oscuro se
+   escondia el sol, en claro la luna. Con tres modos eso no llega, porque
+   "automatico en oscuro" y "negro elegido a mano" se ven igual pero se portan
+   distinto: el primero cambia solo cuando el sistema cambia de tema. Por eso el
+   modo va en data-tema y no se deduce de la clase.
+
+   Se muestra el que corresponde y se ocultan los otros dos, en vez de tocar uno
+   por estado: con cuatro reglas (un par por modo) basta, y no hay que acordarse
+   de esconder el anterior. */
+html[data-tema="auto"]  .ic-auto,
+html[data-tema="claro"] .ic-sol,
+html[data-tema="negro"] .ic-luna { opacity: 1; transform: none; }
+html[data-tema="auto"]  .ic-sol,
+html[data-tema="auto"]  .ic-luna,
+html[data-tema="claro"] .ic-auto,
+html[data-tema="claro"] .ic-luna,
+html[data-tema="negro"] .ic-auto,
+html[data-tema="negro"] .ic-sol {
+  opacity: 0; transform: rotate(-70deg) scale(0.6);
+}
+/* El giro va para el lado contrario segun cual entre, para que no parezca que
+   los dos iconos cruzan la misma puerta. */
+html[data-tema="claro"] .ic-auto,
+html[data-tema="claro"] .ic-luna,
+html[data-tema="negro"] .ic-auto,
+html[data-tema="negro"] .ic-sol { transform: rotate(70deg) scale(0.6); }
+/* Antes de que app.js ponga data-tema —si algo falla al arrancar— se ve la luna,
+   que es el estado por defecto de la pagina. Sin esto el boton sale vacio. */
+html:not([data-tema]) .ic-auto { opacity: 0; transform: rotate(70deg) scale(0.6); }
+html:not([data-tema]) .ic-sol  { opacity: 0; }
 
 /* Solo para lectores de pantalla: el icono no dice nada por si mismo. */
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -1315,6 +1345,30 @@ html.claro .terminal .l.aviso { color: #8a6a1f; }
                  text-indent: -1.5rem; }
 .comando code::before { content: "$"; margin-right: 0.75rem; color: var(--gris);
                         text-indent: 0; opacity: 0.7; }
+/* ── Copiar desde el texto del comando ─────────────────────────────────────────
+   En la portada el comando ya se copiaba al pincharlo, no solo con el boton: el
+   texto tenia cursor de puntero y un subrayado que salia al pasar por encima. En
+   el manual el boton funcionaba pero el texto no, y no habia nada que dijera que
+   se podia pinchar. Estas reglas le dan lo mismo.
+
+   No se unan las dos cajas: son distinto diseno a proposito. En la portada el "$"
+   va en un pseudo de la caja y el texto va con el comando entero en una linea;
+   en el manual el "$" va dentro del propio code, con relleno y borde propios,
+   porque el comando se parte en varias lineas en una columna de 650 px. Lo que se
+   comparte es el comportamiento, no el dibujo. */
+.comando code {
+  cursor: pointer;
+  /* El subrayado sale con text-decoration-color y no con un fondo porque el
+     comando se parte en varias lineas, y con un fondo el subrayado solo
+     saldria en una de ellas. */
+  text-decoration: underline; text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em; text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s, color 0.18s, border-color 0.2s;
+}
+.comando:hover code { text-decoration-color: currentColor; color: var(--hielo);
+                       border-color: var(--linea-alta); }
+.comando code:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px;
+                              border-radius: var(--r); }
 .copiar { flex: none; align-self: stretch; padding: 0 0.7rem; cursor: pointer;
           border: 1px solid var(--linea-alta); border-radius: var(--r);
           background: transparent; color: var(--gris);
@@ -2455,4 +2509,77 @@ html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
 @media (prefers-reduced-motion: reduce) {
   .siguiente i { transition: none; }
   .contenidos::after { transition: none; }
+}
+
+/* ══ EL REPRODUCTOR, CUANDO CARGA ═════════════════════════════════════════════
+   Al darle a play el boton grande se apaga y el video aun no tiene nada que
+   pintar. Sin nada en medio, esa espera es un rectangulo negro sin pistas de que
+   este pasando nada. Estas dos reglas son esa pista. */
+
+/* El aviso. Va en la barra de abajo y no encima del video: encima taparia justo
+   la imagen que se esta intentando ver, y en un movil el pulgar esta ahi. */
+.clip-barra.cargando .clip-tiempo::after {
+  content: "cargando";
+  margin-left: 0.5rem;
+  font-size: 0.58rem; letter-spacing: 0.12em;
+  color: var(--azul-4);
+  animation: clip-pulso 1.1s ease-in-out infinite;
+}
+.clip-barra.cargando .clip-barra-rota { opacity: 0.45; }
+
+@keyframes clip-pulso { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+/* Y un anillo en el centro del video, que es donde se mira. Con un borde y sin
+   SVG ni imagen: es un circulo que se dibuja.
+   --
+   Lleva un disco oscuro detras porque el video va cambiando de escena y un anillo
+   gris se pierde sobre lo claro y se ve demasiado sobre lo oscuro. Medido sobre el
+   fotograma del poster, que es casi blanco: el anillo sin disco apenas se
+   distinguia. El disco es de --suelo con algo de transparencia, asi que el color
+   de la pagina y el del video salen los dos. */
+.escena-clip.cargando::after {
+  content: ""; position: absolute;
+  left: 50%; top: 50%;
+  width: 42px; height: 42px; margin: -21px 0 0 -21px;
+  border: 2.5px solid rgba(153, 186, 201, 0.30);
+  border-top-color: #fff;
+  border-right-color: rgba(153, 186, 201, 0.55);
+  border-radius: 50%;
+  /* Disco casi opaco. Con 0.45 el anillo salia como un borron gris: el arco
+     blanco no se distinguia del disco y la foto parecia una mancha. Medido sobre
+     el fotograma claro del poster, que es lo primero que se ve. */
+  background: rgba(7, 9, 11, 0.72);
+  /* Por encima del <video> y del boton grande. Sin esto el anillo se dibujaba
+     debajo de la imagen del poster y no se veia. */
+  z-index: 3;
+  animation: clip-gira 0.8s linear infinite;
+  /* El pseudo vive dentro de una caja con line-height:0 —para que el <video>
+     no deje un hueco debajo—, asi que sin esto el texto que heredase lo
+     pondria en medio de la espiral. */
+  line-height: 0;
+  pointer-events: none;
+}
+@keyframes clip-gira { to { transform: rotate(360deg); } }
+
+/* Si el video no se puede reproducir, el boton no hara nada y esto es lo unico que
+   lo dice. El aviso sustituye al boton, no se suma. */
+.escena-clip.fallo::after,
+.clip-barra.cargando.fallo::after { animation: none; border: 0; }
+.escena-clip.fallo::after {
+  content: "no se pudo reproducir"; position: absolute;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  margin: 0; width: auto; height: auto; border-radius: 0;
+  font-size: 0.74rem; letter-spacing: 0.08em; color: #e8a48c;
+  background: rgba(7, 9, 11, 0.82);
+  padding: 0.5rem 0.8rem; border: 1px solid rgba(186, 95, 68, 0.5);
+  border-radius: var(--r);
+  white-space: nowrap; line-height: 1.4;
+  z-index: 3; pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Con reduced-motion el aviso TIENE que seguir apareciendo, solo que quieto:
+     quitarlo entero dejaria el mismo rectangulo negro que se queria arreglar. */
+  .escena-clip.cargando::after { animation: none; border-top-color: var(--azul-4); }
+  .clip-barra.cargando .clip-tiempo::after { animation: none; opacity: 1; }
 }

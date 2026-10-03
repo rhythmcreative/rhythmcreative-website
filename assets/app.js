@@ -247,7 +247,11 @@
         '<div class="escena-clip">' +
           '<video id="' + id + '" width="1280" height="720" ' +
           'poster="' + esc(p.poster || "") + '" preload="none" playsinline ' +
-          'loop aria-label="' + esc(p.titulo || "clip") + '">' +
+          // El segundo por el que se salta el arranque en negro del clip. Va como
+          // atributo y no como dato pasado al reproductor para que se vea en el
+          // HTML, que es donde se busca cuando el cartel sale en negro.
+          (p.desde ? ' data-desde="' + esc(p.desde) + '"' : "") +
+          ' loop aria-label="' + esc(p.titulo || "clip") + '">' +
           '<source data-src="' + esc(p.src) + '" type="video/mp4">' +
           "Tu navegador no sabe reproducir MP4. El clip son 33 segundos del " +
           "escritorio, con el launcher, el panel de control y el final." +
@@ -266,7 +270,12 @@
             '<span class="clip-barra-rota"></span><span class="clip-mando"></span>' +
           "</div>" +
           '<span class="clip-tiempo"><b class="clip-actual">0:00</b>' +
-            '<i>/</i><span class="clip-total">0:33</span></span>' +
+            // El total sale "--:--" y no un numero. Estaba escrito en el HTML a
+            // mano —0:33— y era el segundo en que duraba el clip el dia que se
+            // escribio. Si el video cambia, o si no se puede leer el metadato,
+            // eso es un numero falso; "--:--" se ve como lo que es: que aun no se
+            // sabe. pintar() lo rellena en cuanto loadedmetadata llega.
+            '<i>/</i><span class="clip-total">--:--</span></span>' +
           // El volumen, como en Omarchy: el altavoz con una barrita al lado.
           //
           // Es el mismo markup que la pista de progreso y por el mismo motivo:
@@ -356,8 +365,30 @@
         } else video.pause();
       }
 
+      // Saltar el arranque en negro del clip.
+      //
+      // El video empieza con dos segundos y medio de negro con un cartel, y el
+      // poster es un fotograma de DESPUES. Sin esto, lo que se ve al pulsar es una
+      // pantalla negra: medida, es lo que pasaba. Se salta al primer plano con
+      // contenido y asi el paso del poster al video es continuo.
+      //
+      // Una sola vez, y solo si el video sigue al principio. Si alguien lo ha
+      // visto, lo ha parado y ha vuelto a empezar, se respeta su posicion: el
+      // salto es solo para el primer play.
+      var desde = parseFloat(video.getAttribute("data-desde"));
+      function saltarIntro() {
+        if (!desde || video.getAttribute("data-intro") === "saltada") return;
+        if (video.currentTime > 0.05) return;
+        video.setAttribute("data-intro", "saltada");
+        try { video.currentTime = desde; } catch (e) { /* si no puede, se queda */ }
+      }
+
       video.addEventListener("timeupdate", pintar);
-      video.addEventListener("loadedmetadata", pintar);
+      video.addEventListener("loadedmetadata", function () {
+        saltarIntro();
+        pintar();
+      });
+      video.addEventListener("seeked", pintar);
       video.addEventListener("play", function () {
         // La clase va en los dos sitios: la del boton grande (que esta en la caja
         // del video) y la de los iconos de la barra. Con una sola no se
@@ -370,6 +401,36 @@
         video.parentNode.classList.remove("sonando");
         barra.classList.remove("sonando");
         btnPlay.setAttribute("aria-label", "Reproducir");
+      });
+
+      // ── Aviso de carga ───────────────────────────────────────────────────
+      //
+      // Al darle a play el boton grande se apaga en 0.25 s y el video todavía no
+      // tiene nada que pintar: medido con la red a 1,5 Mbit, entre que se apaga el
+      // boton y que entra el primer fotograma hay casi medio segundo de rectangulo
+      // negro sin ningun indicio de que este pasando algo. El cartel de negro del
+      // principio hacia ese hueco todavia mas largo.
+      //
+      // Se pone con los eventos del propio <video> en vez de con un temporizador:
+      // waiting salta cuando se queda sin datos, playing cuando ya los tiene. Un
+      // setTimeout seria "probablemente" y aqui se sabe.
+      // La clase va en los DOS sitios, igual que la de "sonando": la barra lleva
+      // el texto "cargando" y la caja del video el anillo. Con la clase solo en la
+      // barra el texto aparecia y el anillo no, que es medio aviso.
+      var cargando = function () {
+        var sí = video.readyState < 3 && !video.paused;
+        barra.classList.toggle("cargando", sí);
+        video.parentNode.classList.toggle("cargando", sí);
+      };
+      ["waiting", "stalled", "playing", "canplay", "pause", "seeking", "seeked",
+       "loadeddata", "emptied"].forEach(function (ev) {
+        video.addEventListener(ev, cargando);
+      });
+      video.addEventListener("error", function () {
+        // Si el video no se puede reproducir, el boton de "play" no va a hacer nada
+        // y no hay ningun aviso. Esto es lo unico que avisa, y por eso se pone.
+        video.parentNode.classList.add("fallo");
+        barra.classList.add("fallo");
       });
 
       btnPlay.addEventListener("click", alternar);
@@ -619,11 +680,18 @@
     // que es donde esta la palabra "copied".
     document.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest(".copiar");
-      var cod = !b && ev.target.closest && ev.target.closest(".instalar-cmd code");
+      // ".comando code" y no ".instalar-cmd code": en la portada la caja lleva las
+      // dos clases, y en el manual solo ".comando". Con el selector antigo, pinchar
+      // en el texto del comando del manual no copiaba nada —el boton si, porque va
+      // por su propia clase— y el texto no tenia ni cursor de puntero que dijera
+      // que se podia pinchar.
+      var cod = !b && ev.target.closest && ev.target.closest(".comando code");
       if (!b && !cod) return;
-      var caja = b ? b : cod.closest(".instalar-cmd");
-      // El texto del code es el comando entero y solo el: el "$" va en un
-      // pseudo de la caja, precisamente para que esto salga limpio.
+      var caja = b ? b : cod.closest(".comando");
+      // El texto del code es el comando entero y solo el. El "$" va en un pseudo
+      // —en la portada en la caja y aqui en el propio code—, y un pseudo no entra
+      // en textContent, asi que esto sale limpio en las dos paginas. Si algún dia
+      // se pasara el "$" a texto de verdad, habria que recortarlo aqui.
       var txt = b ? (b.getAttribute("data-copiar") || "")
                   : (cod.textContent || "").replace(/\s+/g, " ").trim();
       var listo = function () {
@@ -657,24 +725,61 @@
       try { document.execCommand("copy"); listo(); } catch (e) { /* nada */ }
       document.body.removeChild(ta);
     }
-  // ── El interruptor de color y blanco y negro ────────────────────────────
+  // ── El tema: automatico, claro y negro ────────────────────────────────────
   //
-  // Se guarda en localStorage, que funciona tambien desde file://, y si no hay
-  // nada guardado se respeta lo que diga prefers-color-scheme. Lo aplica una
-  // clase en <html>, de la que cuelgan tanto las capas como los colores, para
-  // que cambien las dos cosas a la vez.
+  // Tres modos en vez de dos. El tercero es "automatico", que es el que se usa
+  // por defecto y el que no habia: sigue lo que diga el dispositivo con
+  // prefers-color-scheme. Antes solo se podia elegir claro o negro, y quien
+  // lleva el sistema en claro se encontraba con una pagina oscura sin haber
+  // pedido nada.
+  //
+  // Se guarda en localStorage, que funciona tambien desde file://. Lo aplica una
+  // clase en <html>, de la que cuelgan tanto las capas como los colores, para que
+  // cambien las dos cosas a la vez.
   var CLAVE = "rhythm-crea-tema";
+  var MODOS = ["auto", "claro", "negro"];
+  var ETIQUETAS = {
+    auto: "Matches your device",
+    claro: "Light",
+    negro: "Dark"
+  };
 
-  // Dos temas: negro y blanco. No se pregunta al sistema, porque la pagina es
-  // oscura de por si y un tema claro del sistema no dice nada util aqui.
-  // Sin eleccion guardada se empieza en negro.
-  function aplicarClaro(activo) {
-    document.documentElement.classList.toggle("claro", activo);
+  function modoGuardado() {
+    try { return localStorage.getItem(CLAVE); } catch (e) { return null; }
+  }
+
+  // "auto" si no hay eleccion guardada o si lo que hay no es uno de los tres.
+  // Un valor viejo o escrito a mano no puede dejar la pagina sin tema.
+  function modoActual() {
+    var g = modoGuardado();
+    return MODOS.indexOf(g) > -1 ? g : "auto";
+  }
+
+  function elDispositivoPideClaro() {
+    return !!(window.matchMedia &&
+              matchMedia("(prefers-color-scheme: light)").matches);
+  }
+
+  function aplicarTema(modo) {
+    var claro = modo === "claro" || (modo === "auto" && elDispositivoPideClaro());
+    document.documentElement.classList.toggle("claro", claro);
+    // El modo va en <html> y no solo en la clase, porque el icono del boton
+    // depende de los TRES modos y con dos clases no hay forma de distinguir
+    // "automatico en oscuro" de "negro elegido a mano": se ven igual pero se
+    // comportan distinto cuando el sistema cambia de tema.
+    document.documentElement.setAttribute("data-tema", modo);
+
     var b = $("#interruptor");
     if (b) {
-      b.setAttribute("aria-pressed", String(activo));
-      b.title = activo ? "Switch to the dark theme" : "Switch to the light theme";
+      b.setAttribute("aria-label", "Theme: " + ETIQUETAS[modo] + ". Change it.");
+      b.setAttribute("aria-pressed", String(modo === "claro"));
+      // El title dice cual es el siguiente, no cual es el actual: el icono ya
+      // enseña el actual, y lo que hace falta saber antes de pinchar es a donde
+      // vas a ir.
+      var sig = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
+      b.title = "Theme: " + ETIQUETAS[modo] + " \u2014 tap for " + ETIQUETAS[sig].toLowerCase();
     }
+
     // theme-color es lo que pinta la barra del navegador en los moviles. Estaba
     // fija en el negro del tema oscuro, asi que con la pagina en blanco la barra
     // del navegador seguia siendo negra: la unica parte de la pagina que no
@@ -693,15 +798,26 @@
   function interruptor() {
     var b = $("#interruptor");
     if (!b) return;
-    var guardado = null;
-    try { guardado = localStorage.getItem(CLAVE); } catch (e) { guardado = null; }
-    aplicarClaro(guardado === "claro");
+    var modo = modoActual();
+    aplicarTema(modo);
 
     b.addEventListener("click", function () {
-      var activo = document.documentElement.classList.contains("claro");
-      aplicarClaro(!activo);
-      try { localStorage.setItem(CLAVE, activo ? "negro" : "claro"); } catch (e) { /* sin storage */ }
+      modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
+      aplicarTema(modo);
+      try { localStorage.setItem(CLAVE, modo); } catch (e) { /* sin storage */ }
     });
+
+    // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo
+    // de lo que decia al abrir la pagina. Sin esto, quien tiene el movil en
+    // claro de noche se queda con la pagina en claro hasta que recarga.
+    if (window.matchMedia) {
+      var avisa = function () {
+        if (modoActual() === "auto") aplicarTema("auto");
+      };
+      var mq = matchMedia("(prefers-color-scheme: light)");
+      if (mq.addEventListener) mq.addEventListener("change", avisa);
+      else if (mq.addListener) mq.addListener(avisa);   // Safari viejo
+    }
   }
 
   // Aqui ya no hay datos de la maquina en la pagina. No se quitaron solo de la
@@ -1413,7 +1529,6 @@
       (PROYECTOS.length > 1 ? " in " + PROYECTOS.length + " projects" : "") +
       " · collected " + hace(D.recogido);
   }
-
 
   // ── Arranque ───────────────────────────────────────────────────────────────
 

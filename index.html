@@ -60,12 +60,79 @@
 
 <script>
   try {
-    if (localStorage.getItem("rhythm-crea-tema") === "claro") {
-      document.documentElement.classList.add("claro");
-    }
-  } catch (e) { /* sin storage: se queda en oscuro, que es el tema por defecto */ }
+    /* El tema, aqui en la cabecera y antes de la hoja, para que este puesto
+       antes del primer pintado. Si no, hay un fotograma en el contrario en cada
+       recarga, que es justo lo que se nota al recargar con el tema claro
+       guardado.
+
+       La estructura es la del script de omarchy.org, y lo que importa es el ORDEN
+       de los pasos:
+
+         1. LEER lo guardado, con su propio try. Puede fallar —modo privado, un
+            iframe sin permisos, algun file://— y no debe arrastrar al resto.
+         2. VALIDAR contra los tres valores buenos. Uno raro no vale: si se
+            acepta, el boton puede acabar marcando un modo que el <html> no tiene,
+            con la pagina clara y el boton diciendo "automatico".
+         3. DECIDIR el color con matchMedia, que NO necesita almacenamiento. Este
+            es el paso que antes no podia llegar a ejecutarse: la lectura del
+            storage estaba dentro del mismo try que el resto, asi que si fallaba
+            se iba todo y la pagina se quedaba sin tema puesto. Con el storage
+            bloqueado, la pagina salia con el oscuro del CSS y el boton con el
+            icono de automatico: dos verdades distintas en la misma pantalla.
+         4. GUARDAR lo resuelto, con su propio try, para que la proxima carga y
+            app.js esten de acuerdo.
+         5. En el catch de fuera, un valor por defecto y no un comentario vacio. */
+    var modo = "auto";
+    try { modo = localStorage.getItem("rhythm-crea-tema"); } catch (e) { /* sin storage */ }
+    if (["auto", "claro", "negro"].indexOf(modo) < 0) modo = "auto";
+
+    var claro = modo === "claro"
+             || (modo === "auto" && !!(window.matchMedia &&
+                 matchMedia("(prefers-color-scheme: light)").matches));
+    if (claro) document.documentElement.classList.add("claro");
+    /* El modo va tambien como atributo. El icono del boton depende de los tres
+       modos y con la clase sola no hay forma de distinguir "automatico en oscuro"
+       de "negro elegido a mano": se ven igual pero se portan distinto. */
+    document.documentElement.setAttribute("data-tema", modo);
+    try { localStorage.setItem("rhythm-crea-tema", modo); } catch (e) { /* sin storage */ }
+
+    /* El preload del angel. Se CREA aqui en vez de poner un <link> fijo, porque
+       hay dos imagenes, una por tema, y un solo preload solo puede poner una: con
+       la fija se descargaba siempre la oscura y en tema claro eran 120 KB que no
+       se pintan mientras la que si se pinta llegaba tarde. El aviso del navegador
+       lo decia —"preloaded but not used"—, que es como se encontro.
+
+       Y al crearlo desde aqui, que va antes de la hoja, adelanta el angel: empieza
+       a bajar mientras se descarga el CSS, en vez de despues. */
+    try {
+      var a = document.createElement("link");
+      a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
+      a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
+      document.head.appendChild(a);
+    } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
+  } catch (e) {
+    /* Si ha petado algo de lo de arriba —que no deberia, porque cada paso va
+       protegido por su propio try— el <html> se queda sin tema y la pagina sale
+       con el del CSS, que es el oscuro. Se pone uno por defecto para que la pagina
+       y el boton no acaben diciendo cosas distintas. */
+    document.documentElement.setAttribute("data-tema", "auto");
+  }
 </script>
-<link rel="preload" as="image" href="assets/angel-oscuro.webp" fetchpriority="high">
+  <!-- El angel NO se precarga aqui sino en el script del tema, mas arriba. Hay
+       dos imagenes, una por tema, y un solo preload solo puede poner una: con la
+       fija se descargaba siempre la oscura y en tema claro eran 120 KB que no se
+       pintan mientras la que si se pinta llegaba tarde. El script crea el link
+       del que toca, y de paso lo adelanta a antes de la hoja. -->
+  <!-- El poster del clip, precargado. Son 23 KB y es lo primero que deberia
+       verse en la seccion de hyprland, pero hasta que el navegador decide
+       pedirlo —que es cuando pinta el <video>— el hueco sale vacio.
+       Medido el 2026-10-04 con la red a 400 kbit: entre que aparece el
+       reproductor y que se ve el cartel pasan casi dos segundos de rectangulo
+       vacio. Con el preload, el cartel esta ahi desde el principio.
+       Sin fetchpriority a proposito: la portada compite por el ancho de banda
+       con el angel y con la hoja, y este no es el elemento mas importante de
+       la pagina. Es el segundo. -->
+  <link rel="preload" as="image" href="assets/hyprland-poster.webp">
 <link rel="stylesheet" href="assets/style.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
      que la pagina ya comparte con la barra: un anillo de oxido sobre el suelo
@@ -117,6 +184,16 @@
              habia antes no estaba centrado en su caja de 24x24: la dibujaba
              descentrada, y con el contenedor centrado se notaba el medio pixel
              de desvio. -->
+        <!-- El icono del modo automatico: un circulo con medio relleno, el signo
+             clasico de "contraste". Es el mismo trazo que los otros dos —1.7 de
+             grosor, sin relleno, extremos redondos— para que los tres pesen lo
+             mismo al girar. Va el primero porque es el estado por defecto. -->
+        <svg class="ic ic-auto" viewBox="0 0 24 24" aria-hidden="true"
+             fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.4"/>
+          <path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" stroke="none"/>
+        </svg>
         <svg class="ic ic-luna" viewBox="0 0 24 24" aria-hidden="true"
              fill="none" stroke="currentColor" stroke-width="1.7"
              stroke-linecap="round" stroke-linejoin="round">
