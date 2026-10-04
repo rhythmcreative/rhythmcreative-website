@@ -57,8 +57,8 @@ window.RHYTHM_I18N.es = {
   "The manual": "El manual",
   "The whole desktop, piece by piece: what each thing is, what it does, and what it does not do.":
     "El escritorio entero, pieza a pieza: qu\u00e9 es cada cosa, qu\u00e9 hace y qu\u00e9 no hace.",
-  "This page is generated from the repository by <code>scripts/collect-docs.py</code>. When you change a keybinding or a flag, run it again and commit the file it writes.":
-    "Esta p\u00e1gina se genera desde el repositorio con <code>scripts/collect-docs.py</code>. Cuando cambies un atajo o una bandera, ejec\u00fautalo otra vez y sube el fichero que escribe.",
+  "This page is generated from the repository by":
+    "Esta p\u00e1gina se genera desde el repositorio con",
 
   // El indice y los titulos de los 13 capitulos
   "On this page": "En esta p\u00e1gina",

@@ -968,11 +968,15 @@
 
     var b = $("#interruptor");
     if (b) {
-      // Los dos rotulos de este boton pasan por el traductor, y no por una razon
-      // estetica: ESTA FUNCION SE REPITE CADA SEGUNDO —el reloj llama a tic() cada
-      // 1000 ms—. Si escribiera el ingles cada vez, borraria lo que el traductor
-      // hizo y este boton se quedaria en ingles con la pagina entera ya
-      // traducida. Medido: era el unico elemento que se quedaba fuera.
+      // Los dos rotulos de este boton pasan por el traductor porque se componen de
+      // trozos y el traductor no puede rehacerlos: "Theme" + ": " + el modo + ". "
+      // + "Change it." no existe como frase en ninguna parte de la pagina.
+      //
+      // Ojo con lo que decia antes este comentario, que era falso: NO es el reloj
+      // quien lo repinta cada segundo. `tic()` solo pone la hora, y esta funcion
+      // se llama una vez, al arrancar. Por eso, cuando el diccionario llega mas
+      // tarde —que es lo que pasa ahora que se carga bajo demanda— hay que
+      // volver a llamarla desde el evento `idioma`. Abajo, donde se hace.
       //
       // Y no se traduce el rotulo ENTERO, porque se compone de tres trozos y hay
       // nueve combinaciones: tres modos por los tres que puede ser el siguiente. Si
@@ -2176,6 +2180,24 @@
     window.__RHYTHM_LISTO = true;
     if (window.aplicarIdioma) window.aplicarIdioma();
   };
+  // Cuando el traductor acaba, hay que rehacer lo que se compone con datos dentro.
+  //
+  // El boton del tema dice "Tema: Como el del sistema. Cambialo.", que son tres
+  // trozos pegados y ninguna frase entera: el traductor, que va de nodo en nodo, no
+  // puede rehacerla. La construye `interruptor()`, y `interruptor()` se llama una
+  // sola vez, al arrancar.
+  //
+  // Con el diccionario cargado en el HTML eso no pasaba: ya estaba ahi cuando se
+  // llamaba. Al cargar el fichero bajo demanda, todavia no esta, y el boton se
+  // quedaba en ingles con la pagina entera traduicda. Medido.
+  //
+  // El sello de arriba tiene el mismo problema —lleva la hora y el numero de
+  // capitulos— y se rehace tambien.
+  window.addEventListener("idioma", function () {
+    interruptor();
+    selloDocs();
+  });
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arranque);
   else arranque();
 

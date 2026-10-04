@@ -2225,8 +2225,6 @@ html.entrando #hyprland.hyprland-visto {
 .fila .k { font-size: 0.78rem; color: var(--hielo); }
 .fila .v { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
 
-.manual-fin { margin-top: 2.5rem; padding-top: 1.1rem; border-top: 1px solid var(--linea);
-              font-size: 0.68rem; color: rgba(107, 130, 140, 0.7); max-width: 60ch; }
 
 /* ── El tema claro ───────────────────────────────────────────────────────────── */
 html.claro .indice h2,
