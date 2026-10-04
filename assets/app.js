@@ -705,24 +705,52 @@
       pintarVolumen();
 
       // La pista: clic para saltar, y arrastre con el raton y con el dedo.
+      //
+      // Antes solo habia mousedown / mousemove / mouseup, y el dedo no pasaba por
+      // ahi. En un movil eso significa que el navegador se queda con el gesto para
+      // desplazar la pagina y el clip no se mueve: se deslizaba el dedo y lo que
+      // bajaba era la pagina, no el video. Medido en un navegador con dedo.
+      //
+      // Ahora son Pointer Events, que son un solo camino para raton, dedo y lapiz.
+      // Lo que hace que el dedo llegue hasta aqui es el `touch-action: none` de la
+      // pista, en el CSS: sin eso el navegador se reserva el gesto antes de que
+      // llegue a ningun manejador, y por muchos eventos que se escuchen.
+      //
+      // `setPointerCapture` deja el gesto dentro de la pista aunque el dedo se salga
+      // de ella al arrastrar, que es lo que hace cualquier control de desplazamiento.
+      // Antes hacia falta un listener en `window` para eso.
       function saltar(evt) {
         var r = pista.getBoundingClientRect();
-        var x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - r.left;
+        var x = evt.clientX - r.left;
         var pct = Math.max(0, Math.min(1, x / r.width));
         if (video.duration) video.currentTime = pct * video.duration;
         pintar();
       }
-      pista.addEventListener("click", saltar);
-      pista.addEventListener("mousedown", function (ev) {
-        if (ev.button !== 0) return;
-        ev.preventDefault();
+      pista.addEventListener("pointerdown", function (ev) {
+        // Con el raton, el boton 0 es el izquierdo. Con el dedo no hay botones y
+        // `button` sale 0, asi que el filtro solo puedebearlo cuando es raton.
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
         arrastrando = true;
+        try { pista.setPointerCapture(ev.pointerId); } catch (e) { /* sin capturacion */ }
+        ev.preventDefault();
         saltar(ev);
       });
-      window.addEventListener("mousemove", function (ev) {
+      pista.addEventListener("pointermove", function (ev) {
         if (arrastrando) saltar(ev);
       });
-      window.addEventListener("mouseup", function () { arrastrando = false; });
+      pista.addEventListener("pointerup", function () { arrastrando = false; });
+      // El dedo puede ser cancelado por el sistema —una llamada entrante, un
+      // aviso del navegador— y sin esto el arrastre se queda activo para siempre
+      // y el siguiente movimiento del rato mueve el clip sin haber pulsado nada.
+      pista.addEventListener("pointercancel", function () { arrastrando = false; });
+
+      // El `click` de antes se queda solo para el teclado. Con el raton o el dedo ya
+      // se salta en el pointerdown, y si se escuchase tambien el click cada pulsacion
+      // saltaria dos veces. Un click hecho con el teclado tiene detail 0; uno hecho
+      // con el raton o el dedo, detail 1 o mas.
+      pista.addEventListener("click", function (ev) {
+        if (ev.detail === 0) saltar(ev);
+      });
 
       // Con el teclado la pista va de cinco en cinco segundos, que es lo que
       // hace el control nativo y lo que espera cualquiera que la mueva.
