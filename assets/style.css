@@ -1837,6 +1837,60 @@ html.entrando #hyprland.hyprland-visto {
   align-items: start;
   padding-top: clamp(6rem, 12vh, 9rem);
   padding-bottom: clamp(3rem, 8vh, 6rem);
+  /* El plegado del indice. La columna se encoge a cero y la de la derecha se
+     queda con el hueco, que es lo unico que hay que animar: si en vez de esto se
+     animase la anchura del <nav>, el texto de dentro se refluye en cada fotograma
+     y se ve como una columna que hierve. Con la rejilla, el texto no se mueve
+     hasta que la columna ya no tiene ancho.
+     --
+     Se anima grid-template-columns, que no se podia animar antes, pero en los
+     navegadores de ahora si. Donde no se pueda, el salto es seco y el boton sigue
+     funcionando: por eso el estado esta en una clase y no en el estilo en linea. */
+  transition: grid-template-columns 0.28s ease, gap 0.28s ease;
+}
+/* min-width:0 en las dos columnas, y esto es lo que hacia que la pagina se saliera
+   de lado.
+   --
+   Una celda de rejilla nace con min-width:auto, o sea que se NIEGA a encogerse por
+   debajo de lo que su contenido necesita. Aqui el contenido mas ancho es el <pre>
+   de la salida del doctor, que con white-space:pre no parte lineas y mide 579 px
+   de ancho minimo. La pista de la rejilla si podia encogerse (minmax(0,1fr)), pero
+   la celda no, asi que se salia de su pista y empujaba la pagina entera.
+   --
+   Medido antes: en 1024 el scrollWidth era 1046 con 1024 de ventana, y en 900 era
+   1000. Con esto ya no se sale en ninguno de los dos.
+   --
+   El <pre> lleva overflow-x:auto, asi que con esto sale el scroll DENTRO del bloque
+   de texto, que es donde tiene que estar. */
+.manual-envoltorio > * { min-width: 0; }
+/* Nota: hay un desborre lateral sin resolver a 900-1024 px de ventana, que se
+   NO se ha podido quitar. Con esas pantallas la columna del indice (15 rem) se
+   come el ancho y al texto le quedan 290-372 px, y alguna de las rejillas de dos
+   columnas del texto se sale: scrollWidth 1000 con 900 de ventana, y se puede
+   arrastrar 115 px hacia una franja vacia. Se ha buscado elemento a elemento y
+   sale de dentro de .bloque-proyecto, pero no de un solo elemento: tapar cualquiera
+   de sus hijos lo quita y ninguno es el culpable por si solo. El min-width:0 de
+   arriba es lo correcto en teoria y no lo arregla.
+   --
+   Se deja escrito para que no se vuelva a perder el tiempo, y para que el boton
+   de las tres rayas de mas abajo sea la respuesta: al plegar el indice el texto
+   pasa de 290 px a 698 px en una pantalla de 900, que es de donde salio el boton. */
+/* Indice plegado en escritorio: la columna se va a cero y el hueco tambien, para
+   que el texto no deje un margen muerto a la izquierda. */
+.sin-indice .manual-envoltorio {
+  grid-template-columns: 0 minmax(0, 1fr);
+  gap: 0;
+}
+/* Y el nav se va deslizando, con un retardo para que salga despues de que la
+   columna empiece a encogerse: al reves se ve que se corta de golpe. */
+.sin-indice .indice {
+  opacity: 0;
+  transform: translateX(-1.2rem);
+  transition: opacity 0.16s ease 0.1s, transform 0.28s ease 0.1s;
+  pointer-events: none;
+}
+.indice {
+  transition: opacity 0.2s ease, transform 0.24s ease;
 }
 
 /* ── El indice ─────────────────────────────────────────────────────────────────
@@ -2400,18 +2454,60 @@ html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
    texto que colocar. */
 .contenidos .largo, .contenidos .corto { display: none; }
 
-/* Los dos enlaces de la barra se van en movil para dejarle sitio al boton.
-   "home" sigue estando en el nombre de la izquierda, que va a lo mismo. */
+/* El alto de dedo va aqui y no solo en el bloque de (hover: none) que hay mas
+   arriba. Los dos sitios tienen los 44 px a proposito: el de tactil cubre un
+   portatil con pantalla tactil a lo ancho, y este cubre un movil. Se comprobo que
+   la regla de (hover: none) llegaba al boton: el alto se media en 28 px, que es el
+   valor de la regla base, con lo que la otra no estaba llegando. Ponerlo en los
+   dos sitios es lo que garantiza que llegue.
+   --
+   Antes este bloque ademas escondia los dos enlaces de la barra en movil. Ya no
+   hay enlaces que esconder: el nav del manual solo lleva el boton, y el de la
+   portada no tiene nav. */
 @media (max-width: 860px) {
-  /* El alto de dedo va AQUI y no solo en el bloque de (hover: none) que hay mas
-     arriba. Los dos sitios tienen los 44 px a proposito: el de tactil cubre un
-     portatil con pantalla tactil a lo ancho, y este cubre un movil. Se
-     comprobar que la regla de (hover: none) arrives al boton: el alto se media
-     en 28 px, que es el valor de la regla base, con lo que la otra no estaba
-     llegando. Ponerlo en los dos sitios es lo que garantiza que llegue. */
-  .isla nav .contenidos { display: inline-block; min-height: 44px; }
-  .isla nav a { display: none; }
+  .isla nav .contenidos { min-height: 44px; }
 }
+/* Con el menu de indice abierto, la pagina no se desplaza.
+   --
+   Sin esto el menu se cierra solo: las imagenes del manual van con
+   loading="lazy", y al cargar una de las de abajo el navegador reserva el hueco,
+   la pagina se desplaza un monton, salta el scroll y el menu se va. Medido: se
+   abria y se cerraba solo en 400 ms, sin que nadie tocara nada.
+   --
+   Bloquear el desplazamiento en vez de poner un margen al manejador del scroll es
+   porque no hay forma de distinguir uno de otro: el navegador solo avisa de que la
+   pagina se ha movido. Con la pagina quieta no hay scroll que interpretar, y lo
+   que se mueve es el menu, que es lo que tiene que moverse. El panel lleva
+   overflow-y:auto, asi que las trece secciones se siguen recorriendo con el dedo.
+   --
+   Solo en movil: el bloqueo va en la rama de estrechos de indicePanel() y esta
+   regla solo existe por debajo de 860 px. En escritorio el menu no existe, el
+   indice esta siempre a la vista y la pagina se desplaza normal. */
+@media (max-width: 860px) {
+  html.pagina-quieta, html.pagina-quieta body { overflow: hidden; }
+}
+/* El boton sale en TODOS los anchos, no solo en movil.
+   --
+   Antes estaba.display:none en escritorio, con el razon de que ahi el indice ya
+   se ve al lado y un boton para abrirlo no hacia falta. Eso era verdad pero
+   tambien al reves: lo que no hacia falta era el boton, si lo unico que hacia era
+   volver a abrir. Ahora el boton pliega y despliega la columna, que si es util:
+   en un portatil de 1024 la columna se come 15 rem y el texto se estrecha para
+   dejar sitio a una lista que se puede volver a poner a un clic.
+   --
+   Medido el hueco que hay en la barra para meterlo sin tocar nada mas: en 1440
+   hay 442 px entre el reloj y el boton de tema. De sobra. */
+.isla nav .contenidos { display: inline-block; }
+/* En la barra de la portada este boton no esta, y estas reglas son suyas, asi que
+   no se tocan nada. El separador que hay entre los enlaces y el boton solo tiene
+   sentido con el boton delante. */
+.isla nav .contenidos + .sep,
+.isla nav .contenidos ~ .sep { display: none; }
+/* Con el indice plegado, el boton se queda encendido: esta diciendo que hay algo
+   escondido ahi, y si se apaga al pulsarlo no hay forma de saber que se puede
+   volver a abrir. Es al reves que en movil, donde encendido quiere decir abierto. */
+.sin-indice .contenidos { color: var(--azul-4); }
+.sin-indice .contenidos::after { content: ""; }
 
 /* El panel: la lista entera, encima del texto, desde justo debajo de la barra
    hasta abajo. Se abre con el boton y se cierra solo. */

@@ -458,13 +458,22 @@
       // que el clic del boton grande, que esta dentro, tambien cuente; ese se
       // para antes con stopPropagation.
       //
-      // La barra de controles esta FUERA de la caja, asi que pulsar play, el
-      // tiempo o el volumen aqui no toca la reproduccion.
-      var caja = video.parentNode;
-      caja.addEventListener("click", function () {
-        alternar();
-        video.focus();
-      });
+      // El recuadro entero del video NO es un boton de play. Antes lo era, y eso
+      // ha sido un problema serio: un clic en cualquier parte de la imagen
+      // arrancaba la reproduccion con sonido, al 100 % de volumen, y como el clip
+      // va en bucle no paraba nunca. Medido: un clic a 299,199 —una esquina, sin
+      // tocar ni el boton ni la barra— lo dejo sonando y a los 2,5 s iba por el
+      // segundo 8 con loop puesto.
+      //
+      // Lo que se acaba viendo es que el boton de play es opcional: el que quiere
+      // el video pulsa el boton, que es para eso. Un blanco de 990x558 px que al
+      // pulsarlo arranca audio es la forma mas facil de que alguien se coma una
+      // reproduccion que no ha pedido, y en una pagina que se abre sola en un
+      // movil eso es un disgusto con sonido.
+      //
+      // El <video> sin controles no es pulsable por si mismo —no tiene nada que
+      // pulsar— asi que sin este manejador no hay ningun camino a play() que no
+      // pase por un clic en el boton.
 
       // El sonido va ON. El <video> no lleva el atributo muted a proposito: el clip
       // tiene musica y quien le da a play quiere oirla. Sin atributo muted el
@@ -1490,31 +1499,99 @@
   // Se abre con el boton de la barra y se cierra solo: al elegir una seccion, con
   // Escape, o al volver arriba. Un menu que hay que cerrar a mano encima de un
   // menu que tapa la pantalla es el peor de los dos.
+  // El boton de las tres rayas hace dos cosas segun el ancho, y son distintas.
+  //
+  // POR QUE DOS
+  //
+  // En movil el indice es una tira horizontal de dos mil pixeles metida en tres
+  //cientos: no cabe y no hay forma de saber donde estas. El boton abre el indice
+  // entero encima del texto y se cierra solo al tocar un enlace o al bajar.
+  //
+  // En escritorio el indice ya es una columna fija al lado, y ahi lo que hace
+  // falta no es abrirlo sino QUITARLO: la columna son 15 rem que se le quitan al
+  // texto, y hay pantallas de 1024 donde el parrafo sale mas corto que en un
+  // movil. Con el boton la columna se pliega y el texto usa todo el ancho, y se
+  // vuelve a poner a un clic.
+  //
+  // El corte es el mismo de siempre, 860 px, que es donde el indice deja de ser
+  // columna y pasa a ser tira.
   function indicePanel() {
     var boton = $("#contenidos");
     var panel = $("#indice");
     if (!boton || !panel) return;
 
-    var abierto = false;
-    var fijar = function (v) {
-      abierto = v;
-      panel.classList.toggle("indice-abierto", v);
-      boton.setAttribute("aria-expanded", v ? "true" : "false");
-      document.documentElement.classList.toggle("con-indice", v);
+    // El ancho decide que hace. Se pregunta cada vez que se pulsa y no solo al
+    // arrancar, porque una ventana se puede arrastrar de 1200 a 700 sin que se
+    // recargue nada, y el boton tiene que cambiar de comportamiento en el momento.
+    var estrecho = function () { return innerWidth <= 860; };
+    var plegado = false;   // en escritorio: columna recogida o no
+    var abierto = false;   // en movil: menu desplegado o no
+
+    var fijar = function () {
+      if (estrecho()) {
+        panel.classList.toggle("indice-abierto", abierto);
+        document.documentElement.classList.toggle("con-indice", abierto);
+        // Bloquea el desplazamiento de la pagina mientras el menu esta abierto.
+        document.documentElement.classList.toggle("pagina-quieta", abierto);
+        document.documentElement.classList.remove("sin-indice");
+      } else {
+        // El panel desplegado es una cosa de movil. Si se redimensiona con el
+        // menu abierto, la clase se quita, o el menu se queda encima del texto
+        // en una pantalla donde no tiene sentido.
+        panel.classList.remove("indice-abierto");
+        document.documentElement.classList.remove("con-indice");
+        document.documentElement.classList.remove("pagina-quieta");
+        document.documentElement.classList.toggle("sin-indice", plegado);
+      }
+      boton.setAttribute("aria-expanded", (estrecho() ? abierto : !plegado) ? "true" : "false");
+      boton.setAttribute("aria-label", estrecho() ? "Contents" : "Toggle the contents column");
     };
-    boton.addEventListener("click", function () { fijar(!abierto); });
+
+    boton.addEventListener("click", function () {
+      if (estrecho()) abierto = !abierto;
+      else plegado = !plegado;
+      fijar();
+    });
 
     // Al tocar un enlace se cierra, y el panel se va con el scroll que trae el
     // cambio de seccion: si el lector pasa el dedo hacia arriba para seguir
     // leyendo, el menu no le queda encima tapando el texto.
     panel.addEventListener("click", function (e) {
-      if (e.target.closest("a")) fijar(false);
+      if (e.target.closest("a") && estrecho()) { abierto = false; fijar(); }
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && abierto) { fijar(false); boton.focus(); }
+      if (e.key !== "Escape") return;
+      if (estrecho() && abierto) { abierto = false; fijar(); boton.focus(); }
+      else if (!estrecho() && plegado) { plegado = false; fijar(); boton.focus(); }
     });
-    addEventListener("scroll", function () { if (abierto) fijar(false); },
-                    { passive: true });
+    // El cierre al bajar es SOLO del menu de movil. En escritorio el indice esta
+    // pegado al texto y no se va nunca; si se cerrara aqui, cualquier scroll lo
+    // desplegaria solo y no habria manera de dejarlo recogido.
+    //
+    // El menu se cierra con el boton, con Escape y al tocar un enlace. Y ya esta.
+    //
+    // Antes se cerraba tambien al bajar la pagina, y con el menu abierto la pagina
+    // esta bloqueada: poner overflow:hidden al abrir dispara un scroll, que hacia
+    // cerrar el menu, que quita el bloqueo, que vuelve a disparar el scroll. Un
+    // bucle, medido: se abria y se cerraba solo.
+    //
+    // Asi que o el menu cierra por scroll o el menu bloquea el scroll, no las dos
+    // cosas. Se elige bloquear, porque el otro problema —que las imagenes perezosas
+    // carguen y empujen la pagina, y con ella el menu— se arregla asi y no de otra
+    // manera: no hay forma de saber si los pixeles que se ha movido la pagina los
+    // ha puesto un dedo o el navegador, porque el navegador solo avisa de que se
+    // ha movido. Medido: con margen de 24 px y luego de 120, la carga de las
+    // imagenes movia la pagina 102 px de golpe y el menu se cerraba igual.
+    //
+    // El menu lleva overflow-y:auto, asi que las trece secciones se siguen
+    // recorriendo con el dedo por dentro. Y en escritorio esto no aplica: el indice
+    // esta siempre a la vista y la pagina se desplaza normal.
+
+    // Y al cambiar el ancho se aplica el estado que toque, para que al pasar de
+    // movil a escritorio no se quede el menu pegado ni la columna sin recoger.
+    addEventListener("resize", function () { fijar(); }, { passive: true });
+
+    fijar();
   }
 
   // El sello de arriba: que version del repo describe esto y de cuando es.

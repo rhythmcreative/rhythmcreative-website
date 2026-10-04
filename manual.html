@@ -114,20 +114,16 @@
     <span class="reloj" id="reloj">--:--:--</span>
     <div class="der">
       <nav>
-        <a href="index.html">home</a>
-        <a href="#hyprland/empezar">install</a>
-        <!-- El boton de contenido SOLO sale en movil, y es la pieza que hacia
-             falta: en una pantalla estrecha el indice es una tira de dos mil
-             pixeles dentro de trescientos, y sin esto no hay manera de saber
-             donde estas ni de saltar a donde sea. El boton abre el indice
-             entero, que baja desde debajo de la barra. En escritorio no
-             aparece, porque ahi el indice ya esta a la vista al lado y un boton
-             para abrirlo seria un boton que no hace falta.
-
-             Las tres rayas se dibujan en el CSS, con tres gradientes, y no hay
-             ni un svg ni un <i>. El texto va en un .sr: sin el, el boton es un
-             rectangulo con un dibujo dentro y un lector de pantalla no tiene
-             nada que leer. Con el, lee "contents, boton, pulsado". -->
+        <!-- Aqui no hay enlaces de navegacion, y no es que se hayan escondido: no
+             hay ninguno. El nombre de la izquierda, "Rhythmcrea", va a la portada,
+             que es lo que hacia el enlace "home". Y el de install, que iba al
+             ancla #hyprland/empezar, esta a dos scrolls de aqui y ademas esta en
+             el indice: el propio boton de las tres rayas sirve para saltar.
+             --
+             Medido lo que ocupa lo que se va: con el boton de las tres rayas en
+             medio, los dos enlaces dejaban 442 px de hueco sin usar a 1440 y
+             empujaban el reloj hacia el centro. Sin ellos la barra queda con lo
+             justo y el reloj vuelve al centro, que es donde debe estar. -->
 
         <button id="contenidos" class="contenidos" type="button"
                 aria-expanded="false" aria-controls="indice"
