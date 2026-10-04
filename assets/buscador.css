@@ -25,15 +25,17 @@
    la barra crece. */
 .barra-centro { display: inline-flex; align-items: center; justify-content: center; }
 
-/* El botón, a la izquierda del reloj. El margen derecho los separa lo justo, y el
-   grupo de los dos es lo que queda centrado. Sin ese margen se arriman. */
+/* El botón, a la izquierda del reloj. Mide 36 px como el interruptor del tema:
+   dos botones distintos con dos tamaños distintos se leen como un error. El
+   margen derecho los separa lo justo, y el grupo de los dos es lo que queda
+   centrado. Sin ese margen se arriman. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45em;
-  height: 26px;
-  min-width: 26px;
+  height: 36px;
+  min-width: 36px;
   margin-right: 0.7rem;
   padding: 0 0.5em;
   border: 1px solid var(--linea);
@@ -54,26 +56,25 @@
 /* La lupa, dibujada con dos bordes en vez de con una fuente de iconos: un SVG o
    un glifo son un archivo más o una dependencia, y esto son cuatro líneas. */
 .buscador-boton span {
-  width: 9px;
-  height: 9px;
-  border: 1.4px solid currentColor;
+  width: 12px;
+  height: 12px;
+  border: 1.8px solid currentColor;
   border-radius: 50%;
   position: relative;
   flex: none;
-  /* El mango (::after) sale 4 px abajo-derecha del círculo. Sin esto, el círculo
-     queda centrado pero el dibujo entero se ve desplazado arriba-izquierda:
-     medido, 1 px a la izquierda y -3 a la derecha. Moviendo el conjunto 2 px
-     arriba-izquierda, las sobras quedan iguales a los cuatro lados. */
+  /* El mango (::after) sale abajo-derecha del círculo. Sin esto, el círculo
+     queda centrado pero el dibujo entero se ve desplazado arriba-izquierda.
+     Se mide con ver-lupa.cjs y se deja en sobras iguales a los cuatro lados. */
   transform: translate(-2px, -2px);
 }
 
 .buscador-boton span::after {
   content: "";
   position: absolute;
-  right: -4px;
-  bottom: -3px;
-  width: 4px;
-  height: 1.4px;
+  right: -5px;
+  bottom: -4px;
+  width: 5px;
+  height: 1.8px;
   background: currentColor;
   transform: rotate(45deg);
 }
