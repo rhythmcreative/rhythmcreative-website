@@ -95,8 +95,14 @@ NOTAS = {
     "style3 monitor adaptive": "Open the launcher, styled for the screen it is on",
     "workspace overview": "See every workspace at once",
     "adaptive rofi window": "Switch windows with the launcher",
-    "screenshot": "Grab a region and open it in the editor",
-    "colour picker": "Pick a colour and copy its hex",
+    # El comando es grim -g "$(slurp)" - | swappy -f -. Eso es: eliges un
+    # RECTANGULO con el raton y sale solo esa parte. No hay atajo de pantalla
+    # completa: los dos que hay, SUPER + P y SUPER + SHIFT + Print, son el mismo
+    # comando y los dos son parciales. Decirlo aqui evita que se vaya a buscar un
+    # atajo de captura completa que no existe.
+    "screenshot": "Screenshot of a part of the screen: drag out the area with the "
+                  "mouse and it opens in the editor. There is no full-screen one",
+    "colour picker": "Pick a colour off the screen and copy its hex",
     "split layout": "Split the window in half",
     "fullscreen": "Fullscreen",
     "lock screen": "Lock the screen",

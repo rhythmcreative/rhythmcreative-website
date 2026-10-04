@@ -41,6 +41,30 @@ GRUPOS = [
     ("Misc", re.compile(r"^--\s*Misc\s*$")),
 ]
 
+# ALGUNOS ATAJOS NO VAN EN EL GRUPO DONDE ESTAN ESCRITOS
+#
+# El grupo sale del comentario que los precede en el fichero, y eso casi siempre es
+# lo que toca. Pero hay atajos que estan escritos en el bloque General y el lector
+# los busca en otro sitio, porque es ahi donde los ira a buscar:
+#
+#     SUPER + P          grim -g "$(slurp)"   una captura PARCIAL
+#     SUPER + SHIFT + P  hyprpicker -a       el selector de color
+#
+# Los dos estan en el bloque General del fichero, con el resto de los launching, y
+# por eso salian ahi: la captura se quedaba sola en su grupo, con una entrada, y la
+# gente iba a Screenshot a buscarla y no estaba. Medido: el grupo Screenshot tenia
+# una sola tecla, y las dos de arriba estaban entre las veintiocho de General.
+#
+# Aqui se corrige por lo que hacen, no por donde estan escritos. El bloque del
+# fichero sigue mandando para todo lo demas.
+#
+# La clave es lo que hace, no el atajo: si anades otro atajo de captura donde
+# quieras que lo del fichero lo colocara mal, cae aqui tambien.
+REASIGNAR_POR_ACCION = {
+    "screenshot": "Screenshot",
+    "colour picker": "Screenshot",
+}
+
 # Que poner en la pagina, en vez del comando literal. El comando entero se
 # guarda tambien, en `detalle`, por si acaso.
 ETIQUETAS = [
@@ -319,10 +343,14 @@ def parsear(ruta):
             else:
                 t = t.replace("mouse:272", "left button")
                 t = t.replace("mouse:273", "right button")
+            que = etiqueta(acc)
             salida.append({
                 "tecla": t,
-                "que": etiqueta(acc),
-                "grupo": grupo,
+                "que": que,
+                # El grupo del fichero, corregido por lo que hace el atajo. Ver
+                # REASIGNAR_POR_ACCION: hay atajos escritos en un bloque que
+                # pertenecen a otro grupo, y el que las busca no las ahi.
+                "grupo": REASIGNAR_POR_ACCION.get(que, grupo),
                 "raton": bool(raton),
                 "bloqueado": bloqueado,
             })
