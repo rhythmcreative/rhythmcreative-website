@@ -352,8 +352,18 @@ html:not([data-tema]) .ic-sol  { opacity: 0; }
                 height: 26%; z-index: 4; pointer-events: none;
                 background: linear-gradient(180deg, transparent, var(--suelo) 88%); }
 
+/* El fondo de la escena mientras cargan las fotos. Sin esto, al recargar con la
+   red lenta la escena es un hueco negro durante segundos: la barra y el titulo
+   estan puestos y todo lo demas no, que es lo de "todo amontonado en un sitio".
+   Es la misma foto en miniatura (48 px, 300-400 bytes en data:), asi que el tono
+   ya es el bueno desde el primer pintado y cuando llegan las capas de verdad la
+   tapan sin que nada se mueva: estan en posicion absoluta y no empujan a nadie.
+
+   Son dos, una por tema, como las fotos grandes. Cuando las capas llegan, tapan
+   esto del todo: no se ve nunca mas que cargando. */
 .escena { position: absolute; inset: 0; overflow: hidden;
-          cursor: crosshair; background: #0a0e12; }
+          cursor: crosshair; background: #07090b url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCAAbADADASIAAhEBAxEB/8QAGQAAAwEBAQAAAAAAAAAAAAAAAQIDBAAF/8QAGBAAAwEBAAAAAAAAAAAAAAAAAAECAyH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A82S0szKxp0A1CtCLQ56ACzPT6PehnqugBWcrZFFJAtOjA9BEBgdVk3QWKwP/2Q==") center/cover no-repeat; }
+html.claro .escena { background-color: #eceae5; background-image: url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCAAbADADASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAABAUCAwYAAf/EACAQAAICAgEFAQAAAAAAAAAAAAABAgMEETEFEiEyQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0ELoyXJztWxFTmNfQiGVuS8gOYvaPWwei1SjyTttUY8gRtsSfJRZdDXlgOZl63piy7Nl+gBV3tfQirIfdyLYsIo9kBo8G5tEs3IcY8lPT/Qr6hwwF2Re5N+QKcyVre2USA//2Q=="); }
 
 /* Cada capa es la foto entera, y ocupa su caja (#capas) entera. Esa caja la
    mide capa.js con numeros exactos: antes era inset fijo y background-size:
