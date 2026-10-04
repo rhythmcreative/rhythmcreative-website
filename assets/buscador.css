@@ -60,6 +60,11 @@
   border-radius: 50%;
   position: relative;
   flex: none;
+  /* El mango (::after) sale 4 px abajo-derecha del círculo. Sin esto, el círculo
+     queda centrado pero el dibujo entero se ve desplazado arriba-izquierda:
+     medido, 1 px a la izquierda y -3 a la derecha. Moviendo el conjunto 2 px
+     arriba-izquierda, las sobras quedan iguales a los cuatro lados. */
+  transform: translate(-2px, -2px);
 }
 
 .buscador-boton span::after {
