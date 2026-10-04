@@ -41,21 +41,30 @@
   "use strict";
 
   var CLAVE = "rhythm-crea-idioma";
-  // La lista de la captura que me mandaste. Con 36 se quedaban fuera varios de los
-  // que de verdad estan ahi, y el selector prometia mas de los que ofrecia.
-  var CODIGOS = ("en es pt fr it ca gl eu ast de nl af sw zu xh st tn ts ss ve nr " +
-    "sv da nb nn fi et lv lt pl cs sk sl uk be ru bg sr mk sq el hy ka hy az kk ky " +
-    "uz mn tr ar fa ur he hi bn pa gu mr ta te kn ml si ne my km lo th vi id ms tl " +
-    "fil ja ko zh-CN zh-TW").split(" ");
+  // ── Los idiomas que HAY, no los que uno quisiera que hubiera ────────────────
+  //
+  // La lista se lee del propio diccionario, no de una lista escrita a mano. Poner
+  // una lista de cuarenta y traducir dos es lo que hacia antes: el desplegable
+  // ofrecia seventy y pico idiomas, y al elegir uno la pagina se recargaba en
+  // ingles y se quedaba guardada esa preferencia.
+  //
+  // Asi, anadir un idioma es UNA cosa: copiar data/lang-es.js, renombrarlo, y ya
+  // sale en el desplegable. No hay que tocar ni esta linea ni ningun HTML.
+  function disponibles() {
+    var d = window.RHYTHM_I18N || {};
+    var lista = Object.keys(d);
+    // El ingles esta siempre, aunque no tenga fichero: la pagina esta escrita en
+    // ingles, asi que no necesita diccionario para estar en ingles. Sin esto,
+    // `?lang=en` caia a otro idioma, porque "en" no aparecia en la lista.
+    if (lista.indexOf("en") === -1) lista.push("en");
+    return lista.sort();
+  }
+
+  // El nombre de cada idioma en el suyo. Los que falten se quedan con el codigo, que
+  // es feo pero no miente.
   var NOMBRES = {
-    en: "English", es: "Español", pt: "Português", fr: "Français", it: "Italiano",
-    ca: "Català", gl: "Galego", eu: "Euskara", ast: "Asturianu", de: "Deutsch",
-    nl: "Nederlands", sv: "Svenska", da: "Dansk", nb: "Norsk", fi: "Suomi",
-    pl: "Polski", cs: "Čeština", sk: "Slovenčina", hu: "Magyar", ro: "Română",
-    bg: "Български", el: "Ελληνικά", ru: "Русский", uk: "Українська",
-    tr: "Türkçe", ar: "العربية", he: "עברית", fa: "فارسی", hi: "हिन्दी",
-    id: "Bahasa Indonesia", th: "ไทย", vi: "Tiếng Việt", ja: "日本語",
-    ko: "한국어", "zh-CN": "简体中文", "zh-TW": "繁體中文"
+    en: "English",
+    es: "Español"
   };
 
   // Los nodos donde lo que hay NO se traduce.
@@ -79,6 +88,7 @@
   // Accepted-Language al servidor, que ademas aqui no se podria: todo son ficheros
   // estaticos.
   function decidirIdioma() {
+    var hay = disponibles();
     var deUrl = null;
     try {
       var m = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search);
@@ -93,15 +103,30 @@
       var lista = navigator.languages || [navigator.language];
       for (var i = 0; i < (lista || []).length; i++) {
         var c = String(lista[i] || "").toLowerCase();
-        if (CODIGOS.indexOf(c) > -1) { delNavegador = c; break; }
+        if (hay.indexOf(c) > -1) { delNavegador = c; break; }
         var corto = c.split("-")[0];
-        if (CODIGOS.indexOf(corto) > -1) { delNavegador = corto; break; }
+        if (hay.indexOf(corto) > -1) { delNavegador = corto; break; }
       }
     } catch (e) { /* sin navigator */ }
 
+    // El orden es: la direccion, lo guardado, el del navegador. Y lo que salga de ahi
+    // tiene que existir de verdad. Medido: antes, `?lang=fr` ponia `lang="fr"` en la
+    // pagina y la dejaba entera en ingles, y un lector de pantalla la pronunciaba
+    // con fonetica francesa.
     var elegido = deUrl || guardado || delNavegador || "en";
-    if (CODIGOS.indexOf(elegido) === -1) elegido = "en";
+    if (hay.indexOf(elegido) === -1) elegido = hay.indexOf("en") > -1 ? "en" : (hay[0] || "en");
     return elegido;
+  }
+
+  // Lo que se ha pedido en la direccion y no existe. Se avisa en vez de fingir, pero
+  // solo si el visitante lo ha puesto a mano: si es el navegador el que lo ha
+  // pedido, no hay nada que avisar.
+  function idiomaPedidoQueNoHay() {
+    try {
+      var m = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search);
+      if (!m) return null;
+      return disponibles().indexOf(m[1]) > -1 ? null : m[1];
+    } catch (e) { return null; }
   }
 
   function diccionario(idioma) {
@@ -115,8 +140,10 @@
   function aplicar() {
     var idioma = decidirIdioma();
     var dic = diccionario(idioma);
-    // Sin diccionario para este idioma no se toca nada: la pagina se queda como
-    // esta, que es el ingles de siempre.
+    // El atributo `lang` va SIEMPRE con el idioma que esta really en la pagina. Antes
+    // se ponia el que se habia pedido, y con `?lang=fr` la pagina entera en ingles
+    // se anunciaba como francesa: mal para un lector de pantalla, para el corrector
+    // del navegador y para la traduccion automatica.
     document.documentElement.setAttribute("lang", idioma);
     if (!dic) { aplicada = ""; return 0; }
 
@@ -173,11 +200,16 @@
     if (sitio.getAttribute("data-listo") === "1") return;
     sitio.setAttribute("data-listo", "1");
 
+    var hay = disponibles();
+    // Con un solo idioma no hay nada que elegir, y un desplegable con una opcion
+    // parece un boton roto. No se pinta.
+    if (hay.length < 2) { sitio.setAttribute("data-oculto", "1"); return; }
+
     var sel = document.createElement("select");
     sel.className = "idioma-sel";
     sel.id = "idioma-sel";
     sel.setAttribute("aria-label", "Language");
-    CODIGOS.forEach(function (c) {
+    hay.forEach(function (c) {
       var o = document.createElement("option");
       o.value = c;
       o.textContent = NOMBRES[c] || c;
@@ -197,9 +229,23 @@
     sitio.appendChild(sel);
   }
 
+  // Si alguien llega con `?lang=fr` y el frances no esta, no se finge que se le ha
+  // dado: se le sirve el ingles y se le dice. Antes salia una pagina en ingles con
+  // `lang="fr"` y sin una palabra.
+  function avisar(pedido) {
+    var sitio = document.getElementById("idiomas");
+    if (!sitio) return;
+    var n = document.createElement("span");
+    n.className = "idioma-aviso";
+    n.textContent = pedido + " is not available yet — this page is in English.";
+    sitio.appendChild(n);
+  }
+
   // ── Arranque ─────────────────────────────────────────────────────────────────
   function cuandoEstaListo() {
+    var pedido = idiomaPedidoQueNoHay();
     montarSelector();
+    if (pedido && !document.querySelector(".idioma-aviso")) avisar(pedido);
     var n = aplicar();
     if (n && window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent("idioma", { detail: { cadenas: n } }));

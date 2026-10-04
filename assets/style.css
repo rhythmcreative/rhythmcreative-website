@@ -1138,6 +1138,16 @@ html.claro .b-gh .marca { color: #000000; }
 .idioma-sel option { background: var(--suelo); color: var(--hielo); }
 html.claro .idioma-sel option { background: #fff; color: rgba(30, 32, 34, 0.9); }
 .idiomas-sep { margin: 0 0.45rem; opacity: 0.5; }
+/* El aviso de "este idioma no existe todavia". Sale pequeno y al lado del selector,
+   sin cartel, porque es una informacion y no un error: el visitante llega con un
+   enlace de otra persona y lo unico que necesita es saber que le estan|English. */
+.idiomas[data-oculto="1"] { display: none; }
+.idioma-aviso {
+  font-size: 0.68rem; color: var(--gris); opacity: 0.85;
+}
+/* Y cuando el selector no se pinta porque solo hay un idioma, el punto de la
+   separacion se va con el, que si no queda colgando un "|" sin nada al lado. */
+.idiomas[data-oculto="1"] + .idiomas-sep { display: none; }
 /* En pantallas tactiles el selector se hace grande, como los botones del reproductor.
    Medido: con el tamaño normal mide 26 px de alto, y con el dedo por delante eso es
    poco. Con `pointer: coarse` —que es lo que contestan los Lapices y los moviles— el
