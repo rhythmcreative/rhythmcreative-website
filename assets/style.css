@@ -1383,14 +1383,27 @@ html.claro .terminal .l.aviso { color: #8a6a1f; }
    El comando entero en una sola linea, con scroll si no cabe, y un boton
    que lo copia. El boton es pequeno a proposito: no es un boton de la pagina,
    es una etiqueta que se pone verde un momento. */
-.comando { display: flex; align-items: stretch; gap: 0.4rem; margin-top: 0.5rem;
-           padding-left: 1.4rem; }
-.comando code { flex: 1; min-width: 0; white-space: pre-wrap;
-                 overflow-wrap: anywhere; padding: 0.5rem 0.6rem 0.5rem 2.1rem;
-                 border: 1px solid var(--linea); border-radius: var(--r);
-                 background: var(--cristal-opaco);
+/* El marco es la CAJA y no el codigo, como en la portada. Antes lo era el codigo y
+   el boton, al ser absolute, se colaba dentro de su caja; para que no se pusiera
+   encima del texto habia que reservarle sitio, y el sitio reservado se veia
+   vacio con el boton oculto. Medido: 48 px de hueco arriba, cuando una linea de
+   texto mide 21.
+   --
+   Con el marco en la caja, el boton va en absolute a la DERECHA y el hueco se
+   reserva a la derecha, que es lo que hace la portada. No hay banda vacia en
+   ningun ancho, y el comando solo pierde el ancho del boton, que es lo
+   inevitable. */
+.comando { display: flex; align-items: baseline; gap: 0.15rem; margin-top: 0.5rem;
+           position: relative;
+           padding: 0.5rem 4.8rem 0.5rem 1.1rem;
+           border: 1px solid var(--linea); border-radius: var(--r);
+           background: var(--cristal-opaco);
+           transition: border-color 0.18s; }
+.comando code { flex: 1 1 auto; min-width: 0; white-space: pre-wrap;
+                 overflow-wrap: anywhere; padding: 0;
+                 border: 0; border-radius: 0; background: none;
                  font: 0.66rem/1.5 var(--f); color: var(--azul-4);
-                 text-indent: -1.5rem; }
+                 text-indent: 0; }
 .comando code::before { content: "$"; margin-right: 0.75rem; color: var(--gris);
                         text-indent: 0; opacity: 0.7; }
 /* ── Copiar desde el texto del comando ─────────────────────────────────────────
@@ -1413,9 +1426,10 @@ html.claro .terminal .l.aviso { color: #8a6a1f; }
   text-underline-offset: 0.3em; text-decoration-color: transparent;
   transition: text-decoration-color 0.2s, color 0.18s, border-color 0.2s;
 }
-.comando:hover code { text-decoration-color: currentColor; color: var(--hielo);
-                       border-color: var(--linea-alta); }
-.comando code:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px;
+.comando:hover code { text-decoration-color: currentColor; color: var(--hielo); }
+/* El borde que se ilumina al pasar el raton es el de la caja, que es el marco. */
+.comando:hover { border-color: var(--linea-alta); }
+.comando code:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 3px;
                               border-radius: var(--r); }
 .copiar { flex: none; align-self: stretch; padding: 0 0.7rem; cursor: pointer;
           border: 1px solid var(--linea-alta); border-radius: var(--r);
@@ -1446,12 +1460,14 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
    parte en tres lineas: en el centro caeria encima del texto. Arriba, con el hueco
    que deja el `padding` de 2,4 rem en el code, el boton tiene su sitio y el
    texto no pasa por debajo. Es lo mismo que hace la portada en movil. */
-.comando { position: relative; }
-.comando code { padding: 2.4rem 0.9rem 0.6rem 2.1rem; }
 .comando .copiar {
-  position: absolute; right: 0.55rem; top: 0.55rem;
-  transform: none;                    /* el del centro vertical es el de la portada */
-  align-self: auto;                   /* deshace el `stretch` de la regla de arriba */
+  /* A la derecha y en el CENTRO vertical, como el de la portada. Antes iba arriba a
+     la derecha y por eso hacia falta el hueco de 2,4 rem de arriba. Con el marco en
+     la caja, el sitio se reserva a la derecha con el `padding` de 4,8 rem y aqui no
+     hay que dejar nada. */
+  position: absolute; right: 0.55rem; top: 50%;
+  transform: translateY(-50%);
+  align-self: auto;                   /* deshace el `stretch` de la regla de .copiar */
   padding: 0.4rem 0.7rem;
   border: 1px solid transparent;
   opacity: 0;
