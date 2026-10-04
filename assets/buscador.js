@@ -75,9 +75,9 @@
   // el índice y leer tus facturas. Esa vive solo en la terminal del indexador:
   // tools/algolia-indexar.mjs se niega a arrancar si no llega por variable de
   // entorno.
-  var APP_ID = "";        // Settings -> API keys -> Application ID. P. ej. "ABCD1234"
+  var APP_ID = "0WWMDPLF0W"; // Settings -> API keys -> Application ID. No es secreto.
   var INDICE = "rhythmcrea";
-  var CLAVE_BUSQUEDA = "0115d13bca2435f164500dc3c0bcf553"; // search-only, restringida a INDICE
+  var CLAVE_BUSQUEDA = "9ac94b402cc44fc9217a38c3adff23bb"; // search-only, restringida a INDICE
   var HABILITADO = APP_ID !== "" && CLAVE_BUSQUEDA !== "";
 
   var URL_API = "https://" + APP_ID + "-dsn.algolia.net/1/indexes/*/queries";
