@@ -1756,6 +1756,21 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
     .isla .rotulo { font-size: 0.72rem; letter-spacing: 0.1em; }
     .isla .reloj { font-size: 0.76rem; letter-spacing: 0.02em; }
   }
+
+/* ── Los enlaces no caben con la lupa puesta ─────────────────────────────────
+   La lupa vive en la columna derecha y la ha ensanchado: nav con enlaces +
+   lupa + interruptor miden 273 px, y por debajo de ~885 px de ventana la
+   columna de 1fr ya no los traga y el contenido se sale por la izquierda
+   encima del reloj. Medido: a 900 no se tocan, a 880 se pisan 1 px, a 800 ya
+   son 31 px y a 640 son 90 px. El corte va en 900, con margen.
+
+   Se esconden los ENLACES y no el nav: dentro vive el boton de contenido y el
+   de buscar, y sin ellos a este ancho no quedaria nada pulsable a la derecha.
+   Es la misma regla que la de 540 para tactil, pero para todos: es un problema
+   de LAYOUT y pasa con raton igual, como la captura ensena. */
+@media (max-width: 900px) {
+  .isla nav a { display: none; }
+}
    El corte de los 620 px es de LAYOUT. El del objetivo tactil es otro: depende de
    como se esta usando la cosa, no de lo ancha que sea. Una tableta de 768 se
    toca con el dedo igual que un movil de 390, y sin esto su barra seguia en 41 px
