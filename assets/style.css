@@ -1428,6 +1428,8 @@ html.claro .terminal .l.aviso { color: #8a6a1f; }
 html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
                            background: rgba(47, 122, 69, 0.08); }
 
+/* El boton de copiar del comando del manual se cambio despues: estaba como
+   un elemento mas del flex y salia como una barra del alto de la caja. */
 /* ── Las pantallas ─────────────────────────────────────────────────────
    Tres columnas por monitor. El nombre va en monoespaciada porque es lo que
    escribe Hyprland y es lo que hay que escribir en monitor,preferred. */
@@ -2634,6 +2636,38 @@ html.claro .contenidos:hover { background-color: rgba(0, 0, 0, 0.06); }
     min-height: 44px;                 /* dedo */
   }
   .indice.indice-abierto li a.activo { border-bottom-color: var(--azul-4); }
+
+  /* ── COMO SE ABRE Y COMO SE CIERRA EL MENÚ ───────────────────────────────────
+     --
+     El menu salia de golpe. Medido: cerrado, .indice es una tira horizontal de
+     72 px de alto en su sitio; abierto, pasa a display:block y se vuelve un panel
+     fijo de 779 px. Ese cambio se hace con display, y display NO SE PUEDE
+     ANIMAR: no hay estado anterior al que ir con una transicion, porque el elemento
+     simplemente no estaba en pantalla. Por eso aparecia de golpe.
+     --
+     Para abrir se usa una ANIMACION, que es lo que si funciona aqui. Un elemento
+     que pasa de display:none a display:block se pinta otra vez, y al pintarse de
+     nuevo la animacion empieza sola, sin necesidad de pedirla con JavaScript.
+     --
+     Para cerrar hace falta lo contrario:|display:none lo borra en el mismo
+     fotograma y no hay nada que animar. Asi que al cerrar se pone la clase
+     `indice-cerrando`, que deja el panel en pantalla pero transparente y subido, y
+     JavaScript espera a que la transicion termine antes de quitarlo. Por eso hace
+     falta el temporizador, y por eso el alto del menu se mantiene hasta el final. */
+  @keyframes menu-entra {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .indice.indice-abierto:not(.indice-cerrando) {
+    animation: menu-entra 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* La salida si es una transicion, y solo en este estado: en el de abierto sin mas
+     no lleva transition para que no pelee con la animacion de entrada. */
+  .indice.indice-abierto.indice-cerrando {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
 }
 
 /* Con el panel abierto la pagina de detras no se mueve. El scroll del body se
@@ -2697,6 +2731,11 @@ html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
      el fondo y las dos rayas de los pseudoelementos— y se apagan las tres. */
   .contenidos { transition: color 0.2s, background-color 0.2s; }
   .contenidos::before, .contenidos::after { transition: none; }
+
+  /* El menu de contenidos: la entrada y la salida. Se apagan las dos, que es lo
+     mismo que se hace en el resto de la pagina. */
+  .indice.indice-abierto:not(.indice-cerrando) { animation: none; }
+  .indice.indice-abierto.indice-cerrando { transition: none; }
 }
 
 /* ══ EL REPRODUCTOR, CUANDO CARGA ═════════════════════════════════════════════

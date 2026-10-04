@@ -1528,6 +1528,11 @@
     var plegado = false;   // en escritorio: columna recogida o no
     var abierto = false;   // en movil: menu desplegado o no
 
+    // El tiempo que tarda la salida. Tiene que ser el mismo que la transicion del
+    // CSS (0.18 s), o el panel se borra a mitad de fundido y se ve un parpadeo.
+    var CIERRE_MS = 180;
+    var cerrando = null;
+
     var fijar = function () {
       if (estrecho()) {
         panel.classList.toggle("indice-abierto", abierto);
@@ -1548,21 +1553,48 @@
       boton.setAttribute("aria-label", estrecho() ? "Contents" : "Toggle the contents column");
     };
 
-    boton.addEventListener("click", function () {
-      if (estrecho()) abierto = !abierto;
-      else plegado = !plegado;
+    // Abrir y cerrar por separado, y no con un `abierto = !abierto`, porque cerrar
+    // ya no es instantaneo: hay que dejar el menu en pantalla mientras se va.
+    //
+    // Durante esos 180 ms `abierto` sigue siendo true a proposito, para que el
+    // bloqueo del scroll se quite en el mismo momento que el menu desaparece y no
+    // con 180 ms de adelanto, que se lee como un tirón al volver a poder deslizar.
+    var abrir = function () {
+      if (cerrando) { clearTimeout(cerrando); cerrando = null; }
+      panel.classList.remove("indice-cerrando");
+      abierto = true;
       fijar();
+    };
+    var cerrar = function () {
+      if (cerrando) return;                    // ya se esta cerrando
+      if (!estrecho() || !abierto) { abierto = false; fijar(); return; }
+      panel.classList.add("indice-cerrando");
+      cerrando = setTimeout(function () {
+        cerrando = null;
+        abierto = false;
+        panel.classList.remove("indice-cerrando");
+        fijar();
+      }, CIERRE_MS);
+    };
+
+    boton.addEventListener("click", function () {
+      if (!estrecho()) { plegado = !plegado; fijar(); return; }
+      if (abierto || cerrando) cerrar(); else abrir();
     });
 
     // Al tocar un enlace se cierra, y el panel se va con el scroll que trae el
     // cambio de seccion: si el lector pasa el dedo hacia arriba para seguir
     // leyendo, el menu no le queda encima tapando el texto.
     panel.addEventListener("click", function (e) {
-      if (e.target.closest("a") && estrecho()) { abierto = false; fijar(); }
+      if (e.target.closest("a") && estrecho()) cerrar();
     });
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
-      if (estrecho() && abierto) { abierto = false; fijar(); boton.focus(); }
+      // Escape: cierra lo mismo que el boton, y `cerrar` ya esta hecho para eso.
+      // Si el menu esta a media salida, `cerrar` no hace nada porque el temporizador
+      // que ya corre lo terminara — y no hay que limpiarlo, porque si se limpiara
+      // sin ponerlo a null el menu se quedaria a media salida para siempre.
+      if (estrecho() && (abierto || cerrando)) { cerrar(); boton.focus(); }
       else if (!estrecho() && plegado) { plegado = false; fijar(); boton.focus(); }
     });
     // El cierre al bajar es SOLO del menu de movil. En escritorio el indice esta
