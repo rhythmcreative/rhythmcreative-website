@@ -23,6 +23,22 @@ window.RHYTHM_HYPRLAND = {
     id: "hyprland",
     titulo: "hyprland, the desktop",
     src: "assets/hyprland-demo.mp4",
+    // El WebM del mismo clip, a 720p en vez de 1080p. Va el primero en la lista de
+    // <source> y por eso es el que se descarga casi siempre.
+    //
+    // Pesa 3,9 MB frente a los 10,4 del mp4, que es un 62 % menos, y no se ve
+    // peor: el reproductor no pasa de 990 px de ancho y el mp4 estaba a 1920, con
+    // lo que se Bajaba una resolucion que no se podia ver ni con zoom.
+    //
+    // Y hay una razon mas: hay bloqueadores de anuncios y redes de empresa que
+    // cortan los .mp4. Si el webm va primero, a esos no les afecta. Quien no sepa
+    // hacer WebM —un Safari viejo— cae en el mp4, que esta aqui justo para eso.
+    //
+    // Como se codifico, para poder rehacerlo:
+    //   ffmpeg -i assets/hyprland-demo.mp4 -vf scale=1280:720 \
+    //     -c:v libvpx-vp9 -crf 32 -b:v 0 -row-mt 1 -deadline good -cpu-used 3 \
+    //     -c:a libopus -b:a 96k assets/hyprland-demo.webm
+    webm: "assets/hyprland-demo.webm",
     poster: "assets/hyprland-poster.webp",
     nota: "Recorded off a real session.",
 

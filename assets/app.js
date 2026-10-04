@@ -253,9 +253,27 @@
           // HTML, que es donde se busca cuando el cartel sale en negro.
           (p.desde ? ' data-desde="' + esc(p.desde) + '"' : "") +
           ' loop aria-label="' + esc(p.titulo || "clip") + '">' +
+          // El WebM va PRIMERO, y el MP4 detras. No es por Taste: hay dos razones.
+          //
+          // Una: pesa menos. El mp4 son 10,4 MB y el webm del mismo clip a 720p
+          // se queda en una fraccion, y el reproductor nunca pasa de 990 px de
+          // ancho, asi que a 1920 no se ve ni un detalle mas.
+          //
+          // Dos, y es la que importa: hay bloqueadores de anuncios y redes de
+          // empresa que cortan los .mp4. Medido con la peticion bloqueada: el
+          // navegador se queda en readyState 0 y networkState 3 —sin fuente— y no
+          // pone NINGUN error, ni en la consola ni en el elemento. Con dos
+          // <source>, en cuanto falla el primero el navegador pasa al segundo, y
+          // el clip suena igual.
+          //
+          // El orden es webm-mp4 y no mp4-webm a proposito: el mp4 pesa 10,4 MB y
+          // con el mp4 delante se lo bajaba todo el mundo. Quien no sepa hacer
+          // WebM —un Safari viejo— cae en el mp4, que es justo lo que tiene que
+          // pasar.
+          '<source data-src="' + esc(p.webm || p.src) + '" type="video/webm">' +
           '<source data-src="' + esc(p.src) + '" type="video/mp4">' +
-          "Tu navegador no sabe reproducir MP4. El clip son 33 segundos del " +
-          "escritorio, con el launcher, el panel de control y el final." +
+          "This browser cannot play the clip. It is 50 seconds of the desktop: " +
+          "the launcher, the control centre and the end." +
           "</video>" +
           '<button class="clip-play" type="button" data-play="' + id +
           '" aria-label="Reproducir el clip"><svg viewBox="0 0 24 24" aria-hidden="true">' +
@@ -384,6 +402,31 @@
         btnPlay.setAttribute("aria-label", motivo);
         btnPlay.setAttribute("data-fallo", "1");
       }
+
+      // ── CUANDO EL FICHERO NO LLEGA, QUE SE DIGA ─────────────────────────────
+      //
+      // Todo lo de arriba escucha el rechazo de `play()`. Pero hay un caso en el que
+      // no hay nada que escuchar, y es el mas comun en un ordenador.
+      //
+      // Medido con la peticion del clip bloqueada, que es lo que hace un bloqueador
+      // de anuncios o una red de empresa:
+      //
+      //     readyState   0        no ha cargado nada
+      //     networkState 3        SIN FUENTE
+      //     video.error  ninguno   el navegador no se queja
+      //     el boton     normal   sin marca y sin aviso
+      //
+      // Es decir: un rectangulo negro de 990 x 558 y un play que no hace nada, sin
+      // un solo mensaje. Nadie puede saber si la pagina esta rota o si es su
+      // navegador, que es lo que hace que esto sea tan dificil de reportar.
+      //
+      // Por eso se escuchan los eventos del propio elemento —`error` y `stalled`—
+      // y por eso se comprueba `networkState`, que es el unico dato que delata el
+      // caso: 3 es NETWORK_NO_SOURCE, y un video sin fuente no se puede reproducir
+      // por mas que se le insista.
+      //
+      // El aviso se pone en el boton, y no en un cartel por pantalla, porque el
+      // boton ya esta ahi y no tapa el texto de la pagina.
       function funcionar() {
         barra.classList.remove("clip-fallo");
         btnPlay.removeAttribute("title");
@@ -391,7 +434,52 @@
         btnPlay.removeAttribute("data-fallo");
       }
 
+      // Tres cosas que solo aqui pueden saber que el clip no va a venir.
+      //
+      //   error    el navegador no pudo cargar ni el webm ni el mp4. Es el evento
+      //            normal cuando los dos formatos estan bloqueados.
+      //   stalled   la conexion se quedo parada a media carga.
+      //   probe     al abrir el menu, para el caso de que el fallo ya hubiera
+      //            pasado antes de que hubiera quien escuchara. Con esto no hace
+      //            falta que nadie pulse play para enterarse.
+      video.addEventListener("error", function () {
+        avisar("The clip did not load. Your browser or network may be blocking video files.");
+      });
+      video.addEventListener("stalled", function () {
+        avisar("The clip stopped downloading. Check your connection and try again.");
+      });
+      // Y el aviso se quita solo en cuanto el clip se reproduce. Sin esto se quedaba
+      // puesto para siempre en un caso que antes no existia: al intentar el mp4 se
+      // dispara un `stalled` de camino al webm, el boton se marca, el webm carga y
+      // el clip suena — con el boton en rojo, que es una contradiccion. Medido.
+      //
+      // Se escucha `playing` y no `canplay` a proposito: `canplay` salta con lo
+      // justo para empezar, y el aviso que importa es el de "no suena", que ya no
+      // es cierto en cuanto hay imagen en movimiento.
+      video.addEventListener("playing", funcionar);
+
+      // Y la comprobacion de "no hay fuente", que es el unico dato que delata el
+      // caso. NO se hace aqui, al montar, porque en ese instante el elemento todavia
+      // no tiene fuente: el src se asigna justo despues y con `preload="none"` el
+      // navegador no carga nada hasta que se le pide. Medido: marcando aqui, el
+      // boton se ponia en rojo en el caso BUENO —con el mp4 bloqueado y el webm
+      // ya sonando— y no habia ningun evento posterior que lo quitara.
+      //
+      // Se comprueba mas tarde, cuando ya ha pasado el tiempo de empezar a cargar,
+      // y otra vez en cada pulsacion.
+      setTimeout(function () {
+        if (video.networkState === 3) {
+          avisar("The clip did not load. Your browser or network may be blocking video files.");
+        }
+      }, 3000);
       function alternar() {
+        // Si el fichero no llego, se dice antes de intentar nada. Sin esta
+        // comprobacion, con el clip sin fuente, `play()` no siempre rechaza —a veces
+        // no promesse nada— y la pulsacion se pierde en silencio.
+        if (video.paused && video.networkState === 3 && !video.error) {
+          avisar("The clip did not load. Your browser or network may be blocking video files.");
+          return;
+        }
         // El primer play necesita un play() dentro de un gesto del usuario, y
         // este lo es: el boton. A partir de ahi se puede pausar y reanudar.
         if (video.paused) {
