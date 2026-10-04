@@ -1263,17 +1263,18 @@
     var caja = $("#indice");
     if (!caja) return;
     var D = window.RHYTHM_DOCS || null;
-    var nGrupos = D && D.atajos
-      ? new Set(D.atajos.map(function (a) { return a.grupo; })).size : null;
 
+    // Antes al lado de "Hotkeys" salia "10 groups", el numero de grupos de atajos
+    // que hay debajo. Quitado: el indice es para saltar a un capitulo, y un dato
+    // sobre lo que hay DENTRO del capitulo no ayuda a elegir. Ademas el numero
+    // cambia solo cada vez que se re-genera la lista de atajos, con lo que el
+    // indice y el capitulo pueden llegar a decir cosas distintas.
     caja.innerHTML = '<h2>On this page</h2>' + PROYECTOS.map(function (proy) {
       var subs = proy.subs.map(function (sub) {
         var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        var extra = sub.id === "atajos" && nGrupos
-          ? "<span>" + nGrupos + " groups</span>" : "";
         return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
           '<i class="n">' + (entrada ? entrada.n : "?") + "</i>" +
-          "<b>" + esc(sub.t) + "</b>" + extra + "</a></li>";
+          "<b>" + esc(sub.t) + "</b></a></li>";
       }).join("");
 
       return '<div class="grupo-indice">' +
