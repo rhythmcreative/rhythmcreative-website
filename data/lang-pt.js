@@ -19,6 +19,9 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.pt = {
+  "to select": "para escolher",
+  "to navigate": "para navegar",
+  "to close": "para fechar",
   "Search this site": "Procurar nesta página",
   "Close": "Fechar",
   "Searching…": "A procurar…",

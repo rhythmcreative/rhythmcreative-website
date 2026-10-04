@@ -17,6 +17,9 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.ca = {
+  "to select": "per triar",
+  "to navigate": "per moure-us",
+  "to close": "per tancar",
   "Search this site": "Cerca en aquesta pàgina",
   "Close": "Tanca",
   "Searching…": "Cercant…",

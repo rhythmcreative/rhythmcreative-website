@@ -104,6 +104,43 @@
   var resaltado = -1;
   var textoOriginal = "";
 
+  // El pie del diálogo: las teclas y el "Search by Algolia".
+  //
+  // Es la barra de la foto de DocSearch: a la izquierda lo que hace cada tecla y a
+  // la derecha quien busca. Las tres frases van por el traductor como todo lo demás;
+  // "Search by" no se traduce porque es la marca que pide Algolia para usar su
+  // servicio, y las marcas no se traducen. El logo es texto con un enlace, no una
+  // imagen: una imagen suya sería una petición a un tercero y la CSP solo deja salir
+  // al host de la API, no al de sus imágenes.
+  function pie() {
+    var f = document.createElement("div");
+    f.className = "buscador-pie";
+    var pistas = document.createElement("div");
+    pistas.className = "buscador-atajos";
+    [["⏎", "to select"], ["↓", "to navigate"], ["↑", "to navigate"], ["esc", "to close"]].forEach(function (par) {
+      var s = document.createElement("span");
+      s.className = "buscador-atajo";
+      var k = document.createElement("kbd");
+      k.textContent = par[0];
+      s.appendChild(k);
+      var t = document.createElement("span");
+      t.className = "buscador-atajo-texto";
+      t.setAttribute("data-pista", par[1]);
+      t.textContent = T(par[1]);
+      s.appendChild(t);
+      pistas.appendChild(s);
+    });
+    f.appendChild(pistas);
+    var marca = document.createElement("a");
+    marca.className = "buscador-marca";
+    marca.href = "https://www.algolia.com/";
+    marca.target = "_blank";
+    marca.rel = "noopener";
+    marca.innerHTML = esc(T("Search by")) + ' <b>Algolia</b>';
+    f.appendChild(marca);
+    return f;
+  }
+
   function crear() {
     // Fondo y panel son DOS elementos, no uno.
     //
@@ -131,6 +168,8 @@
         '<p class="buscador-estado" id="buscador-estado" role="status" aria-live="polite"></p>' +
         '<ol class="buscador-lista" id="buscador-lista"></ol>' +
       "</div>";
+
+    caja.querySelector(".buscador-panel").appendChild(pie());
 
     campo = caja.querySelector("#buscador-campo");
     lista = caja.querySelector("#buscador-lista");
@@ -555,6 +594,10 @@
         campo.placeholder = T("Search this site");
         var c = caja.querySelector(".buscador-cerrar");
         if (c) c.setAttribute("aria-label", T("Close"));
+        var ps = caja.querySelectorAll("[data-pista]");
+        for (var i = 0; i < ps.length; i++) {
+          ps[i].textContent = T(ps[i].getAttribute("data-pista"));
+        }
       }
     });
   }

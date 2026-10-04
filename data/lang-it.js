@@ -18,6 +18,9 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.it = {
+  "to select": "per selezionare",
+  "to navigate": "per spostarsi",
+  "to close": "per chiudere",
   "Search this site": "Cerca in questa pagina",
   "Close": "Chiudi",
   "Searching…": "Sto cercando…",

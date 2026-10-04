@@ -32,6 +32,9 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.es = {
+  "to select": "para elegir",
+  "to navigate": "para moverse",
+  "to close": "para cerrar",
   "Search this site": "Buscar en esta página",
   "Close": "Cerrar",
   "Searching…": "Buscando…",
