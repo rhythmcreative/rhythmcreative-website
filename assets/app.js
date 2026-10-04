@@ -1012,6 +1012,46 @@
     if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
   }
 
+  // Cambiar de tema CON la transicion. Es lo que se llama desde el boton y desde
+  // el aviso del sistema, en los dos sentidos: de oscuro a claro y de claro a
+  // oscuro, que la raja es la misma se vaya o se venga.
+  //
+  // Como lo hace omarchy-site: se congela la pagina en una foto, se cambia la clase
+  // por debajo y la foto vieja se abre con la raja. Todo lo que cambia el tema —
+  // la clase, el data-tema, los rotulos, el theme-color del movil y el aviso al
+  // canvas— esta dentro de aplicarTema(), asi que la foto nueva sale completa.
+  //
+  // Sin View Transitions en el navegador, o con movimiento reducido, es un cambio
+  // instantaneo como el de antes: mejor eso que una raja a medias o un error.
+  var cambiando = false;
+
+  function cambiarTema(modo, guardar) {
+    var cambia = function () {
+      aplicarTema(modo);
+      if (guardar) {
+        try { localStorage.setItem(CLAVE, modo); } catch (e) { /* sin storage */ }
+      }
+    };
+    var reduc = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (cambiando || !document.startViewTransition || reduc) { cambia(); return; }
+    cambiando = true;
+    // Sin transiciones propias durante el cambio: ver la nota en style.css.
+    document.documentElement.classList.add("sin-transicion");
+    var quita = function () {
+      document.documentElement.classList.remove("sin-transicion");
+      cambiando = false;
+    };
+    try {
+      var v = document.startViewTransition(function () { cambia(); });
+      if (v && v.finished && v.finished.then) v.finished.then(quita, quita);
+      else quita();
+    } catch (e) {
+      cambia();
+      quita();
+    }
+  }
+
   function interruptor() {
     var b = $("#interruptor");
     if (!b) return;
@@ -1020,8 +1060,7 @@
 
     b.addEventListener("click", function () {
       modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
-      aplicarTema(modo);
-      try { localStorage.setItem(CLAVE, modo); } catch (e) { /* sin storage */ }
+      cambiarTema(modo, true);
     });
 
     // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo
@@ -1029,7 +1068,7 @@
     // claro de noche se queda con la pagina en claro hasta que recarga.
     if (window.matchMedia) {
       var avisa = function () {
-        if (modoActual() === "auto") aplicarTema("auto");
+        if (modoActual() === "auto") cambiarTema("auto", false);
       };
       var mq = matchMedia("(prefers-color-scheme: light)");
       if (mq.addEventListener) mq.addEventListener("change", avisa);

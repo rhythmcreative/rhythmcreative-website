@@ -2226,6 +2226,68 @@ html.entrando #hyprland.hyprland-visto {
 .fila .v { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
 
 
+/* ── El cambio de tema ─────────────────────────────────────────────────────────
+   Como lo hace omarchy-site, adaptado a dos temas: el navegador congela la pagina
+   en una foto, se cambia la clase por debajo y la foto vieja se abre con una
+   raja en diagonal que deja ver la nueva. Dura 240 ms, lo mismo que el giro del
+   icono del interruptor, para que los dos acaben a la vez.
+
+   Sin esto el cambio se veia mal por dos motivos a la vez: cada elemento con
+   `transition` en un color cambiaba por su cuenta —cincuenta transiciones a
+   ritmos distintos— y las fotos (angel y fondo, que son ficheros distintos en
+   cada tema) cortaban de golpe en medio de ese fundido. Con la foto congelada
+   no hay ni una cosa ni la otra: lo viejo se va entero y lo nuevo entra entero.
+
+   La propiedad --barrido se declara con @property para que el navegador pueda
+   animarla dentro del keyframe. Sin la declaracion seria una cadena y el
+   fundido saldria de golpe en el ultimo fotograma. */
+
+@property --barrido {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* La foto nueva, quieta debajo. La vieja, con la raja, encima. */
+::view-transition-new(root) { animation: none; }
+
+::view-transition-old(root) {
+  animation: barrido-tema 240ms ease-out both;
+  mask-image: linear-gradient(
+    100deg,
+    #000 0,
+    #000 calc(50% - var(--barrido)),
+    transparent calc(50% - var(--barrido)),
+    transparent calc(50% + var(--barrido)),
+    #000 calc(50% + var(--barrido)),
+    #000 100%
+  );
+  mask-mode: alpha;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+@keyframes barrido-tema {
+  from { --barrido: 0px; }
+  to { --barrido: 75%; }
+}
+
+/* Mientras se cambia la clase, ninguna transicion propia: si no, los colores
+   intentarian fundirse por su cuenta debajo de la foto congelada y al quitar la
+   raja se veria el fundido a medias. Se pone y se quita desde app.js. */
+html.sin-transicion *,
+html.sin-transicion *::before,
+html.sin-transicion *::after {
+  transition: none !important;
+}
+
+/* Con movimiento reducido, o donde no hay View Transitions, el cambio es
+   instantaneo: es lo mismo que pedia el sistema, y una raja de 240 ms tambien
+   es movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root) { animation: none; }
+}
+
 /* ── El tema claro ───────────────────────────────────────────────────────────── */
 html.claro .indice h2,
 html.claro .manual-sello,
