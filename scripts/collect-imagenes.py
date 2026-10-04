@@ -112,15 +112,12 @@ FIGURAS = [
      "mountain valley with a windmill on the ridge.",
      "The first wallpaper you get"),
 
-    ("hyprland/login", "Previews/preview1.png", ANCHO_PANTALLA,
-     "The login theme in daylight, with the clock, the user field and the "
-     "password field over the Earth.",
-     "The theme by day"),
-
-    ("hyprland/login", "Previews/preview5.png", ANCHO_PANTALLA,
-     "The same login theme at night: darker, with the background almost gone. "
-     "The theme reads the clock and changes with it.",
-     "The same theme at night"),
+    # Las dos capturas del tema de login —la de dia y la de noche— no van aqui.
+    # La seccion del login se queda con UNA foto, la de la pantalla de inicio, que es
+    # lo que se ve de verdad al arrancar. Las otras dos mostraban el mismo wallpaper
+    # en dos momentos del dia, que es una misma pantalla dos veces.
+    # Los ficheros siguen en Previews/ por si se quieren volver a usar; lo que no
+    # es, la pagina no los enseña.
 
     ("hyprland/atajos", "rofi_hotkeys_crop.png", ANCHO_RECORTE,
      "The hotkey browser, open over the desktop, with every shortcut in the "
