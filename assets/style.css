@@ -229,16 +229,37 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
   text-decoration: none;
   transition: color 0.2s, background 0.2s;
 }
-.isla .rotulo-enlace:hover { background: rgba(153, 186, 201, 0.09); color: #fff; }
-/* En claro el color se queda en --hielo, que ya es casi negro. La regla de
-   arriba pone #fff al pasar por encima, y aqui eso seria blanco sobre crema:
-   medido, el nombre se ponia rgb(255,255,255) sobre un suelo claro y
-   desaparecia justo en el momento en que se le iba a pulsar. En claro el aviso
-   es solo el fondo. */
+/* El aviso son las LETRAS, no el fondo.
+   --
+   Pedido tal cual: al pasar por encima se iluminan las letras. Antes el aviso era
+   el fondo, con la caja entera encendida como un boton mas, y las letras quietas.
+   Ahora el color del texto es lo que cambia, y el fondo solo acompana con un gris
+   muy claro para que el enlace se note como una zona pulsable sin echar mas luz de la cuenta.
+
+   En oscuro el nombre es --hielo, un azul apagado (#99bac9). Iluminar es subirle
+   el brillo hasta blanco puro, que son 8,6:1 de contraste, medido.
+
+   En claro --hielo ya es casi negro (#1b1d1f) y no tiene arriba donde subir: poner
+   blanco ahi era justo el fallo de antes, medido, el nombre se ponia
+   rgb(255,255,255) sobre crema y desaparecia en el momento de pulsarlo. Asi que
+   en claro "iluminar" es lo contrario, oscurecer: de #1b1d1f a negro puro, que
+   pasa de 14,1:1 a 17,4:1. Las dos direcciones tienen contraste medido y en las
+   dos se nota. */
+.isla .rotulo-enlace:hover { background: rgba(153, 186, 201, 0.07); color: #fff; }
 html.claro .isla .rotulo-enlace:hover { background: rgba(0, 0, 0, 0.06);
-                                        color: var(--hielo); }
+                                        color: #000; }
+/* Y al pulsar, un paso mas. Sin esto el dedo no nota el momento exacto del clic:
+   entra y sale el hover y no hay ningun cambio en el instante de apretar. */
+.isla .rotulo-enlace:active { background: rgba(153, 186, 201, 0.14); color: #fff;
+                              transition-duration: 0.06s; }
+html.claro .isla .rotulo-enlace:active { background: rgba(0, 0, 0, 0.11); color: #000; }
 .isla .rotulo-enlace:focus-visible { outline: 2px solid var(--azul-4);
                                     outline-offset: 1px; border-radius: var(--r); }
+/* Con reduced-motion no hay transicion que recortar: el cambio de color es
+   instantaneo y ya esta, pero la transicion se apaga para no mover el fondo. */
+@media (prefers-reduced-motion: reduce) {
+  .isla .rotulo-enlace, .isla .rotulo-enlace:active { transition: none; }
+}
 /* Con dedo, los 28 px no valen: el mismo objetivo de 44 que los demas controles. */
 @media (hover: none) {
   .isla .rotulo-enlace { height: 44px; }

@@ -28,26 +28,28 @@ window.RHYTHM_HYPRLAND = {
 
     // Por donde empieza el clip en vez de por el principio.
     //
-    // El video abre con negro y un cartel de "HYPRLAND" que se desvanece sobre el
-    // fondo. El poster es un fotograma del propio video, del segundo ocho, asi que
-    // antes de darle a play se ve una escena y al pulsar de golpe salia un cartel
-    // en negro: eso era lo de "a la primera no se pone bien".
+    // El video abre con el escritorio desenfocado y encima un cartel de "HYPRLAND"
+    // que se desvanece. El poster es un fotograma del propio video, del segundo
+    // 5,2, asi que antes de darle a play se ve una escena y al pulsar de golpe
+    // salia un cartel en negro: eso era lo de "a la primera no se pone bien".
     //
-    // El segundo no es deguess. Medido el 2026-10-04 mirando el brillo de la
+    // El segundo no es de ojo. Medido el 2026-10-04 mirando el brillo de la
     // banda central, que es donde va el texto, a lo largo del arranque:
     //
-    //     2.4 s  gris 66      el fondo empieza a entrar
-    //     2.8 s  gris 134     el cartel AUN se ve encima
-    //     3.0 s  gris 168     limpio
-    //     3.2 s  gris 168     limpio
+    //     4,0 s  gris  61     el cartel, entero
+    //     4,4 s  gris  61     el cartel, entero
+    //     4,6 s  gris  57     desvaneciendose
+    //     4,8 s  gris  50     casi en negro
+    //     5,0 s  gris 176     limpio, ya el escritorio
     //
-    // Con 2.7 se caia de lleno en el cartel. Se salta a 3.2, con margen para que
-    // el segundo que se busca no sea justo el ultimo del desvanecido.
+    // Con 3.2, que era el del video anterior, caia de lleno en medio del cartel. Se
+    // salta a 5,0, con margen para que el segundo que se busca no sea justo el
+    // ultimo del desvanecido.
     //
     // Va en los datos y no dentro del reproductor para que el segundo sea un
     // numero que se cambia sin tocar codigo, y para que quede escrito que es una
     // decision y no un descuido.
-    desde: 3.2
+    desde: 5.0
   },
 
   // Los dos botones de abajo. El del manual va con flecha porque abre el manual,
