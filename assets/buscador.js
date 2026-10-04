@@ -105,23 +105,32 @@
   var textoOriginal = "";
 
   function crear() {
+    // Fondo y panel son DOS elementos, no uno.
+    //
+    // Con uno solo —un overlay que cubre toda la pantalla— "pinchar fuera para cerrar"
+    // es imposible: todo cae dentro, no hay fuera. Medido: el clic en la esquina
+    // entraba en la caja y no cerraba nada, y solo se podía salir con el botón "esc"
+    // o con Escape. Así que el fondo va aparte, el panel dentro, y se cierra el
+    // fondo, que es lo que se espera de un diálogo.
     caja = document.createElement("div");
     caja.className = "buscador-caja";
     caja.setAttribute("role", "dialog");
     caja.setAttribute("aria-modal", "true");
     caja.setAttribute("aria-label", T("Search this site"));
     caja.hidden = true;
-    caja.innerHTML =
-      '<div class="buscador-cabecera">' +
-        '<span class="buscador-lupa" aria-hidden="true"></span>' +
-        '<input type="search" id="buscador-campo" class="buscador-campo" ' +
-          'autocomplete="off" autocapitalize="off" spellcheck="false" ' +
-          'aria-describedby="buscador-estado">' +
-        '<button type="button" class="buscador-cerrar" aria-label="' + esc(T("Close")) + '">' +
-          "esc</button>" +
-      "</div>" +
-      '<p class="buscador-estado" id="buscador-estado" role="status" aria-live="polite"></p>' +
-      '<ol class="buscador-lista" id="buscador-lista"></ol>';
+    caja.innerHTML = '<div class="buscador-fondo"></div>' +
+      '<div class="buscador-panel">' +
+        '<div class="buscador-cabecera">' +
+          '<span class="buscador-lupa" aria-hidden="true"></span>' +
+          '<input type="search" id="buscador-campo" class="buscador-campo" ' +
+            'autocomplete="off" autocapitalize="off" spellcheck="false" ' +
+            'aria-describedby="buscador-estado">' +
+          '<button type="button" class="buscador-cerrar" aria-label="' + esc(T("Close")) + '">' +
+            "esc</button>" +
+        "</div>" +
+        '<p class="buscador-estado" id="buscador-estado" role="status" aria-live="polite"></p>' +
+        '<ol class="buscador-lista" id="buscador-lista"></ol>' +
+      "</div>";
 
     campo = caja.querySelector("#buscador-campo");
     lista = caja.querySelector("#buscador-lista");
@@ -133,12 +142,22 @@
     campo.addEventListener("keydown", teclas);
     lista.addEventListener("click", function (e) {
       var li = e.target.closest ? e.target.closest("li[data-ir]") : null;
-      if (li) ir(li.getAttribute("data-ir"));
+      if (li) ir(li.getAttribute("data-ir"), li.getAttribute("data-pag"));
     });
+
+    // Cerrar: el botón, el fondo, o Escape. Y el panel se traga el clic para que
+    // pinchar en un hueco entre resultados no cierre el diálogo mientras se lee.
     caja.querySelector(".buscador-cerrar").addEventListener("click", cerrar);
-    // Pinchar fuera cierra, como en cualquier diálogo.
-    document.addEventListener("click", function (e) {
-      if (abierto && !caja.contains(e.target)) cerrar();
+    caja.querySelector(".buscador-fondo").addEventListener("click", cerrar);
+    caja.querySelector(".buscador-panel").addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+
+    // Escape cierra esté el foco donde esté. Estaba solo en el campo, así que si el
+    // foco se iba a otra parte —pinchar en un resultado, por ejemplo— dejaba de
+    // funcionar. Un diálogo modal se cierra con Escape siempre.
+    document.addEventListener("keydown", function (e) {
+      if (abierto && e.key === "Escape") { e.preventDefault(); cerrar(); }
     });
   }
 
@@ -149,6 +168,12 @@
   }
 
   // ── Abrir y cerrar ───────────────────────────────────────────────────────────
+  //
+  // No hace falta que `abrir` reciba el evento. Antes sí: el manejador global de
+  // "pincha fuera" necesitaba saber si el clic que le llegaba era el mismo que había
+  // abierto el diálogo, y por eso comparaba objetos. Ese manejador ya no existe —el
+  // fondo es un elemento aparte y es el que cierra— así que la variable era código
+  // muerto y `abrir(ev)` recibía un argumento que nadie leía.
 
   var ANTERIOR = null;
 
@@ -267,21 +292,24 @@
     var lengua = document.documentElement.getAttribute("data-idioma") || "en";
     var puntos = [];
     base.forEach(function (r) {
-      var t = ((r.titulo || "") + " " + (r.texto || "") + " " + (r.codigo || []).join(" ")).toLowerCase();
+      // Los campos son cortos a propósito (t/a/p/l en vez de titulo/ancla/pagina/lang):
+      // son 126 registros y cada byte cuenta para que el respaldo pese 9 KB y no 86.
+      var titulo = r.t || "", ancla = r.a || "", pagina = r.p || "manual";
+      var t = (titulo + " " + (r.texto || "") + " " + (r.codigo || []).join(" ")).toLowerCase();
       var n = 0;
       palabras.forEach(function (p) { if (t.indexOf(p) > -1) n++; });
       if (!n) return;
       // El titulo pesa doble, y estar en la lengua de la pagina pesa mas todavia.
-      var tl = (r.titulo || "").toLowerCase();
+      var tl = titulo.toLowerCase();
       var enTitulo = palabras.filter(function (p) { return tl.indexOf(p) > -1; }).length;
-      puntos.push({ r: r, n: n + enTitulo * 2 + (r.lang === lengua ? 3 : 0) });
+      puntos.push({ titulo: titulo, ancla: ancla, pagina: pagina, n: n + enTitulo * 2 + (r.l === lengua ? 3 : 0) });
     });
     puntos.sort(function (a, b) { return b.n - a.n; });
     // El respaldo local no trae texto, solo titulos y anclas —por eso son 9 KB y no
     // 86—, asi que no hay nada que recortar: el resultado es el titulo y el sitio al
     // que lleva.
     resultados = puntos.slice(0, 8).map(function (x) {
-      return { titulo: x.r.titulo, ancla: x.r.ancla || "", pagina: x.r.pagina || "manual", local: true };
+      return { titulo: x.titulo, ancla: x.ancla, pagina: x.pagina, local: true };
     });
     pintar(resultados.length, true);
   }
@@ -333,6 +361,7 @@
       var li = document.createElement("li");
       li.className = "buscador-resultado";
       li.setAttribute("data-ir", r.ancla);
+      li.setAttribute("data-pag", r.pagina || "manual");
       li.setAttribute("role", "option");
       li.id = "buscador-r" + i;
       var t = document.createElement("b");
@@ -372,9 +401,12 @@
 
   // ── Ir al resultado ─────────────────────────────────────────────────────────
 
-  function ir(ancla) {
+  function ir(ancla, pagina) {
     if (!ancla) { cerrar(); return; }
-    var pagina = resultados.length ? resultados[0].pagina : "manual";
+    // La página sale del resultado que se ha pinchado, no del primero de la lista.
+    // Antes se usaba resultados[0].pagina siempre: con resultados de las dos páginas
+    // mezclados, pinchar el segundo te llevaba a la página del primero.
+    if (!pagina) pagina = resultados.length ? resultados[0].pagina : "manual";
     var aquí = /manual\.html$/.test(location.pathname);
     if (pagina === "manual" && !aquí) {
       location.href = "manual.html#" + ancla;
@@ -401,8 +433,8 @@
     if (e.key === "ArrowUp") { e.preventDefault(); mover(-1); return; }
     if (e.key === "Enter") {
       e.preventDefault();
-      if (resaltado >= 0 && resultados[resaltado]) ir(resultados[resaltado].ancla);
-      else if (resultados.length) ir(resultados[0].ancla);
+      if (resaltado >= 0 && resultados[resaltado]) ir(resultados[resaltado].ancla, resultados[resaltado].pagina);
+      else if (resultados.length) ir(resultados[0].ancla, resultados[0].pagina);
       return;
     }
   }
@@ -437,22 +469,51 @@
   //
   // El atajo de teclado no sirve de nada en un móvil, así que también hay un botón.
   // Y sin botón no se ve que el buscador existe.
+  // ── Donde va el botón ────────────────────────────────────────────────────────
+  //
+  // ARRIBA, no en el pie. Centrado en el escritorio.
+  //
+  // Donde: la barra de arriba tiene un grid de tres columnas —el nombre a la izquierda,
+  // el reloj en el medio, los enlaces y el tema a la derecha— y la del medio es
+  // "auto": mide lo que lleva dentro. El botón va con el reloj dentro de un
+  // envoltorio, y los dos son UN solo hijo del grid, de modo que el grupo sale
+  // centrado. Medido: el grupo se desvía 0 px.
+  //
+  // Meter el botón como cuarto hijo suelto NO vale: se crea una cuarta columna
+  // implícita, la de la derecha se desplaza y el reloj se va 271 px de sitio. También
+  // está medido, por eso el envoltorio.
+  //
+  // Por qué en móvil no vale lo mismo: a 390 px el texto "RHYTHMCREA" y el botón se
+  // pisan 17 px. No hay sitio en el medio. Así que por debajo de 620 px el botón se
+  // va a la derecha, junto al interruptor del tema, que es donde está el otro control
+  // pequeño de la barra. El mismo corte que usa el CSS para quitar los enlaces.
+  //
+  // El reloj se queda 20 px a la derecha del centro exacto en escritorio. Es
+  // inevitable si hay un botón a su izquierda, y el grupo centrado compensa: se ve
+  // el conjunto centrado, que es lo que se pidió.
+
+  var ANCHO_ESTRECHO = 620;   // el mismo corte que el CSS
+
+  function dondeVaElBoton() {
+    if (window.innerWidth < ANCHO_ESTRECHO) return document.querySelector(".isla .der");
+    // Por separado y en este orden. Con una sola consulta
+    // (".isla .barra-centro, .isla") siempre salía .isla, porque en el documento el
+    // ancestro va antes que el descendiente y querySelector devuelve el primero.
+    // Medido: el botón caía como cuarto hijo del grid y el reloj se iba 291 px.
+    return document.querySelector(".isla .barra-centro") || document.querySelector(".isla");
+  }
+
+  function ponerBoton(b) {
+    var destino = dondeVaElBoton();
+    if (!destino) return false;
+    if (b.parentNode === destino) return true;
+    destino.insertBefore(b, destino.firstChild);
+    return true;
+  }
+
   function boton() {
-    // Donde va: dentro de la fila de abajo del pie, junto al selector de idioma, que
-    // es donde ya vive lo que es "herramienta" y no "contenido".
-    //
-    // Se busca un sitio donde el nodo de referencia sea de verdad hermano de lo que
-    // se va a insertar. La primera version hacia pie.insertBefore(b, #idiomas) y
-    // #idiomas no es hijo del pie sino de un span dentro de otro: NotFoundError, y el
-    // boton no aparecia. Se podia ver que #idiomas existe en el codigo y aun asi no
-    // funcionar, que es la peor forma de romperse.
-    var pie = document.getElementById("fuera");
-    if (!pie) return null;
-    var idiomas = document.getElementById("idiomas");
-    var padre = idiomas && idiomas.parentNode;
-    var destino = (padre && padre.nodeType === 1 && pie.contains(padre))
-      ? padre
-      : (pie.lastElementChild || pie);
+    var barra = document.querySelector(".isla");
+    if (!barra) return null;
 
     var b = document.createElement("button");
     b.type = "button";
@@ -463,12 +524,47 @@
       e.preventDefault();
       abrir();
     });
-    destino.insertBefore(b, (idiomas && destino.contains(idiomas)) ? idiomas : destino.firstChild);
+
+    // El envoltorio del centro se crea una vez y solo si hay reloj. Es lo que
+    // convierte "boton + reloj" en un solo hijo del grid.
+    var reloj = barra.querySelector(".reloj");
+    if (reloj && reloj.parentNode === barra && !barra.querySelector(".barra-centro")) {
+      var centro = document.createElement("span");
+      centro.className = "barra-centro";
+      barra.insertBefore(centro, reloj);
+      centro.appendChild(reloj);
+    }
+
+    ponerBoton(b);
+
+    // Al cambiar el tamaño de la ventana hay que recolocarlo: se puede pasar de un
+    // lado al otro. Se comprueba el corte, no el ancho, porque mover el nodo en cada
+    // pixel de arrastre no hace falta.
+    var estrecho = null;
+    window.addEventListener("resize", function () {
+      var ahora = window.innerWidth < ANCHO_ESTRECHO;
+      if (ahora === estrecho) return;
+      estrecho = ahora;
+      ponerBoton(b);
+    });
 
     window.addEventListener("idioma", function () {
       b.setAttribute("aria-label", T("Search this site"));
     });
     return b;
+  }
+
+  // ── Atajo global ────────────────────────────────────────────────────────────
+
+  function global(e) {
+    // "/" con el foco en un campo, o Ctrl+K en cualquier sitio: se deja pasar.
+    var enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "").toUpperCase());
+    var esBarra = e.key === "/" && !enCampo && !e.metaKey && !e.ctrlKey && !e.altKey;
+    var esK = (e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey);
+    if (esBarra || esK) {
+      e.preventDefault();
+      abrir();
+    }
   }
 
   // ── Una cosa a medias ────────────────────────────────────────────────────────

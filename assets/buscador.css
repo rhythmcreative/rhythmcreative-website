@@ -12,17 +12,33 @@
       tiene un borde aparte, y no solo un cambio de color: si alguien no distingue
       el azul del gris, el borde sigue estando.
 
-   3. Va en el pie, junto al idioma. En móvil crece a 52 px, como el resto de
-      controles con el dedo — la misma regla que el resto del sitio, por el mismo
-      motivo: en un móvil de 390 px, 26 px es medio dedo.
+   3. Va en la barra de arriba, en la columna del medio junto al reloj. En móvil
+      crece a 44 px, como el resto de controles con el dedo — la misma regla que el
+      resto del sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio
+      dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
+/* El envoltorio del botón y el reloj.
+   La barra es un grid de tres columnas: nombre · centro · enlaces. El reloj vive en la
+   del medio, que es "auto": mide lo que lleva dentro. El botón va con él dentro de
+   este envoltorio para que los dos sean UN solo hijo del grid. Como cuarto hijo
+   suelto se creaba una cuarta columna y el reloj se iba 271 px de sitio.
+
+   Sin `display: flex` los dos se apilan en dos filas y la barra crece. */
+.barra-centro { display: inline-flex; align-items: center; justify-content: center; }
+
+/* El botón va en la barra de arriba, en la columna del medio junto al reloj. Por eso
+   el margen de la derecha: separa del reloj lo justo, y el grupo de los dos es lo que
+   queda centrado. Sin ese margen el buscador se arrima al reloj. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45em;
   height: 26px;
-  padding: 0 0.55em;
+  min-width: 26px;
+  margin-right: 0.7rem;
+  padding: 0 0.5em;
   border: 1px solid var(--linea);
   border-radius: var(--r);
   background: transparent;
@@ -32,6 +48,7 @@
   letter-spacing: 0.06em;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex: none;
 }
 
 .buscador-boton:hover { color: var(--hielo); border-color: var(--linea-alta); }
@@ -61,6 +78,10 @@
 
 /* ── El diálogo ─────────────────────────────────────────────────────────── */
 
+/* El contenedor ya no lleva el fondo ni el desenfoque: solo apila. El fondo y el
+   panel son hermanos, y el fondo es el que se cierra al pinchar. Con el fondo puesto
+   en el contenedor, el contenedor cubria la pantalla entera y no habia "fuera" al
+   que pinchar, que es justo lo que hacia que cerrar pincando no funcionase. */
 .buscador-caja {
   position: fixed;
   inset: 0;
@@ -68,23 +89,41 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(1rem, 8vh, 6rem) 1rem 1rem;
+}
+
+.buscador-caja[hidden] { display: none; }
+
+/* El fondo: cubre todo, difumina, y al pincarlo cierra. */
+.buscador-fondo {
+  position: absolute;
+  inset: 0;
   background: color-mix(in srgb, var(--suelo) 72%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: buscador-entra 0.16s ease-out;
 }
 
-.buscador-caja[hidden] { display: none; }
+/* El panel: lo de verdad. Va por encima del fondo y se traga el clic.
+   Sin `height`, es decir con la altura justa: si ocupa toda la pantalla se come al
+   fondo y volvería a no haber "fuera" al que pinchar. Medido — con height:100% el
+   clic en la esquina seguía sin cerrar nada. */
+.buscador-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: clamp(1rem, 8vh, 6rem) 1rem 1rem;
+}
 
 @keyframes buscador-entra {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* La caja en sí. El ancho se limita para que una línea de resultado no ocupe
-   toda una pantalla de 27 pulgadas. */
-.buscador-caja > * { width: min(46rem, 100%); }
+/* El ancho se limita para que una línea de resultado no ocupe toda una pantalla de
+   27 pulgadas. Y cuelgan del panel, no del contenedor. */
+.buscador-panel > * { width: min(46rem, 100%); }
 
 .buscador-cabecera,
 .buscador-lista,
@@ -186,6 +225,10 @@
   line-height: 1.45;
 }
 
+/* Los resultados locales no traen texto, solo título y destino. Sin esto el hueco
+   vacío dejaba filas altas y vacías que parecían rotas. */
+.buscador-trozo:empty { display: none; }
+
 .buscador-trozo b { color: var(--azul-1); font-weight: 500; }
 
 .buscador-resultado > em {
@@ -218,21 +261,25 @@
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse) {
+  /* En el dedo el botón crece a 44 px, como el resto de controles con el dedo. En la
+     barra se le recorta el margen para que no empuje el reloj. */
   .buscador-boton {
-    height: 52px;
-    padding: 0 1rem;
+    height: 44px;
+    min-width: 44px;
+    margin-right: 0.5rem;
+    padding: 0 0.7em;
     font-size: 0.78rem;
   }
   .buscador-boton span { width: 13px; height: 13px; border-width: 2px; }
-  .buscador-caja { padding-top: 0.5rem; align-items: stretch; }
+  .buscador-panel { padding-top: 0.5rem; align-items: stretch; }
   .buscador-resultado { padding: 0.85rem 0.9rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buscador-caja { animation: none; }
+  .buscador-fondo { animation: none; }
   .destacado { animation: none; outline: 2px solid var(--azul-3); outline-offset: 4px; }
 }
 
 /* ── El claro ───────────────────────────────────────────────────────────── */
 
-html.claro .buscador-caja { background: color-mix(in srgb, var(--suelo) 66%, transparent); }
+html.claro .buscador-fondo { background: color-mix(in srgb, var(--suelo) 66%, transparent); }
