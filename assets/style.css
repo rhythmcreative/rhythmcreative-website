@@ -1076,10 +1076,23 @@ html.claro .b-gh .marca { color: #000000; }
      texto y el aire queda donde tiene sentido: entre las dos cosas, no dentro de
      una. Los enlaces se quedan a la derecha porque su columna es la que crece.
      --
-     `auto` y no `1.3fr`: en una rejilla, una pista `auto` con lo que hay dentro es
-     del ancho de su contenido mas la parte de la fraccion que le toca. Con dos
-     pistas y la segunda al 100%, la primera se queda con lo suyo. */
-  grid-template-columns: auto minmax(0, 1fr);
+     --
+     Y el reparto del espacio libre. Antes de esto la columna de los enlaces se
+     comia todo lo que sobra: a 1440 la pista media 749 px para unas palabras que
+     ocupan 90, con lo que habia 660 px de vacio pegados al borde derecho. Y como
+     la fila de abajo SI reparte —el copyright a la izquierda y el enlace al
+     repositorio a la derecha—, las dos filas se leian de formas distintas y la de
+     arriba parecia rota.
+     --
+     La solucion es que las dos columnas midan lo que miden y el hueco libre se
+     quede ENTRE ellas, que es donde un hueco se lee como separacion y no como un
+     trozo de pagina que no le toca a nadie. Es lo mismo que hace la fila de abajo
+     con su space-between, y por eso ahora las dos filas se leen igual.
+     --
+     `justify-content` es lo que reparte: en una rejilla, si las pistas no suman el
+     ancho del contenedor, el espacio que sobra va donde el mande esto. */
+  grid-template-columns: auto auto;
+  justify-content: space-between;
   align-items: start;
   padding-top: clamp(2.4rem, 6vh, 4.5rem);
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
