@@ -216,12 +216,89 @@ async function leer(control) {
   return todos;
 }
 
+// ── El preaviso ───────────────────────────────────────────────────────────────
+//
+// Antes de leer nada se comprueba que la clave puede escribir. Es una petición de dos
+// segundos, y va PRIMERO a propósito: la versión anterior lo tenía al final, después
+// de cuatro minutos abriendo un Chromium y leyendo las dos páginas en seis idiomas.
+// Con la clave equivocada se llegaba al final para descubrirlo, con todo ese trabajo
+// echado.
+//
+// El orden importa porque leer las páginas es de lo que tarda. Comprobar antes es
+// barato; comprobar después es tarde.
+
+async function preaviso(cfg) {
+  const base = `https://${cfg.app}.algolia.net`;
+  const cabeceras = {
+    "X-Algolia-Application-Id": cfg.app,
+    "X-Algolia-API-Key": cfg.key
+  };
+
+  // Se reintenta. El DNS de esta maquina falla a ratos con el host de la aplicacion:
+  // el mismo nombre resuelve unas veces y otras da ENOTFOUND, y el de busqueda
+  // (-dsn) va bien casi siempre. Un fallo de nombre es justo lo que se arregla
+  // esperando un poco y pidiendo otra vez, y sin esto el indexador falla de forma
+  // intermitente sin motivo aparente.
+  let r = null, ultimo = null;
+  for (let intento = 1; intento <= 4; intento++) {
+    try {
+      r = await fetch(base + "/1/indexes", { headers: cabeceras });
+      break;
+    } catch (e) {
+      ultimo = e;
+      const codigo = e.cause ? (e.cause.code || e.cause.message) : e.message;
+      if (!/ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT/.test(String(codigo))) break;
+      if (intento < 4) {
+        console.log(`      el nombre del dominio no ha resuelto (intento ${intento}/4), reintento…`);
+        await new Promise((r2) => setTimeout(r2, 1500 * intento));
+      }
+    }
+  }
+  if (!r) {
+    const codigo = ultimo && ultimo.cause ? (ultimo.cause.code || ultimo.cause.message) : "desconocido";
+    throw new Error(
+      `No se pudo ni resolver ni llegar a ${base} (${codigo}).\n\n` +
+      "  Esto NO es un problema de la clave: es del dominio. Comprobado en esta maquina:\n" +
+      "  el host de busqueda (con -dsn) va bien, y este a ratos no resuelve.\n\n" +
+      "  Se puede probar con:\n" +
+      "    getent hosts " + cfg.app.toLowerCase() + ".algolia.net\n" +
+      "  Si no sale nada, es el DNS de la conexion, no Algolia."
+    );
+  }
+
+  if (r.status === 403) {
+    throw new Error(
+      "La clave no puede escribir en este índice.\n\n" +
+      "  Es la de SOLO BÚSQUEDA, que es la que va en el navegador. Para indexar hace\n" +
+      "  falta otra, con permiso de escritura, y esa va solo por esta variable de\n" +
+      "  entorno y nunca en el código.\n\n" +
+      "  Se crea en el panel: Settings -> API keys -> Add API Key, con el ACL que incluya\n" +
+      "  addObject, deleteObject y settings."
+    );
+  }
+  if (r.status === 404) {
+    throw new Error(
+      "El Application ID no existe en Algolia.\n\n" +
+      `  «${cfg.app}» no es una aplicación. Un ID son 10 caracteres en mayúsculas,\n` +
+      "  como RHYT8MZC3K. Si lo que tienes son 32 hexadecimales, es una clave."
+    );
+  }
+  if (!r.ok) {
+    throw new Error(`La clave no responde bien: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  }
+  const j = await r.json().catch(() => ({ items: [] }));
+  const lista = (j.items || []).map((i) => i.name);
+  console.log("  ok  la clave puede escribir" + (lista.length
+    ? `  ·  índices ahora mismo: ${lista.join(", ")}` : "  ·  la cuenta no tiene ningún índice todavía"));
+}
+
 // ── Subida ───────────────────────────────────────────────────────────────────
 
 async function subir(cfg, filas) {
   // El host de escritura y el de lectura son distintos a propósito: uno puede
   // escribir y el otro no. No se mezclan.
   const base = `https://${cfg.app}.algolia.net`;
+
   const cabeceras = {
     "content-type": "application/json",
     "x-algolia-application-id": cfg.app,
@@ -294,6 +371,12 @@ async function subir(cfg, filas) {
   const cfg = seco
     ? { app: "", key: "", idx: process.env.ALGOLIA_INDEX || "rhythmcrea" }
     : entorno();
+
+  if (!seco) {
+    console.log("  ── comprobando la clave ──");
+    await preaviso(cfg);
+    console.log("");
+  }
 
   const navegador = await abrirNavegador();
   const control = conectar(navegador.url);
