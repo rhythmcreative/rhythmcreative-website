@@ -29,10 +29,18 @@
     var t = new Date(String(fecha).replace(" ", "T"));
     if (isNaN(t)) return esc(fecha);
     var min = Math.floor((Date.now() - t.getTime()) / 60000);
-    if (min < 1) return "just now";
-    if (min < 60) return min + " min ago";
+    // El idioma se pregunta aqui y no en el diccionario porque la forma es distinta:
+    // el ingles pone la unidad delante y el español detrás ("12 h" contra "h 12"), y
+    // el español además quiere el "hace" delante. Con un diccionario de frases
+    // enteras esto no se podria hacer: la cifra cambia cada minuto.
+    var T = window.traducir || function (x) { return x; };
+    var es = T("just now") !== "just now";
+    if (min < 1) return T("just now");
+    if (min < 60) return es ? T("hace") + " " + min + " " + T("min") : min + " " + T("min ago");
     var h = Math.floor(min / 60);
-    return h < 24 ? h + " h ago" : Math.floor(h / 24) + " d ago";
+    if (h < 24) return es ? T("hace") + " " + h + " h" : h + " " + T("h ago");
+    var d = Math.floor(h / 24);
+    return es ? T("hace") + " " + d + " " + T("d") : d + " " + T("d ago");
   }
 
   // ── La temperatura. Ya no hay punto en la barra: el termometro vive en el
@@ -1830,10 +1838,18 @@
     if (!D) { el.textContent = ""; return; }
     // "in N projects" solo cuando hay mas de uno. Con uno solo sale
     // "1 projects", que es ingles mal dicho y se ve en la pagina.
-    el.textContent = "documents " + (D.version || "the repository") +
-      " · " + PLANO.length + " sections" +
-      (PROYECTOS.length > 1 ? " in " + PROYECTOS.length + " projects" : "") +
-      " · collected " + hace(D.recogido);
+    //
+    // Todo esto se compone de trozos traducidos, y no como una frase entera, porque
+    // lleva un numero dentro. La linea que sale es
+    //   "documents v0.24 · 13 sections · collected 12 h ago"
+    // y la hora cambia cada minuto, asi que como cadena entera jamas podria estar en
+    // un diccionario: habria que escribir una entrada por cada edad posible.
+    // Medido: asi se quedaba en ingles con el dictionary lleno.
+    var T = window.traducir || function (x) { return x; };
+    el.textContent = T("documents") + " " + (D.version || T("the repository")) +
+      " · " + PLANO.length + " " + T("sections") +
+      (PROYECTOS.length > 1 ? " " + T("in") + " " + PROYECTOS.length + " " + T("projects") : "") +
+      " · " + T("collected") + " " + hace(D.recogido);
   }
 
   // ── Arranque ───────────────────────────────────────────────────────────────

@@ -546,4 +546,26 @@ window.RHYTHM_I18N.es = {
   "Reproducir el clip": "Reproducir el clip",
   "Volumen": "Volumen",
   "(hover: none)": "(hover: none)",
+  // ══ Los trozos que se componen con numeros dentro ════════════════════════════
+  //
+  // Estas no se pueden traducir como frases enteras, porque llevan una cifra que
+  // cambia: "13 sections", "12 h ago". Como cadena entera jamas casarian con un
+  // diccionario, habria que escribir una entrada por cada edad y cada numero de
+  // capitulos. Se traducen los trozos y el codigo los junta.
+  //
+  // Y `hace()` tiene dos formas porque el ingles pone la unidad delante y el
+  // espanol detras: "12 h ago" contra "hace 12 h".
+  "The wallpaper daemon needs to know which one it is painting, and it reads that from the environment. If the variable is missing it falls back to wayland-0, finds nothing there, and paints zero screens without saying anything. It is the quietest failure in the whole setup.": "El demonio del fondo necesita saber cual esta pintando, y lo lee del entorno. Si falta la variable cae a wayland-0, no encuentra nada ahi y pinta cero pantallas sin decir nada. Es el fallo mas silencioso de toda la instalacion.",
+  "The wallpaper daemon needs to know which Wayland socket the compositor is on. If the variable is not set it falls back to <code>wayland-0</code>, finds nothing, and paints zero outputs \u2014 silently, and with a log line that says it worked. See <a href=\"#hyprland/doctor\">the doctor</a>.": "El demonio del fondo necesita saber en que socket de Wayland esta el compositor. Si la variable no esta puesta cae a <code>wayland-0</code>, no encuentra nada y pinta cero salidas \u2014 en silencio, y con una linea de registro que dice que ha funcionado. Mira <a href=\"#hyprland/doctor\">el medico</a>.",
+  "documents": "documentos",
+  "the repository": "el repositorio",
+  "sections": "secciones",
+  "in": "en",
+  "projects": "proyectos",
+  "collected": "recogido",
+  "hace": "hace",
+  "just now": "ahora mismo",
+  "min": "min",
+  "h ago": "h",
+  "d ago": "d",
 };
