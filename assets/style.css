@@ -395,19 +395,34 @@ html:not([data-tema]) .ic-sol  { opacity: 0; }
 .fondo  { background-image: url("fondo-oscuro.webp");
           /* El fondo-oscuro.webp ya viene graduado por el script. Este filtro era
              una segunda graduacion encima, y se aplicaba tambien en claro, donde
-             ya hacia falta menos todavia. En claro se anula. */
-          filter: brightness(0.82) contrast(1.02); }
+             ya hacia falta menos todavia. En claro se anula.
+             --
+             El blur(--borr) va aqui y no en un numero fijo porque depende de
+             cuantos pixeles de pantalla se pintan: en un monitor normal no hace
+             falta nada, y en un movil habia que estirar la foto 3,74x. Lo calcula
+             capa.js al medir la caja. Sin ese script la variable no existe y el
+             desenfoque es 0, que es como estaba antes. */
+          filter: brightness(0.82) contrast(1.02) blur(var(--borr, 0px)); }
 .angel  { background-image: url("angel-oscuro.webp");
           /* Sin luz alrededor: un drop-shadow hielo de 14 px salia como un filo
-             claro pegado a las alas, y no era la foto, era mio. */
-          filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)); }
+             claro pegado a las alas, y no era la foto, era mio.
+             --
+             El desenfoque va DESPUES del drop-shadow a proposito. Al reves, la
+             sombra de 22 px se difuminaria tambien y las alas perderian el relieve
+             contra el cielo; asi el relieve se queda y lo que se suaviza es la
+             foto, que es lo que se estaba viendo a cuadros. */
+          filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)) blur(var(--borr, 0px)); }
 
 /* En pantallas estrechas se baja el angel de 1100, no el de 2000. El mio
   Sin esto, un movil se baja 113 KB de una figura que ahi ocupa 430
    px de ancho. */
 @media (max-width: 900px) {
-  .angel { background-image: url("angel-oscuro-p.webp"); }
+  /* El fichero pequeno, y con el desenfoque que le corresponde a ESE fichero. Con
+     el del grande se quedaria corto: este se estira 3,74x en un movil y el otro
+     2,06x, y por eso tienen desenfoques distintos. */
+  .angel { background-image: url("angel-oscuro-p.webp"); filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.5)) blur(var(--borr-p, 0px)); }
   html.claro .angel { background-image: url("angel-claro-p.webp"); }
+  html.claro .angel { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18)) blur(var(--borr-p, 0px)); }
 }
 
 /* El velo lleva con screen. Sobre nada, screen no hace nada; y cualquier borde
@@ -448,7 +463,10 @@ html.claro .fondo    { background-image: url("fondo-claro.webp"); }
 html.claro .angel    { background-image: url("angel-claro.webp"); }
 html.claro .frente   { background-image: url("frente-claro.webp"); }
 html.claro .respaldo { background-image: url("fondo-claro.webp"); }
-html.claro .fondo { filter: none; }
+/* En claro el fondo se queda con el desenfoque y sin la graduacion: antes era
+   filter: none entero, y con eso el movil se veía a cuadros en los dos temas. */
+html.claro .fondo { filter: blur(var(--borr, 0px)); }
+html.claro .angel { filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18)) blur(var(--borr, 0px)); }
 html.claro .respaldo { filter: blur(26px) contrast(0.94); }
 
 /* Y la pagina entera se da la vuelta. Si solo las imagenes cambiaran, el texto
@@ -1936,7 +1954,8 @@ html.entrando #hyprland.hyprland-visto {
    solo no se distingue en el tema claro, y el indice es lo que dice donde estas
    cuando el texto es largo. */
 .indice li a.activo { color: var(--hielo); border-left-color: var(--hielo); }
-.indice li a span { margin-left: auto; font-size: 0.66rem; color: rgba(107, 130, 140, 0.6); }
+/* Los <span> del indice se fueron con lo de "10 groups". No queda ninguno: el
+   rotulo de cada capitulo es lo unico que hay dentro del enlace. */
 .indice-sello { margin-top: 0.9rem; font-size: 0.62rem; color: rgba(107, 130, 140, 0.6); }
 
 /* ── El texto ───────────────────────────────────────────────────────────────── */
@@ -2051,6 +2070,8 @@ html.claro .manual-sello,
 html.claro .buscador-conteo { color: rgba(30, 32, 34, 0.55); }
 html.claro .indice li a { color: var(--gris); }
 html.claro .indice li a.activo { color: var(--hielo); border-left-color: var(--hielo); }
+/* Los <span> del indice se fueron con lo de "10 groups". No queda ninguno: el
+   rotulo de cada capitulo es lo unico que hay dentro del enlace. */
 html.claro .buscador input { color: var(--hielo); }
 html.claro .seccion-manual p,
 html.claro .seccion-manual .prosa li,
@@ -2090,7 +2111,6 @@ html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
                  border-bottom: 2px solid transparent;
                  padding: 0.2rem 0.5rem; border-radius: var(--r); }
   .indice li a.activo { border-bottom-color: var(--hielo); border-left-color: transparent; }
-  .indice li a span { margin-left: 0.3rem; }
   .indice-sello { margin-top: 0.5rem; }
   .seccion-manual h2 { font-size: 0.86rem; }
   .bandera, .fila, .fila-arbol, .componentes { grid-template-columns: 1fr; }

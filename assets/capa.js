@@ -151,6 +151,45 @@
       // difuminado tiene que dar la medida de la franja que tapa.
       var hueco = Math.min(180, Math.max(0, my));
       caja.style.setProperty("--fade", hueco.toFixed(1) + "px");
+
+      // ── CUANTO DESENFOCAR, QUE ES LO QUE HACIA FALTA ──────────────────────
+      //
+      // La foto se estira SIEMPRE a la caja, y la caja se mide en pixeles CSS.
+      // Pero el navegador no pinta pixeles CSS: pinta pixeles de la pantalla, y en
+      // un telefono o en un monitor de alta resolucion son dos o tres por cada uno.
+      // Medido con las medidas de ahora:
+      //
+      //   ventana  caja CSS  pixeles que se pintan  foto   estiramiento
+      //      1440    1425        4275 (DPR 3)      2000      2,14x
+      //      1024    1024        3072 (DPR 3)      2000      1,54x
+      //       768     768        2304 (DPR 3)      1100      2,09x
+      //       390    1371        4113 (DPR 3)      1100      3,74x
+      //
+      // Estirar una foto 2,14x o 3,74x es lo que hacia que se viera a cuadros: no
+      // es que la foto fuera pequena, es que se le pedian mas pixeles de los que
+      // tiene. En un movil el angel va 3,74x estirado, y ahi es donde se nota mas.
+      //
+      // El desenfoque se mide en la misma unidad que el estiramiento: medio pixel
+      // de la foto por cada pixel al que se estira. Con eso los cuadros se
+      // difuminan justo y la imagen sigue leyendose; con mas se perderia el detalle
+      // de las plumas, que es lo que hace que se vea bien.
+      //
+      // Se escribe en la caja, no en el <html>, porque depende de como ha quedado
+      // esta medida en concreto. Y si el script no llega a correr, la variable no
+      // existe y el CSS usa 0px: la foto se ve nitida, que es lo de antes.
+      var dpr = Math.min(window.devicePixelRatio || 1, 3);
+      var estirar = function(anchoFoto) {
+        return (w * dpr) / anchoFoto;
+      };
+      // El angel tiene dos ficheros: el de 2000 px, y el de 1100 px que se carga
+      // por debajo de 900 px de ventana. Cada uno con su propio estiramiento, que
+      // no son el mismo: en un movil el de 1100 va 3,74x y el fondo 2,06x.
+      var anchoP = TAM.p || 1100;
+      var b = function(e) {
+        return (Math.max(0, e - 1) * 0.5).toFixed(2) + "px";
+      };
+      caja.style.setProperty("--borr", b(estirar(FOTO_W)));
+      caja.style.setProperty("--borr-p", b(estirar(anchoP)));
     }
     void capas;
 
