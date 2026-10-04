@@ -52,14 +52,32 @@
 
   // ── Lo único que hay que rellenar ────────────────────────────────────────────
   //
-  // El App ID NO es un secreto: sale en el HTML, se puede ver en el código, es
-  // público por diseño. La clave de abajo es la de SOLO BÚSQUEDA. No es la de
-  // escritura: esa no sale nunca de aquí y vive solo en la terminal del indexador.
+  // Son DOS cosas, y hacen falta las dos. Algolia las pide en cada petición, y el
+  // host de búsqueda se construye con la primera:
   //
-  // Con estas dos líneas vacías el buscador no se monta y la web va igual que antes.
-  var APP_ID = "";        // p. ej. "ABCDEF1234"
+  //     https://<APP_ID>-dsn.algolia.net/1/indexes/*/queries
+  //     X-Algolia-Application-Id: <APP_ID>
+  //     X-Algolia-API-Key: <CLAVE_BUSQUEDA>
+  //
+  // Con la clave sola no hay host al que ir, y el ID no se puede deducir de la clave:
+  // es una derivación en un solo sentido. Si falta cualquiera de las dos, el buscador
+  // no se monta y la web va exactamente igual que antes.
+  //
+  // ── POR QUÉ ESTA CLAVE ESTÁ EN EL CÓDIGO, SIN OCULTAR ───────────────────────
+  //
+  // Porque es una clave de SOLO BÚSQUEDA, y esa clase de clave está hecha para ir en
+  // una página pública: no puede escribir nada, no puede leer nada fuera del índice
+  // al que está restringida, y lo peor que puede hacer un atacante con ella es ver lo
+  // que ya está en tu web. Se puede ver en el código y no pasa nada. Así funcionan
+  // los buscadores de la mitad de internet.
+  //
+  // Lo que NO puede acabar aquí nunca es la clave de escritura, que sí puede vaciar
+  // el índice y leer tus facturas. Esa vive solo en la terminal del indexador:
+  // tools/algolia-indexar.mjs se niega a arrancar si no llega por variable de
+  // entorno.
+  var APP_ID = "";        // Settings -> API keys -> Application ID. P. ej. "ABCD1234"
   var INDICE = "rhythmcrea";
-  var CLAVE_BUSQUEDA = ""; // search-only, con el índice restringido a INDICE
+  var CLAVE_BUSQUEDA = "0115d13bca2435f164500dc3c0bcf553"; // search-only, restringida a INDICE
   var HABILITADO = APP_ID !== "" && CLAVE_BUSQUEDA !== "";
 
   var URL_API = "https://" + APP_ID + "-dsn.algolia.net/1/indexes/*/queries";
@@ -451,6 +469,16 @@
       b.setAttribute("aria-label", T("Search this site"));
     });
     return b;
+  }
+
+  // ── Una cosa a medias ────────────────────────────────────────────────────────
+  //
+  // Si hay clave pero no ID, o al revés, el buscador no se monta y no se ve por qué:
+  // la web funciona, y el botón simplemente no está. Se avisa en la consola, que es
+  // donde se mira cuando algo no aparece.
+  if (!HABILITADO && (APP_ID || CLAVE_BUSQUEDA) && window.console && console.warn) {
+    console.warn("buscador: falta " + (!APP_ID ? "el Application ID" : "la clave") +
+      ". Sin las dos cosas no se monta. Mirar assets/buscador.js, arriba del todo.");
   }
 
   // ── Arranque ────────────────────────────────────────────────────────────────
