@@ -2043,6 +2043,22 @@
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     } catch (e) { /* sin matchMedia: se anima */ }
 
+    // Y tampoco en una recarga. La entrada es para la primera vez que se ve la
+    // pagina; recargar arriba y verla entrar otra vez no es una bienvenida, es
+    // un retraso de medio segundo en una pagina que ya se conoce. Omarchy carga
+    // directa, sin coreografia, y la recarga tiene que sentirse igual: la pagina
+    // ya puesta, sin pasar por el estado invisible.
+    //
+    // Se mira el tipo de navegacion, con el API viejo de respaldo. Todo dentro de
+    // un try: si no se puede saber, se anima, que es lo de antes.
+    try {
+      var nav = (performance.getEntriesByType &&
+        performance.getEntriesByType("navigation")[0]) || null;
+      var tipo = nav ? nav.type : ((performance.navigation &&
+        performance.navigation.type === 1) ? "reload" : "");
+      if (tipo === "reload") return;
+    } catch (e) { /* sin performance: se anima */ }
+
     document.documentElement.classList.add("entrando");
 
     // La seccion de hyprland entra al llegar, no al cargar. Sin observer se marca

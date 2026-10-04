@@ -45,7 +45,7 @@
   Lo que sale por esa puerta no es la pagina, es lo que escribe quien busca, y solo
   si busca. assets/buscador.js lo tiene escrito en su cabecera, sin rodeos.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -159,6 +159,27 @@
       a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
       document.head.appendChild(a);
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
+    /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
+       no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
+       red lenta se ve primero la pagina en ingles y luego el cambiazo. Creandolo
+       aqui, que va antes de la hoja, baja en paralelo con el CSS y cuando i18n.js
+       lo pide ya esta en cache.
+
+       Solo si no es ingles: en ingles no hay fichero que traer, la pagina ya esta
+       escrita en ingles. Y el valor se limpia con la misma expresion que usa
+       i18n.js, para que un parametro raro no acabe en un href. La clave tiene que
+       coincidir con la de i18n.js; si se cambia una, hay que cambiar las dos. */
+    try {
+      var mu = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search || "");
+      var ml = mu ? mu[1] : null;
+      if (!ml) { try { ml = localStorage.getItem("rhythm-crea-idioma"); } catch (e) { /* sin storage */ } }
+      if (ml && ml !== "en" && /^[a-z-]{2,5}$/.test(ml)) {
+        var l = document.createElement("link");
+        l.rel = "preload"; l.as = "script";
+        l.href = "data/lang-" + ml + ".js";
+        document.head.appendChild(l);
+      }
+    } catch (e) { /* sin DOM: el diccionario llegara cuando lo pida i18n.js */ }
   } catch (e) {
     /* Si ha petado algo de lo de arriba —que no deberia, porque cada paso va
        protegido por su propio try— el <html> se queda sin tema y la pagina sale
