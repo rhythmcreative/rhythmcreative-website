@@ -1,0 +1,238 @@
+/* ────────────────────────────────────────────────────────────────────────────
+   El buscador
+   ────────────────────────────────────────────────────────────────────────────
+   Son estilos de un diálogo modal, y hay tres cosas que aquí importan más que
+   que quede bonito:
+
+   1. Es un diálogo. Por eso lleva su propio fondo y su propia sombra, y no
+      dependen de lo que haya detrás, que puede ser la portada clara o el manual
+      oscuro.
+
+   2. Se abre con el teclado. Por eso el elemento que se mueve con las flechas
+      tiene un borde aparte, y no solo un cambio de color: si alguien no distingue
+      el azul del gris, el borde sigue estando.
+
+   3. Va en el pie, junto al idioma. En móvil crece a 52 px, como el resto de
+      controles con el dedo — la misma regla que el resto del sitio, por el mismo
+      motivo: en un móvil de 390 px, 26 px es medio dedo.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.buscador-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  height: 26px;
+  padding: 0 0.55em;
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--ceniza);
+  font: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.buscador-boton:hover { color: var(--hielo); border-color: var(--linea-alta); }
+.buscador-boton:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
+
+/* La lupa, dibujada con dos bordes en vez de con una fuente de iconos: un SVG o
+   un glifo son un archivo más o una dependencia, y esto son cuatro líneas. */
+.buscador-boton span {
+  width: 9px;
+  height: 9px;
+  border: 1.4px solid currentColor;
+  border-radius: 50%;
+  position: relative;
+  flex: none;
+}
+
+.buscador-boton span::after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  width: 4px;
+  height: 1.4px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+/* ── El diálogo ─────────────────────────────────────────────────────────── */
+
+.buscador-caja {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(1rem, 8vh, 6rem) 1rem 1rem;
+  background: color-mix(in srgb, var(--suelo) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: buscador-entra 0.16s ease-out;
+}
+
+.buscador-caja[hidden] { display: none; }
+
+@keyframes buscador-entra {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* La caja en sí. El ancho se limita para que una línea de resultado no ocupe
+   toda una pantalla de 27 pulgadas. */
+.buscador-caja > * { width: min(46rem, 100%); }
+
+.buscador-cabecera,
+.buscador-lista,
+.buscador-estado {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea-alta);
+}
+
+/* La cabecera se solapa con la lista: comparten borde y no hay una raya de 1px
+   entre medias, que se lee como una caja metida dentro de otra caja. */
+.buscador-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--r) var(--r) 0 0;
+}
+
+.buscador-campo {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--hielo);
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+
+.buscador-campo::placeholder { color: var(--gris); }
+
+.buscador-cerrar {
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ceniza);
+  font: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.2em 0.45em;
+  cursor: pointer;
+}
+
+.buscador-cerrar:hover { color: var(--hielo); border-color: var(--linea-alta); }
+
+.buscador-estado {
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  border-top: 0;
+  border-bottom: 0;
+  color: var(--gris);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.buscador-estado:empty { display: none; }
+
+.buscador-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(60vh, 30rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 0 0 var(--r) var(--r);
+}
+
+/* ── Los resultados ─────────────────────────────────────────────────────── */
+
+.buscador-resultado {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--linea);
+  cursor: pointer;
+}
+
+.buscador-resultado:first-child { border-top: 0; }
+.buscador-resultado:hover { background: var(--niebla); }
+
+/* El elemento que está bajo el cursor del teclado. El borde, no solo el fondo:
+   quien no nota el cambio de color sigue viendo dónde está. */
+.buscador-resultado.resaltado {
+  background: var(--niebla);
+  box-shadow: inset 2px 0 0 var(--azul-3);
+}
+
+.buscador-resultado > b {
+  color: var(--hielo);
+  font-weight: 500;
+  font-size: 0.86rem;
+}
+
+.buscador-resultado > b b { color: var(--azul-1); font-weight: 600; }
+
+.buscador-trozo {
+  color: var(--ceniza);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.buscador-trozo b { color: var(--azul-1); font-weight: 500; }
+
+.buscador-resultado > em {
+  color: var(--gris);
+  font-size: 0.62rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.buscador-pista {
+  padding: 0.9rem;
+  color: var(--gris);
+  font-size: 0.76rem;
+}
+
+/* El apartado al que se salta se marca un momento, para que en un manual largo
+   se vea a dónde te ha llevado el buscador. Sin esto el salto parece no haber
+   hecho nada, que es la queja de siempre de los enlaces internos. */
+.destacado {
+  animation: destacado 1.4s ease-out;
+  border-radius: var(--r);
+}
+
+@keyframes destacado {
+  from { background: color-mix(in srgb, var(--azul-3) 22%, transparent); }
+  to   { background: transparent; }
+}
+
+/* ── En el dedo ─────────────────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .buscador-boton {
+    height: 52px;
+    padding: 0 1rem;
+    font-size: 0.78rem;
+  }
+  .buscador-boton span { width: 13px; height: 13px; border-width: 2px; }
+  .buscador-caja { padding-top: 0.5rem; align-items: stretch; }
+  .buscador-resultado { padding: 0.85rem 0.9rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buscador-caja { animation: none; }
+  .destacado { animation: none; outline: 2px solid var(--azul-3); outline-offset: 4px; }
+}
+
+/* ── El claro ───────────────────────────────────────────────────────────── */
+
+html.claro .buscador-caja { background: color-mix(in srgb, var(--suelo) 66%, transparent); }

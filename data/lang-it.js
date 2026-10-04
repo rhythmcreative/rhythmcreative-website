@@ -18,6 +18,15 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.it = {
+  "Search this site": "Cerca in questa pagina",
+  "Close": "Chiudi",
+  "Searching…": "Sto cercando…",
+  "Nothing found.": "Non si trova niente.",
+  "Try fewer words.": "Prova con meno parole.",
+  "1 result": "1 risultato",
+  "%d results": "%d risultati",
+  "Search the manual, the shortcuts and the installer.": "Cerca nel manuale, nelle scorciatoie e nell'installatore.",
+  "from this page, not from the server": "di questa pagina, non dal server",
   "Skip to content": "Vai al contenuto",
   "Switch theme": "Cambia tema",
   "Contents": "Indice",

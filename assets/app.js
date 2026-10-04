@@ -2178,6 +2178,14 @@
   var arranque = function () {
     inicio();
     window.__RHYTHM_LISTO = true;
+    // Ademas de la bandera, un aviso. La bandera la puede mirar quien quiera en
+    // cualquier momento; el aviso es para el que necesita ENTER EN ESTE MOMENTO, y
+    // solo funciona si se dispara de verdad.
+    //
+    // Existia la bandera y ningun aviso, y el buscador —que se montaba al oir ese
+    // aviso que nunca llegaba— se quedaba sin botón. El diálogo sí abría, porque
+    // `abrir()` lo construye si no existe, y por eso el fallo parecía parcial.
+    if (window.dispatchEvent) window.dispatchEvent(new Event("listo"));
     if (window.aplicarIdioma) window.aplicarIdioma();
   };
   // Cuando el traductor acaba, hay que rehacer lo que se compone con datos dentro.

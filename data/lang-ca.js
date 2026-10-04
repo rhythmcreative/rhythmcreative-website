@@ -17,6 +17,15 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.ca = {
+  "Search this site": "Cerca en aquesta pàgina",
+  "Close": "Tanca",
+  "Searching…": "Cercant…",
+  "Nothing found.": "No es troba res.",
+  "Try fewer words.": "Prova amb menys paraules.",
+  "1 result": "1 resultat",
+  "%d results": "%d resultats",
+  "Search the manual, the shortcuts and the installer.": "Cerca al manual, a les dreceres i a l'instal·lador.",
+  "from this page, not from the server": "d'aquesta pàgina, no del servidor",
   "Skip to content": "V\u00e9s al contingut",
   "Switch theme": "Canvia el tema",
   "Contents": "\u00cdndex",

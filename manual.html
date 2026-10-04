@@ -7,7 +7,7 @@
      script es la misma porque el script del tema es el mismo fichero con el
      mismo texto: si algun dia divergieran, hay que volver a mirar este numero.
      El detalle de cada palabra esta escrito alli. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://*.algolia.net https://*.algolianet.com; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -88,6 +88,7 @@
 
 <link rel="preload" as="font" href="assets/fuentes/jetbrains-var.woff2" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/buscador.css">
 <!-- El mismo icono que la principal, y por el mismo motivo: va en un data URI
      para no pedir una peticion mas y que se vea en la pestana antes de que la
      pagina haya descargado nada. -->
@@ -223,5 +224,7 @@
 <script src="data/imagenes.js"></script>
 <script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
+<script src="data/buscador-local.js"></script>
+<script src="assets/buscador.js"></script>
 </body>
 </html>

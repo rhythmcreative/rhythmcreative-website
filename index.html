@@ -9,10 +9,14 @@
      analytics, ni un script de un tercero. Todo lo que necesita esta aqui. Por
      eso se puede cerrar del todo, que es lo que hace esta linea.
 
-     Lo que mas hace es lo ultimo: connect-src 'none'. Aunque alguien dejara un
-     error manana y lograra meter codigo en la pagina, no podria llamar a
-     ningun sitio: ni a mandarse tus datos, ni a una pagina de anuncios. No
-     puede hablar con nadie porque la pagina no habla.
+     connect-src es lo que mas hace, y antes era 'none': la pagina no podia llamar a
+     nadie. Aunque alguien dejara un error manana y lograra meter codigo en ella, no
+     podria mandarse tus datos ni hablar con una pagina de anuncios.
+
+     AHORA NO ES 'none'. El buscador de Algolia necesita salir, asi que se ha abierto
+     solo a los dos dominios de Algolia y no a '*'. Sigue sin poder hablar con nadie mas,
+     y el unico dato que sale es lo que escribe quien esta buscando, y solo si busca.
+     Lo demas —lo que se descarga, de donde— sigue siendo cero y sigue siendo de aqui.
 
      El script de arriba es el unico script en linea, y va con su huella, que es
      una suma del texto exacto. Si alguien anade otro script en linea, el
@@ -27,7 +31,20 @@
      frame-ancestors no esta porque en un <meta> el navegador lo ignora: solo
      cuenta en una cabecera HTTP, que en GitHub Pages no se puede poner. Lo de
      que nadie meta esta pagina en un iframe tiene que ir en la cabecera. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<!--
+  connect-src estaba en 'none', que hacia que esta pagina no pudiera llamar a nadie:
+  ni a un servidor de analiticas ni a una fuente externa ni a un buscador. Con el
+  buscador de Algolia se abre solo a los dos dominios de Algolia, y no a '*'.
+
+  Se puede estrechar a un solo host en cuanto se sepa el Application ID:
+    connect-src https://TU-ID-dsn.algolia.net;
+  El comodin esta porque el prefijo del host es el Application ID, que va en el
+  HTML, y asi el cambio no depende de que alguien se acuerde de tocar la CSP.
+
+  Lo que sale por esa puerta no es la pagina, es lo que escribe quien busca, y solo
+  si busca. assets/buscador.js lo tiene escrito en su cabecera, sin rodeos.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://*.algolia.net https://*.algolianet.com; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -165,6 +182,7 @@
        la pagina. Es el segundo. -->
   <link rel="preload" as="image" href="assets/hyprland-poster.webp">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/buscador.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
      que la pagina ya comparte con la barra: un anillo de oxido sobre el suelo
      oscuro. Antes era un punto suelto, que era un placeholder de los primeros
@@ -342,5 +360,7 @@
 <script src="assets/capa.js"></script>
 <script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
+<script src="data/buscador-local.js"></script>
+<script src="assets/buscador.js"></script>
 </body>
 </html>

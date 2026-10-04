@@ -32,6 +32,15 @@
 
 window.RHYTHM_I18N = window.RHYTHM_I18N || {};
 window.RHYTHM_I18N.es = {
+  "Search this site": "Buscar en esta página",
+  "Close": "Cerrar",
+  "Searching…": "Buscando…",
+  "Nothing found.": "No se encuentra nada.",
+  "Try fewer words.": "Prueba con menos palabras.",
+  "1 result": "1 resultado",
+  "%d results": "%d resultados",
+  "Search the manual, the shortcuts and the installer.": "Busca en el manual, en los atajos y en el instalador.",
+  "from this page, not from the server": "de esta página, no del servidor",
 
   // ── Lo que hay en el HTML de las dos paginas ───────────────────────────────
   "Skip to content": "Ir al contenido",
