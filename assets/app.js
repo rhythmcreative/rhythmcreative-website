@@ -960,13 +960,29 @@
 
     var b = $("#interruptor");
     if (b) {
-      b.setAttribute("aria-label", "Theme: " + ETIQUETAS[modo] + ". Change it.");
+      // Los dos rotulos de este boton pasan por el traductor, y no por una razon
+      // estetica: ESTA FUNCION SE REPITE CADA SEGUNDO —el reloj llama a tic() cada
+      // 1000 ms—. Si escribiera el ingles cada vez, borraria lo que el traductor
+      // hizo y este boton se quedaria en ingles con la pagina entera ya
+      // traducida. Medido: era el unico elemento que se quedaba fuera.
+      //
+      // Y no se traduce el rotulo ENTERO, porque se compone de tres trozos y hay
+      // nueve combinaciones: tres modos por los tres que puede ser el siguiente. Si
+      // el diccionario tuviera las nueve, cualquier cambio en un rotulo obligaria a
+      // acordarse de las otras ocho.
+      //
+      // Se traducen los trozos y luego se juntan. El texto va en `setAttribute`, no
+      // en `innerHTML`, asi que aqui no valen las entidades: van los caracteres.
+      var T = window.traducir || function (x) { return x; };
+      b.setAttribute("aria-label",
+        T("Theme") + ": " + T(ETIQUETAS[modo]) + ". " + T("Change it."));
       b.setAttribute("aria-pressed", String(modo === "claro"));
       // El title dice cual es el siguiente, no cual es el actual: el icono ya
       // enseña el actual, y lo que hace falta saber antes de pinchar es a donde
       // vas a ir.
       var sig = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
-      b.title = "Theme: " + ETIQUETAS[modo] + " \u2014 tap for " + ETIQUETAS[sig].toLowerCase();
+      b.title = T("Theme") + ": " + T(ETIQUETAS[modo]) + " \u2014 " +
+        T("tap for") + " " + T(ETIQUETAS[sig]).toLowerCase();
     }
 
     // theme-color es lo que pinta la barra del navegador en los moviles. Estaba
@@ -2134,7 +2150,17 @@
     });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inicio);
-  else inicio();
+  // La pagina ya esta pintada, y ahora i18n.js puede traducir lo que haya
+  // encontrado. Sin este aviso el traductor solo veria el HTML de origen —una
+  // decena de cadenas— y se le escaparia todo el manual, que lo pinta este mismo
+  // script. Va al final de `inicio` y no aqui, porque aqui todavia no se ha pintado
+  // nada.
+  var arranque = function () {
+    inicio();
+    window.__RHYTHM_LISTO = true;
+    if (window.aplicarIdioma) window.aplicarIdioma();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arranque);
+  else arranque();
 
 })();

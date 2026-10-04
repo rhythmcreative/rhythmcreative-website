@@ -1113,6 +1113,39 @@ html.claro .b-gh .marca { color: #000000; }
 .marca-menu p { margin-top: 0.6rem; font-size: 0.74rem; color: var(--gris);
                 max-width: 24ch; }
 
+/* ── El selector de idioma ────────────────────────────────────────────────────
+   Va en la linea de creditos del pie, con un <select>. Es a proposito que sea un
+   select y no una lista de enlaces: con cuarenta idiomas, cuarenta enlaces son un
+   bloque enorme en el pie, y un select ya funciona con el dedo, con el teclado y con
+   el lector de pantalla sin escribir cuatro manejadores.
+
+   El ancho es el de su contenido, no el suyo: los nombres de los idiomas van de
+   "Deutsch" a "Português" y de "Bahasa Indonesia" a "Ελληνικά", y con un ancho fijo
+   los mas largos se cortan o los cortos quedan con un hueco al lado. */
+.idiomas { display: inline-block; vertical-align: baseline; }
+.idioma-sel {
+  font: inherit; font-size: 0.7rem;
+  color: var(--gris);
+  background: transparent;
+  border: 1px solid var(--linea); border-radius: var(--r);
+  padding: 0.1rem 0.3rem;
+  width: auto; max-width: 100%;
+  cursor: pointer;
+}
+.idioma-sel:hover { color: var(--hielo); border-color: var(--linea-alta); }
+.idioma-sel:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
+/* El triangulo del navegador no pinta bien sobre fondo transparente. */
+.idioma-sel option { background: var(--suelo); color: var(--hielo); }
+html.claro .idioma-sel option { background: #fff; color: rgba(30, 32, 34, 0.9); }
+.idiomas-sep { margin: 0 0.45rem; opacity: 0.5; }
+/* En pantallas tactiles el selector se hace grande, como los botones del reproductor.
+   Medido: con el tamaño normal mide 26 px de alto, y con el dedo por delante eso es
+   poco. Con `pointer: coarse` —que es lo que contestan los Lapices y los moviles— el
+   mismo tratamiento: solo crece donde no hay raton. */
+@media (pointer: coarse) {
+  .idioma-sel { font-size: 0.8rem; padding: 0.45rem 0.5rem; min-height: 2.75rem; }
+}
+
 /* Los creditos: donde sale la pagina y que usa para no pedir nada. Con su propio
    bloque y no pegado al lema, porque el lema es el del proyecto y esto es lo de
    la pagina. Los enlaces heredan el color de los de las columnas para que se lean
