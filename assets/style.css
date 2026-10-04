@@ -1210,6 +1210,9 @@ html.claro .b-gh .marca { color: #000000; }
 .clip-btn {
   width: 1.9rem; height: 1.9rem; flex: none; padding: 0;
   display: grid; place-items: center;
+  /* Sin esto, el anillo de aviso que se dibuja con ::after se posiciona respecto a
+     el primer ancestro posicionado —la barra— y se sale del boton. */
+  position: relative;
   border: 0; border-radius: 50%;
   background: transparent; color: var(--gris);
   cursor: pointer;
@@ -1260,6 +1263,37 @@ html.claro .b-gh .marca { color: #000000; }
   transition: transform 0.15s;
 }
 .clip-pista:hover .clip-mando, .clip-pista:focus-visible .clip-mando { transform: translateY(-50%) scale(1); }
+
+/* ── EN PANTALLAS TACTILES, LO QUE SE PUELSA SE HACE GRANDE ─────────────────────
+   --
+   Medido: el boton de play es de 1,9 rem —30 px— y el mando de arrastrar de 0,6
+   rem —9,6 px—, y NO habia ninguna regla que los hiciera mas grandes en movil. En
+   un movil, con el dedo, 30 px es una referencia que se fallafacilmente y 9,6 px es
+   imposible: el dedo tapa mas que el mando. Apple pide44x44y Android 48x48.
+   --
+   Aqui se agrandan SOLO donde no hay raton (`pointer: coarse`), con lo cual en
+   escritorio no se toca nada y la barra sigue siendo la fina de siempre.
+   --
+   La rayita de la pista —el ::before— no se toca: es el dibujo, y esa sigue
+   siendo de 2 px. Lo que crece es el alto de la pista, que es lo que se pulsa. */
+@media (pointer: coarse) {
+  .clip-btn { width: 2.75rem; height: 2.75rem; }        /* 44 px */
+  .clip-btn svg { width: 1.45rem; height: 1.45rem; }
+  .clip-pista { height: 1.9rem; }                       /* 30 px pulsables */
+  .clip-mando { width: 1.1rem; height: 1.1rem; margin-left: -0.55rem; }
+}
+
+/* Cuando el navegador no deja reproducir, el boton se queda marcado. Sin esto, con
+   opacity 0 por defecto y sin ningun color de fallo, la unica pista era un atributo
+   `title` que en un movil no se ve nunca. */
+.clip-barra.clip-fallo .clip-btn {
+  color: #d98a6a; border-color: rgba(217, 138, 106, 0.55);
+  background: rgba(217, 138, 106, 0.10);
+}
+.clip-barra.clip-fallo .clip-btn::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 1px solid rgba(217, 138, 106, 0.28);
+}
 .clip-pista:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 3px; border-radius: 2px; }
 
 .clip-tiempo {
