@@ -2416,51 +2416,88 @@ html.claro .salida .linea-ok { color: var(--hielo); }
    para abrirlo seria un boton que no hace nada. */
 .contenidos {
   display: none;
-  /* Cuadrado y sin texto. Las tres rayas son tres gradientes de 1.6 px en
-     currentColor, no un svg: asi el boton hereda el color del texto de la barra
-     y no hay un segundo dibujo que mantener cuando cambia el tema. */
+  /* Cuadrado y sin texto.
+     --
+     LAS TRES RAYAS Y COMO SE CONVIERTEN EN X, QUE ESTO ES LO QUE NO SE VEIA
+     --
+     Antes las tres rayas eran tres gradientes en el `background` del boton, y al
+     abrir se hacia `background: none` y aparecian dos diagonales nuevas por los
+     pseudoelementos. Medido: eso NO anima. La transicion que habia era de
+     `background-color`, y un `background-image` con gradientes no se interpola con
+     el color de fondo: las tres rayas se quitaban de golpe y luego la X se
+     aparecia con un fundido de 0,16 s. En un movil se leia como un parpadeo.
+     --
+     Aqui cada raya se dibuja en un sitio que SI se puede animar:
+     --
+       la de arriba   el `background` del boton, que se mueve con background-position
+       la del medio    ::after, girando sobre el centro del boton
+       la de abajo     ::before, que sube al centro y gira
+     --
+     Las dos de abajo rotan sobre el CENTRO del boton y no sobre su propio centro,
+     y para eso se colocan con `top` al 50 % y un `translate(-50%, -50%)` de base. Si
+     rotaran sobre si mismas se doblarian en el sitio y no saldria una X sino dos
+     rayas torcidas.
+     --
+     La de arriba se va deslizando el `background-position` hacia arriba, fuera de
+     la caja: como el fondo se dibuja recortado a la caja del boton, al salirse
+     desaparece, y eso si se puede transicionar. */
   width: 44px; height: 44px; min-width: 44px;
   padding: 0; margin: 0;
   position: relative;
   color: var(--enlace-barra);
-  background:
-    linear-gradient(currentColor 0 0) no-repeat center 34% / 17px 1.6px,
-    linear-gradient(currentColor 0 0) no-repeat center 50% / 17px 1.6px,
-    linear-gradient(currentColor 0 0) no-repeat center 66% / 17px 1.6px;
+  background-image: linear-gradient(currentColor 0 0);
+  background-repeat: no-repeat;
+  background-position: center 34%;
+  background-size: 17px 1.6px;
   border: 0; border-left: 1px solid var(--linea);
   border-radius: var(--r); cursor: pointer;
-  transition: color 0.2s, background-color 0.2s;
+  /* El background-position va en la lista. Sin el, la raya de arriba se teletransporta
+     y el efecto se pierde entero. */
+  transition: color 0.2s, background-color 0.2s, background-position 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.contenidos:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
+.contenidos:hover { color: var(--hielo); background-color: rgba(153, 186, 201, 0.09); }
 .contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
-html.claro .contenidos:hover { background: rgba(0, 0, 0, 0.06); }
-.contenidos[aria-expanded="true"] { color: var(--azul-4); }
-/* Abierto, las tres rayas se hacen una X.
-   --
-   Los tres gradientes se quitan con background:none y las dos diagonales entran
-   por los pseudoelementos, giradas 45 y -45 grados desde el centro. Es el patron
-   clasico y se ve aqui que compensa: la barra solo tiene 44 px de alto, y en
-   lugar de animar el giro —que en 44 px da un movimiento de menos de un
-   pixel— las rayas se van y la X aparece. Se lee mejor y no hay transicion que
-   un telefono viejo tenga que respectar. */
+html.claro .contenidos:hover { background-color: rgba(0, 0, 0, 0.06); }
+
 .contenidos::before,
 .contenidos::after {
   content: ""; position: absolute;
-  left: 50%; top: 50%;
+  left: 50%;
   width: 17px; height: 1.6px;
   background: currentColor;
-  opacity: 0;
-  transition: opacity 0.16s;
+  /* translate(-50%, -50%) es lo que hace que el `left: 50%` acabe siendo el CENTRO
+     del boton y no su borde. */
+  transform: translate(-50%, -50%);
+  /* `top` tambien se anima, y no por adorno: sin moverlo, la raya de abajo gira
+     sobre SU centro y queda a 7 px de la del medio, y las dos diagonales no se
+     cruzan en el mismo punto. Medido: con el giro solo, los centros estaban a
+     29,03 px y 22 px, y la X salia descuadrada. Con `top` animandose al 50 % las
+     dos comparten el centro del boton y si se cruzan. */
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+              top 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.contenidos::before { transform: translate(-50%, -50%) rotate(45deg); }
-.contenidos::after { transform: translate(-50%, -50%) rotate(-45deg); }
-.contenidos[aria-expanded="true"] { background: none; }
-.contenidos[aria-expanded="true"]::before,
-.contenidos[aria-expanded="true"]::after { opacity: 1; }
+/* Cerrado: la del medio al 50 % y la de abajo al 66 %, las dos en linea. */
+.contenidos::before { top: 66%; }
+.contenidos::after  { top: 50%; }
+
+/* Abierto: la de abajo sube al centro y gira, la del medio gira en el sitio, y la
+   de arriba se sale por arriba. Lo que se ve es el movimiento de las dos rayas de
+   abajo mas la salida de la de arriba: eso es lo que hace falta para que se lea
+   como que el boton se esta transformando. */
+.contenidos[aria-expanded="true"] {
+  color: var(--azul-4);
+  background-position: center -40%;
+}
+.contenidos[aria-expanded="true"]::before {
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.contenidos[aria-expanded="true"]::after {
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
 /* Sin nombre largo ni corto: el boton son tres rayas de 17 px dentro de un
-   cuadrado de 44, y ocupa lo mismo a 320 que a 860. Lo que antes se media como
-   un solape de 15 px a 390 px era el texto "contents"; con el icono no hay
-   texto que colocar. */
+   cuadrado de 44, y ocupa lo mismo a 320 que a 860. */
 .contenidos .largo, .contenidos .corto { display: none; }
 
 /* El alto de dedo va aqui y no solo en el bloque de (hover: none) que hay mas
@@ -2634,7 +2671,12 @@ html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
 
 @media (prefers-reduced-motion: reduce) {
   .siguiente i { transition: none; }
-  .contenidos::after { transition: none; }
+  /* Las rayas del boton de contenidos. Antes solo se apagaba la transicion de
+     ::after, que era la unica que tenia; el fondo del boton, que es donde estaba la
+     raya de arriba, se seguia moviendo sola. Ahora hay tres cosas que se mueven —
+     el fondo y las dos rayas de los pseudoelementos— y se apagan las tres. */
+  .contenidos { transition: color 0.2s, background-color 0.2s; }
+  .contenidos::before, .contenidos::after { transition: none; }
 }
 
 /* ══ EL REPRODUCTOR, CUANDO CARGA ═════════════════════════════════════════════
