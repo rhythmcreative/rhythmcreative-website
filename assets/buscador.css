@@ -328,7 +328,12 @@
 
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (any-pointer: coarse) {
+  /* Las dos: `pointer` es lo que se está usando y `any-pointer` lo que hay. Con
+     "modo escritorio" en el móvil, el navegador finge ratón —pointer:fine— pero
+     el táctil sigue estando y any-pointer:coarse lo delata. Sin la segunda, con
+     ese modo puesto el botón se quedaba en 26 px y no había forma de saber por
+     qué mirando el CSS. */
   /* En el dedo el botón crece a 52 px, como el interruptor del tema, y la lupa
      crece con él: con el dibujo pequeño en caja grande se veía vacío al lado del
      icono del tema. */
