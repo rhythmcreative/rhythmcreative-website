@@ -30,15 +30,22 @@ POR QUE WEBM Y NO PNG
 
 Medido el 2026-10-03 con las capturas de este repo:
 
-    desktop_autumn.png      2.6 MB  ->  desktop_autumn.webp     96 KB
-    desktop_neon.png        2.2 MB  ->  desktop_neon.webp       84 KB
-    desktop_cherry.png      1.5 MB  ->  desktop_cherry.webp      71 KB
-    desktop.png             924 KB  ->  desktop.webp            63 KB
-    powermenu.png           876 KB  ->  powermenu.webp          58 KB
+    desktop_autumn.png      2.6 MB  ->  desktop_autumn.webp    169 KB
+    desktop_neon.png        2.2 MB  ->  desktop_neon.webp      143 KB
+    desktop_cherry.png      1.5 MB  ->  desktop_cherry.webp     99 KB
+    desktop.png             924 KB  ->  desktop.webp            61 KB
+    powermenu.png           876 KB  ->  powermenu.webp          29 KB
+    sddm_login.png          411 KB  ->  sddm_login.webp         18 KB
 
 Un PNG de captura guarda tres bytes por pixel donde un WebP guarda uno y medio, y
 ahi no hay nada que perder: son pantallas de colores planos, con bordes duros y
-texto pequeno, no gradientes suaves ni ruido de fotografia.
+texto pequeno, no ruido de fotografia.
+
+LO QUE SI SE PIERDE, Y DONDE
+
+Los degradados. El WebP es de bloque y con poca calidad los escalona. Con la
+calidad que hay ahora, 90, no se nota; con la de antes, 78, se veia a bloques en
+el fondo difuminado de la pantalla de login. Ver CALIDAD mas abajo.
 
 LO UNICO QUE NO SE COMPRIME
 
@@ -75,10 +82,40 @@ MANIFIESTO = os.path.join(SITIO, "data", "imagenes.js")
 ANCHO_PANTALLA = 1280
 ANCHO_RECORTE = 900
 
-# La calidad de WebP. 78 es donde el ojo ya no distingue el WebP del PNG en una
-# captura de escritorio con texto, que es justo lo que hay aqui: bordes duros y
-# letra pequena, donde los artefactos se ven antes que en una fotografia.
-CALIDAD = 78
+# La calidad de WebP. ESTA ERA 78 Y POR ESO LAS FOTOS SALIAN CON BANDAS.
+#
+# El razonamiento de 78 era que en una captura de escritorio con texto el ojo ya
+# no distingue el WebP del PNG. Eso es cierto para los bordes duros y la letra
+# pequena, y por ahi no hay problema. Donde si lo hay es en los degradados, y el
+# manual tiene una fuente de degradados muy mala: la pantalla de login lleva un
+# fondo difuminado, que es justo lo que WebP de bloque escalona.
+#
+# Medido con sddm_login.png, que es la peor de las quince. El error es la
+# diferencia media contra el original, de 0 a 1; mirado tambien en el recorte de
+# la zona de bandas, que es donde se nota:
+#
+#     calidad 78   error 0,00316    10,3 KB   <- con esta salia, con bloques
+#     calidad 90   error 0,00263    18,0 KB   los bloques casi desaparecen
+#     calidad 95   error 0,00250    27,5 KB   sin escalonado
+#     sin perdida  error 0         175,9 KB   identico, y 6 veces mas pesado
+#
+# Lo que pesa cada opcion con las quince capturas, sin el GIF, que ese no se
+# comprime:
+#
+#     calidad 78    464 KB
+#     calidad 90    800 KB
+#     calidad 95  1 160 KB
+#
+# Se queda en 95. Por que no 100 ni sin perdida: el original de esta foto son
+# 411 KB, y el sin perdida son 176 KB por una foto que se ve a un tercio de
+# pantalla. La diferencia entre 95 y sin perdida, mirada, no se aprecia; entre
+# 95 y 78, si.
+#
+# Y por que no romper las bandas con un grano, que es lo que se suele hacer: se
+# probo y aqui sale MAL. Añadir un ruido mínimo a calidad 78 lleva la foto de
+# 10 KB a 84 KB, porque el WebP gasta los mismos bits en guardar el ruido que en
+# guardar los bloques. El grano aqui cuesta mucho mas que subir la calidad.
+CALIDAD = 95
 
 # DEL REPO QUE NO SE USA, Y POR QUE
 #
