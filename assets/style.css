@@ -1428,8 +1428,54 @@ html.claro .terminal .l.aviso { color: #8a6a1f; }
 html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
                            background: rgba(47, 122, 69, 0.08); }
 
-/* El boton de copiar del comando del manual se cambio despues: estaba como
-   un elemento mas del flex y salia como una barra del alto de la caja. */
+/* ── El comando del manual: el boton DENTRO y sin verse hasta que se busca ──────
+   --
+   Esto es lo que se ha cambiado. Medido antes y despues, con el mismo comando en
+   las dos paginas:
+--
+     portada   el boton mide 63 x 29   y solo aparece al pasar el raton
+     manual    el boton mide 63 x 84   y esta siempre a la vista
+--
+   El del manual salia como una barra vertical del alto de la caja, pegada al
+   borde derecho, porque `.copiar` es un elemento mas del flex con
+   `align-self: stretch` y el flex estira los hijos en el eje de la pagina. Con
+   este bloque deja de ser un hijo del flujo y se coloca dentro de la caja, igual
+   que en la portada.
+   --
+   Va ARRIBA a la derecha y no en el centro vertical porque aqui el comando se
+   parte en tres lineas: en el centro caeria encima del texto. Arriba, con el hueco
+   que deja el `padding` de 2,4 rem en el code, el boton tiene su sitio y el
+   texto no pasa por debajo. Es lo mismo que hace la portada en movil. */
+.comando { position: relative; }
+.comando code { padding: 2.4rem 0.9rem 0.6rem 2.1rem; }
+.comando .copiar {
+  position: absolute; right: 0.55rem; top: 0.55rem;
+  transform: none;                    /* el del centro vertical es el de la portada */
+  align-self: auto;                   /* deshace el `stretch` de la regla de arriba */
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent;
+  opacity: 0;
+  transition: opacity 0.18s, color 0.18s, border-color 0.18s, background 0.18s;
+}
+.comando:hover .copiar,
+.comando:focus-within .copiar { opacity: 1; border-color: var(--linea-alta); }
+/* Con opacity 0 no se sabria que ha copiado, asi que al copiarlo se ve siempre un
+   momento. El texto lo pone el copiador. */
+.comando .copiar.hecho { opacity: 1; }
+
+/* Donde no hay raton no hay :hover, y un boton en opacity 0 no se ve. Medido: en
+   un movil, el boton de copiar de la portada estaba invisible y lo unico que
+   habia era tocar a ciegas donde se suponia que estaba.
+
+   Con `hover: none` —que es lo que contestan los pantallas tactiles— el boton se
+   enseña siempre. Asi se pierde el efecto de "solo aparece cuando lo buscas" en el
+   movil, que es donde no se puede buscar con el raton, y se gana que se vea. */
+@media (hover: none) {
+  .instalar .instalar-cmd .copiar,
+  .comando .copiar { opacity: 1; }
+  .comando .copiar, .instalar .instalar-cmd .copiar { border-color: var(--linea-alta); }
+}
+
 /* ── Las pantallas ─────────────────────────────────────────────────────
    Tres columnas por monitor. El nombre va en monoespaciada porque es lo que
    escribe Hyprland y es lo que hay que escribir en monitor,preferred. */

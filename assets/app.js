@@ -697,7 +697,18 @@
       // que se podia pinchar.
       var cod = !b && ev.target.closest && ev.target.closest(".comando code");
       if (!b && !cod) return;
-      var caja = b ? b : cod.closest(".comando");
+      // La caja donde vive el aviso del "copied". Con `b ? b` —el boton— era el
+      // propio boton, y un boton no tiene un .copiar DENTRO: `querySelector` no
+      // encontraba nada y la funcion se iba sin avisar. Medido: al pinchar el texto
+      // del comando salia "copied", y al pinchar el boton se copiaba bien pero no
+      // se veia nada. Ahora se busca la caja en los dos casos.
+      //
+      // Esto hacia falta antes y no se notaba, porque el boton no hacia nada que
+      // alguien echara de menos. Pero el boton es la unica pista de que el comando
+      // se puede copiar, y sin su aviso el que pulsa el boton no sabe si ha
+      // funcionado. Con el texto pasa igual: tambien es un <code> y tampoco tiene
+      // un .copiar dentro.
+      var caja = (b || cod).closest(".comando");
       // El texto del code es el comando entero y solo el. El "$" va en un pseudo
       // —en la portada en la caja y aqui en el propio code—, y un pseudo no entra
       // en textContent, asi que esto sale limpio en las dos paginas. Si algún dia
