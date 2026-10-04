@@ -77,13 +77,14 @@
   //
   // Traer un idioma nuevo son dos cosas y ya: copiar data/lang-es.js con otro
   // nombre, y anadir su codigo aqui. No hay que tocar ninguna pagina.
-  var INDICIOS = ["es"];
+  var INDICIOS = ["es", "pt"];
 
   // El nombre de cada idioma en el suyo. Los que falten se quedan con el codigo, que
   // es feo pero no miente.
   var NOMBRES = {
     en: "English",
-    es: "Español"
+    es: "Español",
+    pt: "Português"
   };
 
   // Los nodos donde lo que hay NO se traduce.
