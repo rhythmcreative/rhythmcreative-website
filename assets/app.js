@@ -357,12 +357,64 @@
         if (d) total.textContent = reloj(d);
       }
 
+      // Cuando el navegador se niega a reproducir, hay que decirselo.
+      //
+      // Antes el error se tragaba con un `.catch(function () { })` y aqui no
+      // pasaba nada: se pulsaba el play y no se veia ninguna reaction, sin error en
+      // pantalla y sin nada en la consola. Quien lo suffer no tiene forma de saber
+      // si la pagina esta rota o si es su navegador, que es justo la situacion en la
+      // que mas caro resulta pedir ayuda.
+      //
+      // Pasa por tres sitios, y los tres son "el navegador ha decidido que no":
+      //   NotAllowedError  la politica de reproduccion automatica. En un movil con
+      //                   ahorro de datos o modo de bajo consumo, el navegador
+      //                   prohibe reproducir con sonido, y con este boton, que es
+      //                   un icono y no un <video controls>, no hay manera de
+      //                   hacerlo desde el propio navegador.
+      //   NotSupportedError el fichero no se puede decodificar aqui.
+      //   AbortError       otra peticion de reproduccion se ha adelantado.
+      //
+      // Se avisa con el propio boton: se queda en estado de fallo y con el titulo
+      // puesto, que se lee al pasar el raton por encima. No sale un cartel por
+      // pantalla porque el aviso se lleva el texto del boton y el texto de la
+      // pagina esta en ingles por lo mismo.
+      function avisar(motivo) {
+        barra.classList.add("clip-fallo");
+        btnPlay.setAttribute("title", motivo);
+        btnPlay.setAttribute("aria-label", motivo);
+        btnPlay.setAttribute("data-fallo", "1");
+      }
+      function funcionar() {
+        barra.classList.remove("clip-fallo");
+        btnPlay.removeAttribute("title");
+        btnPlay.removeAttribute("aria-label");
+        btnPlay.removeAttribute("data-fallo");
+      }
+
       function alternar() {
         // El primer play necesita un play() dentro de un gesto del usuario, y
         // este lo es: el boton. A partir de ahi se puede pausar y reanudar.
         if (video.paused) {
           var p = video.play();
-          if (p && p.catch) p.catch(function () { });
+          if (p && p.then) {
+            p.then(function () { funcionar(); }, function (e) {
+              // Si el navegador no lo quiere, al menos sin sonido puede. Es lo
+              // que hacen los controles de mas de un sitio, y aqui el boton es
+              // nuestro, asi que no hay ningun control del navegador al que
+              // apelar. Un silencio con aviso vale mas que una pantalla en negro.
+              if (e && (e.name === "NotAllowedError" || e.name === "AbortError") &&
+                  !video.muted) {
+                video.muted = true;
+                var q = video.play();
+                if (q && q.catch) {
+                  q.then(function () { avisar("Playing without sound: the browser blocked audio."); },
+                         function () { avisar("This browser will not play the clip."); });
+                } else avisar("This browser will not play the clip.");
+                return;
+              }
+              avisar("This browser will not play the clip.");
+            });
+          }
         } else video.pause();
       }
 
