@@ -12,15 +12,21 @@
       tiene un borde aparte, y no solo un cambio de color: si alguien no distingue
       el azul del gris, el borde sigue estando.
 
-   3. Va en la barra de arriba, a la derecha, delante del interruptor del tema,
-      centrado en vertical con el resto. En móvil crece a 44 px, como el resto de
-      controles con el dedo — la misma regla que el resto del sitio, por el mismo
-      motivo: en un móvil de 390 px, 26 px es medio dedo.
+   3. Va en la barra de arriba, en el medio, a la izquierda del reloj, los dos en
+      un envoltorio para que sean un solo hijo del grid. En móvil crece a 44 px,
+      como el resto de controles con el dedo — la misma regla que el resto del
+      sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* El botón vive en la columna derecha (.der), que ya es flex con align-items:center:
-   sale centrado en vertical sin hacer nada. El margen izquierdo lo separa de los
-   enlaces; sin él se pega al último enlace. */
+/* El envoltorio del botón y el reloj. La barra es un grid de tres columnas y la
+   del medio es "auto": mide lo que lleva dentro. Los dos van aquí dentro para
+   que sean UN solo hijo del grid. Como cuarto hijo suelto se creaba una cuarta
+   columna y el reloj se iba 271 px de sitio. Sin flex se apilan en dos filas y
+   la barra crece. */
+.barra-centro { display: inline-flex; align-items: center; justify-content: center; }
+
+/* El botón, a la izquierda del reloj. El margen derecho los separa lo justo, y el
+   grupo de los dos es lo que queda centrado. Sin ese margen se arriman. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
@@ -28,7 +34,7 @@
   gap: 0.45em;
   height: 26px;
   min-width: 26px;
-  margin-left: 0.55rem;
+  margin-right: 0.7rem;
   padding: 0 0.5em;
   border: 1px solid var(--linea);
   border-radius: var(--r);
@@ -322,7 +328,7 @@
   .buscador-boton {
     height: 44px;
     min-width: 44px;
-    margin-left: 0.4rem;
+    margin-right: 0.5rem;
     padding: 0 0.7em;
     font-size: 0.78rem;
   }

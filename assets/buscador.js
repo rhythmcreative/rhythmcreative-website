@@ -509,26 +509,41 @@
   // El atajo de teclado no sirve de nada en un móvil, así que también hay un botón.
   // Y sin botón no se ve que el buscador existe.
   //
-  // ── Donde va el botón: a la derecha, centrado en vertical ────────────────────
+  // ── Donde va el botón: arriba, en el medio, a la izquierda del reloj ──────────
   //
-  // En la columna derecha (.der), delante del interruptor del tema. Esa columna ya
-  // es flex con align-items:center, así que el botón sale centrado en vertical sin
-  // hacer nada. Va delante del tema porque es el orden habitual: primero buscar,
-  // después cambiar el tema.
+  // La barra tiene tres columnas y la del medio es "auto": mide lo que lleva dentro.
+  // El botón va con el reloj dentro de un envoltorio, y los dos son UN solo hijo del
+  // grid, de modo que el grupo sale centrado. Medido: el grupo se desvía 0 px.
   //
-  // Antes estaba en el centro junto al reloj, dentro de un envoltorio para que los
-  // dos fuesen un solo hijo del grid. Se movió a la derecha por dos motivos: en el
-  // centro el reloj se desplazaba 20 px del sitio exacto, y a 390 px el título y el
-  // botón se pisaban 17 px. A la derecha no pasa ninguna de las dos cosas y el reloj
-  // vuelve a su centro exacto.
+  // Meter el botón como cuarto hijo suelto NO vale: se crea una cuarta columna
+  // implícita, la de la derecha se desplaza y el reloj se va 271 px de sitio. También
+  // está medido, por eso el envoltorio. Y la consulta es por separado y en orden:
+  // con una sola (".isla .barra-centro, .isla") siempre salía .isla, porque el
+  // ancestro va antes que el descendiente y querySelector devuelve el primero.
   //
-  // Y FUERA del nav a propósito, igual que el interruptor: el nav recibe
-  // display:none por debajo de 620 px, y dentro de él el botón desaparecería en el
-  // móvil, que es justo donde más falta hace porque no hay teclado para la barra.
+  // Por debajo de 620 px se va a la derecha (.der): en el centro, a 390 px, el título
+  // y el botón se pisan 17 px y no hay sitio. Mismo corte que el CSS para quitar los
+  // enlaces. El reloj se queda 20 px a la derecha del centro exacto en escritorio;
+  // es inevitable con un botón a su izquierda y el grupo centrado lo compensa.
+
+  var ANCHO_ESTRECHO = 620;   // el mismo corte que el CSS
+
+  function dondeVaElBoton() {
+    if (window.innerWidth < ANCHO_ESTRECHO) return document.querySelector(".isla .der");
+    return document.querySelector(".isla .barra-centro") || document.querySelector(".isla");
+  }
+
+  function ponerBoton(b) {
+    var destino = dondeVaElBoton();
+    if (!destino) return false;
+    if (b.parentNode === destino) return true;
+    destino.insertBefore(b, destino.firstChild);
+    return true;
+  }
 
   function boton() {
-    var der = document.querySelector(".isla .der");
-    if (!der) return null;
+    var barra = document.querySelector(".isla");
+    if (!barra) return null;
 
     var b = document.createElement("button");
     b.type = "button";
@@ -540,27 +555,33 @@
       abrir();
     });
 
-    // Delante del interruptor del tema, o primero si no está.
-    var tema = der.querySelector(".interruptor");
-    der.insertBefore(b, tema || der.firstChild);
+    // El envoltorio del centro se crea una vez y solo si hay reloj. Es lo que
+    // convierte "boton + reloj" en un solo hijo del grid.
+    var reloj = barra.querySelector(".reloj");
+    if (reloj && reloj.parentNode === barra && !barra.querySelector(".barra-centro")) {
+      var centro = document.createElement("span");
+      centro.className = "barra-centro";
+      barra.insertBefore(centro, reloj);
+      centro.appendChild(reloj);
+    }
+
+    ponerBoton(b);
+
+    // Al cambiar el tamaño de la ventana hay que recolocarlo: se puede pasar de un
+    // lado al otro. Se comprueba el corte, no el ancho, porque mover el nodo en cada
+    // pixel de arrastre no hace falta.
+    var estrecho = null;
+    window.addEventListener("resize", function () {
+      var ahora = window.innerWidth < ANCHO_ESTRECHO;
+      if (ahora === estrecho) return;
+      estrecho = ahora;
+      ponerBoton(b);
+    });
 
     window.addEventListener("idioma", function () {
       b.setAttribute("aria-label", T("Search this site"));
     });
     return b;
-  }
-
-  // ── Atajo global ────────────────────────────────────────────────────────────
-
-  function global(e) {
-    // "/" con el foco en un campo, o Ctrl+K en cualquier sitio: se deja pasar.
-    var enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "").toUpperCase());
-    var esBarra = e.key === "/" && !enCampo && !e.metaKey && !e.ctrlKey && !e.altKey;
-    var esK = (e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey);
-    if (esBarra || esK) {
-      e.preventDefault();
-      abrir();
-    }
   }
 
   // ── Una cosa a medias ────────────────────────────────────────────────────────
