@@ -12,24 +12,15 @@
       tiene un borde aparte, y no solo un cambio de color: si alguien no distingue
       el azul del gris, el borde sigue estando.
 
-   3. Va en la barra de arriba, en la columna del medio junto al reloj. En móvil
-      crece a 44 px, como el resto de controles con el dedo — la misma regla que el
-      resto del sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio
-      dedo.
+   3. Va en la barra de arriba, a la derecha, delante del interruptor del tema,
+      centrado en vertical con el resto. En móvil crece a 44 px, como el resto de
+      controles con el dedo — la misma regla que el resto del sitio, por el mismo
+      motivo: en un móvil de 390 px, 26 px es medio dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* El envoltorio del botón y el reloj.
-   La barra es un grid de tres columnas: nombre · centro · enlaces. El reloj vive en la
-   del medio, que es "auto": mide lo que lleva dentro. El botón va con él dentro de
-   este envoltorio para que los dos sean UN solo hijo del grid. Como cuarto hijo
-   suelto se creaba una cuarta columna y el reloj se iba 271 px de sitio.
-
-   Sin `display: flex` los dos se apilan en dos filas y la barra crece. */
-.barra-centro { display: inline-flex; align-items: center; justify-content: center; }
-
-/* El botón va en la barra de arriba, en la columna del medio junto al reloj. Por eso
-   el margen de la derecha: separa del reloj lo justo, y el grupo de los dos es lo que
-   queda centrado. Sin ese margen el buscador se arrima al reloj. */
+/* El botón vive en la columna derecha (.der), que ya es flex con align-items:center:
+   sale centrado en vertical sin hacer nada. El margen izquierdo lo separa de los
+   enlaces; sin él se pega al último enlace. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
@@ -37,7 +28,7 @@
   gap: 0.45em;
   height: 26px;
   min-width: 26px;
-  margin-right: 0.7rem;
+  margin-left: 0.55rem;
   padding: 0 0.5em;
   border: 1px solid var(--linea);
   border-radius: var(--r);
@@ -261,12 +252,11 @@
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse) {
-  /* En el dedo el botón crece a 44 px, como el resto de controles con el dedo. En la
-     barra se le recorta el margen para que no empuje el reloj. */
+  /* En el dedo el botón crece a 44 px, como el resto de controles con el dedo. */
   .buscador-boton {
     height: 44px;
     min-width: 44px;
-    margin-right: 0.5rem;
+    margin-left: 0.4rem;
     padding: 0 0.7em;
     font-size: 0.78rem;
   }

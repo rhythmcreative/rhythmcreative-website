@@ -469,51 +469,27 @@
   //
   // El atajo de teclado no sirve de nada en un móvil, así que también hay un botón.
   // Y sin botón no se ve que el buscador existe.
-  // ── Donde va el botón ────────────────────────────────────────────────────────
   //
-  // ARRIBA, no en el pie. Centrado en el escritorio.
+  // ── Donde va el botón: a la derecha, centrado en vertical ────────────────────
   //
-  // Donde: la barra de arriba tiene un grid de tres columnas —el nombre a la izquierda,
-  // el reloj en el medio, los enlaces y el tema a la derecha— y la del medio es
-  // "auto": mide lo que lleva dentro. El botón va con el reloj dentro de un
-  // envoltorio, y los dos son UN solo hijo del grid, de modo que el grupo sale
-  // centrado. Medido: el grupo se desvía 0 px.
+  // En la columna derecha (.der), delante del interruptor del tema. Esa columna ya
+  // es flex con align-items:center, así que el botón sale centrado en vertical sin
+  // hacer nada. Va delante del tema porque es el orden habitual: primero buscar,
+  // después cambiar el tema.
   //
-  // Meter el botón como cuarto hijo suelto NO vale: se crea una cuarta columna
-  // implícita, la de la derecha se desplaza y el reloj se va 271 px de sitio. También
-  // está medido, por eso el envoltorio.
+  // Antes estaba en el centro junto al reloj, dentro de un envoltorio para que los
+  // dos fuesen un solo hijo del grid. Se movió a la derecha por dos motivos: en el
+  // centro el reloj se desplazaba 20 px del sitio exacto, y a 390 px el título y el
+  // botón se pisaban 17 px. A la derecha no pasa ninguna de las dos cosas y el reloj
+  // vuelve a su centro exacto.
   //
-  // Por qué en móvil no vale lo mismo: a 390 px el texto "RHYTHMCREA" y el botón se
-  // pisan 17 px. No hay sitio en el medio. Así que por debajo de 620 px el botón se
-  // va a la derecha, junto al interruptor del tema, que es donde está el otro control
-  // pequeño de la barra. El mismo corte que usa el CSS para quitar los enlaces.
-  //
-  // El reloj se queda 20 px a la derecha del centro exacto en escritorio. Es
-  // inevitable si hay un botón a su izquierda, y el grupo centrado compensa: se ve
-  // el conjunto centrado, que es lo que se pidió.
-
-  var ANCHO_ESTRECHO = 620;   // el mismo corte que el CSS
-
-  function dondeVaElBoton() {
-    if (window.innerWidth < ANCHO_ESTRECHO) return document.querySelector(".isla .der");
-    // Por separado y en este orden. Con una sola consulta
-    // (".isla .barra-centro, .isla") siempre salía .isla, porque en el documento el
-    // ancestro va antes que el descendiente y querySelector devuelve el primero.
-    // Medido: el botón caía como cuarto hijo del grid y el reloj se iba 291 px.
-    return document.querySelector(".isla .barra-centro") || document.querySelector(".isla");
-  }
-
-  function ponerBoton(b) {
-    var destino = dondeVaElBoton();
-    if (!destino) return false;
-    if (b.parentNode === destino) return true;
-    destino.insertBefore(b, destino.firstChild);
-    return true;
-  }
+  // Y FUERA del nav a propósito, igual que el interruptor: el nav recibe
+  // display:none por debajo de 620 px, y dentro de él el botón desaparecería en el
+  // móvil, que es justo donde más falta hace porque no hay teclado para la barra.
 
   function boton() {
-    var barra = document.querySelector(".isla");
-    if (!barra) return null;
+    var der = document.querySelector(".isla .der");
+    if (!der) return null;
 
     var b = document.createElement("button");
     b.type = "button";
@@ -525,28 +501,9 @@
       abrir();
     });
 
-    // El envoltorio del centro se crea una vez y solo si hay reloj. Es lo que
-    // convierte "boton + reloj" en un solo hijo del grid.
-    var reloj = barra.querySelector(".reloj");
-    if (reloj && reloj.parentNode === barra && !barra.querySelector(".barra-centro")) {
-      var centro = document.createElement("span");
-      centro.className = "barra-centro";
-      barra.insertBefore(centro, reloj);
-      centro.appendChild(reloj);
-    }
-
-    ponerBoton(b);
-
-    // Al cambiar el tamaño de la ventana hay que recolocarlo: se puede pasar de un
-    // lado al otro. Se comprueba el corte, no el ancho, porque mover el nodo en cada
-    // pixel de arrastre no hace falta.
-    var estrecho = null;
-    window.addEventListener("resize", function () {
-      var ahora = window.innerWidth < ANCHO_ESTRECHO;
-      if (ahora === estrecho) return;
-      estrecho = ahora;
-      ponerBoton(b);
-    });
+    // Delante del interruptor del tema, o primero si no está.
+    var tema = der.querySelector(".interruptor");
+    der.insertBefore(b, tema || der.firstChild);
 
     window.addEventListener("idioma", function () {
       b.setAttribute("aria-label", T("Search this site"));
