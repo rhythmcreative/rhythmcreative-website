@@ -1294,6 +1294,16 @@ html.claro .b-gh .marca { color: #000000; }
   content: ""; position: absolute; inset: -6px; border-radius: 50%;
   border: 1px solid rgba(217, 138, 106, 0.28);
 }
+/* Y con el fallo delante, un texto al lado. El `title` solo se ve al pasar el
+   raton por encima, y en un movil no se ve nunca, que es justo donde mas hace
+   falta. El texto va en la barra, a la derecha del boton, y no es un cartel
+   flotante: no tapa nada de la pagina. */
+.clip-barra.clip-fallo .clip-actual::after {
+  content: "the clip did not load";
+  margin-left: 0.7rem;
+  color: #d98a6a;
+  font-size: 0.62rem;
+}
 .clip-pista:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 3px; border-radius: 2px; }
 
 .clip-tiempo {
