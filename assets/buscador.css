@@ -329,15 +329,17 @@
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse) {
-  /* En el dedo el botón crece a 44 px, como el resto de controles con el dedo. */
+  /* En el dedo el botón crece a 52 px, como el interruptor del tema, y la lupa
+     crece con él: con el dibujo pequeño en caja grande se veía vacío al lado del
+     icono del tema. */
   .buscador-boton {
-    height: 44px;
-    min-width: 44px;
+    height: 52px;
+    min-width: 52px;
     margin-right: 0.5rem;
     padding: 0 0.7em;
     font-size: 0.78rem;
   }
-  .buscador-boton span { width: 13px; height: 13px; border-width: 2px; }
+  .buscador-boton span { width: 15px; height: 15px; border-width: 2px; }
   .buscador-panel { padding-top: 0.5rem; align-items: stretch; }
   .buscador-resultado { padding: 0.85rem 0.9rem; }
 }
