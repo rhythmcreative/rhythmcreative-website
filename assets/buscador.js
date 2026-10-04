@@ -507,43 +507,22 @@
   // ── Botón visible ───────────────────────────────────────────────────────────
   //
   // El atajo de teclado no sirve de nada en un móvil, así que también hay un botón.
-  // Y sin botón no se ve que el buscador existe.
+  // ── Donde va el botón: a la derecha, con los controles ─────────────────────
   //
-  // ── Donde va el botón: arriba, en el medio, a la izquierda del reloj ──────────
+  // Izquierda la marca, centro la hora sola, derecha los controles juntos: enlaces,
+  // buscador y tema. Cada cosa en su zona. Con la lupa pegada al reloj, el medio se
+  // leía como un solo control raro y el reloj se iba de su centro; aquí el reloj
+  // vuelve a 0 px y sobran el envoltorio, el mover según ancho y el listener de
+  // resize: el botón vive siempre en el mismo sitio, en móvil también.
   //
-  // La barra tiene tres columnas y la del medio es "auto": mide lo que lleva dentro.
-  // El botón va con el reloj dentro de un envoltorio, y los dos son UN solo hijo del
-  // grid, de modo que el grupo sale centrado. Medido: el grupo se desvía 0 px.
-  //
-  // Meter el botón como cuarto hijo suelto NO vale: se crea una cuarta columna
-  // implícita, la de la derecha se desplaza y el reloj se va 271 px de sitio. También
-  // está medido, por eso el envoltorio. Y la consulta es por separado y en orden:
-  // con una sola (".isla .barra-centro, .isla") siempre salía .isla, porque el
-  // ancestro va antes que el descendiente y querySelector devuelve el primero.
-  //
-  // Por debajo de 620 px se va a la derecha (.der): en el centro, a 390 px, el título
-  // y el botón se pisan 17 px y no hay sitio. Mismo corte que el CSS para quitar los
-  // enlaces. El reloj se queda 20 px a la derecha del centro exacto en escritorio;
-  // es inevitable con un botón a su izquierda y el grupo centrado lo compensa.
-
-  var ANCHO_ESTRECHO = 620;   // el mismo corte que el CSS
-
-  function dondeVaElBoton() {
-    if (window.innerWidth < ANCHO_ESTRECHO) return document.querySelector(".isla .der");
-    return document.querySelector(".isla .barra-centro") || document.querySelector(".isla");
-  }
-
-  function ponerBoton(b) {
-    var destino = dondeVaElBoton();
-    if (!destino) return false;
-    if (b.parentNode === destino) return true;
-    destino.insertBefore(b, destino.firstChild);
-    return true;
-  }
+  // Va delante del interruptor del tema: primero buscar, después cambiar el tema.
+  // Y FUERA del nav a propósito, igual que el interruptor: el nav recibe
+  // display:none por debajo de 620 px, y dentro de él el botón desaparecería en el
+  // móvil, que es justo donde más falta hace porque no hay teclado para la barra.
 
   function boton() {
-    var barra = document.querySelector(".isla");
-    if (!barra) return null;
+    var der = document.querySelector(".isla .der");
+    if (!der) return null;
 
     var b = document.createElement("button");
     b.type = "button";
@@ -555,28 +534,9 @@
       abrir();
     });
 
-    // El envoltorio del centro se crea una vez y solo si hay reloj. Es lo que
-    // convierte "boton + reloj" en un solo hijo del grid.
-    var reloj = barra.querySelector(".reloj");
-    if (reloj && reloj.parentNode === barra && !barra.querySelector(".barra-centro")) {
-      var centro = document.createElement("span");
-      centro.className = "barra-centro";
-      barra.insertBefore(centro, reloj);
-      centro.appendChild(reloj);
-    }
-
-    ponerBoton(b);
-
-    // Al cambiar el tamaño de la ventana hay que recolocarlo: se puede pasar de un
-    // lado al otro. Se comprueba el corte, no el ancho, porque mover el nodo en cada
-    // pixel de arrastre no hace falta.
-    var estrecho = null;
-    window.addEventListener("resize", function () {
-      var ahora = window.innerWidth < ANCHO_ESTRECHO;
-      if (ahora === estrecho) return;
-      estrecho = ahora;
-      ponerBoton(b);
-    });
+    // Delante del interruptor del tema, o primero si no está.
+    var tema = der.querySelector(".interruptor");
+    der.insertBefore(b, tema || der.firstChild);
 
     window.addEventListener("idioma", function () {
       b.setAttribute("aria-label", T("Search this site"));

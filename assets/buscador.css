@@ -18,17 +18,8 @@
       sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* El envoltorio del botón y el reloj. La barra es un grid de tres columnas y la
-   del medio es "auto": mide lo que lleva dentro. Los dos van aquí dentro para
-   que sean UN solo hijo del grid. Como cuarto hijo suelto se creaba una cuarta
-   columna y el reloj se iba 271 px de sitio. Sin flex se apilan en dos filas y
-   la barra crece. */
-.barra-centro { display: inline-flex; align-items: center; justify-content: center; }
-
-/* El botón, a la izquierda del reloj. Mide 36 px como el interruptor del tema:
-   dos botones distintos con dos tamaños distintos se leen como un error. El
-   margen derecho los separa lo justo, y el grupo de los dos es lo que queda
-   centrado. Sin ese margen se arriman. */
+/* El botón, delante del interruptor del tema. El margen izquierdo lo separa de los
+   enlaces; sin él se pega al último. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
@@ -36,7 +27,7 @@
   gap: 0.45em;
   height: 36px;
   min-width: 36px;
-  margin-right: 0.7rem;
+  margin-left: 0.55rem;
   padding: 0 0.5em;
   border: 1px solid var(--linea);
   border-radius: var(--r);
@@ -341,7 +332,7 @@
   .buscador-boton {
     height: 52px;
     min-width: 52px;
-    margin-right: 0.5rem;
+    margin-left: 0.4rem;
     padding: 0 0.7em;
     font-size: 0.78rem;
   }
