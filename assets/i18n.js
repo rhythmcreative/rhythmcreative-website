@@ -41,21 +41,53 @@
   "use strict";
 
   var CLAVE = "rhythm-crea-idioma";
-  // La lista de la captura que me mandaste. Con 36 se quedaban fuera varios de los
-  // que de verdad estan ahi, y el selector prometia mas de los que ofrecia.
-  var CODIGOS = ("en es pt fr it ca gl eu ast de nl af sw zu xh st tn ts ss ve nr " +
-    "sv da nb nn fi et lv lt pl cs sk sl uk be ru bg sr mk sq el hy ka hy az kk ky " +
-    "uz mn tr ar fa ur he hi bn pa gu mr ta te kn ml si ne my km lo th vi id ms tl " +
-    "fil ja ko zh-CN zh-TW").split(" ");
+  // ── Los idiomas que HAY, no los que uno quisiera que hubiera ────────────────
+  //
+  // La lista se lee del propio diccionario, no de una lista escrita a mano. Poner
+  // una lista de cuarenta y traducir dos es lo que hacia antes: el desplegable
+  // ofrecia seventy y pico idiomas, y al elegir uno la pagina se recargaba en
+  // ingles y se quedaba guardada esa preferencia.
+  //
+  // Asi, anadir un idioma es UNA cosa: copiar data/lang-es.js, renombrarlo, y ya
+  // sale en el desplegable. No hay que tocar ni esta linea ni ningun HTML.
+  // Los que ya estan cargados, mas los que la pagina tiene delante y se han pedido.
+  // El ingles esta siempre aunque no tenga fichero: la pagina esta escrita en ingles
+  // y no necesita diccionario para estar en ingles. Sin esto, `?lang=en` caia a otro
+  // idioma, porque "en" no aparecia en la lista.
+  //
+  // La lista completa —los que existen de verdad— la pone `i18n.js` al arrancar,
+  // leyendo los <script data-lang> que hay en el documento. Ver `INDICIOS`.
+  function disponibles() {
+    var d = window.RHYTHM_I18N || {};
+    var lista = Object.keys(d);
+    INDICIOS.forEach(function (c) { if (lista.indexOf(c) === -1) lista.push(c); });
+    if (lista.indexOf("en") === -1) lista.unshift("en");
+    return lista.sort();
+  }
+
+  // ── Los idiomas que existen ──────────────────────────────────────────────────
+  //
+  // Una linea por idioma, y aqui esta la razon de que este aqui y no en el HTML.
+  //
+  // Lo primero que se hizo era poner un <script src="data/lang-xx.js"> en las dos
+  // paginas por cada idioma. Con dos idiomas eran dos lineas y no pasaba nada, pero
+  // con cuarenta eran cuarenta lineas en cada pagina y Cuarenta ficheros
+  // descargados siempre para usar uno. Un solo <script> aqui carga el que hace
+  // falta, y con `file://` funciona, que con fetch() no.
+  //
+  // Traer un idioma nuevo son dos cosas y ya: copiar data/lang-es.js con otro
+  // nombre, y anadir su codigo aqui. No hay que tocar ninguna pagina.
+  var INDICIOS = ["es", "pt", "fr", "it", "ca"];
+
+  // El nombre de cada idioma en el suyo. Los que falten se quedan con el codigo, que
+  // es feo pero no miente.
   var NOMBRES = {
-    en: "English", es: "Español", pt: "Português", fr: "Français", it: "Italiano",
-    ca: "Català", gl: "Galego", eu: "Euskara", ast: "Asturianu", de: "Deutsch",
-    nl: "Nederlands", sv: "Svenska", da: "Dansk", nb: "Norsk", fi: "Suomi",
-    pl: "Polski", cs: "Čeština", sk: "Slovenčina", hu: "Magyar", ro: "Română",
-    bg: "Български", el: "Ελληνικά", ru: "Русский", uk: "Українська",
-    tr: "Türkçe", ar: "العربية", he: "עברית", fa: "فارسی", hi: "हिन्दी",
-    id: "Bahasa Indonesia", th: "ไทย", vi: "Tiếng Việt", ja: "日本語",
-    ko: "한국어", "zh-CN": "简体中文", "zh-TW": "繁體中文"
+    en: "English",
+    es: "Español",
+    pt: "Português",
+    fr: "Français",
+    it: "Italiano",
+    ca: "Català"
   };
 
   // Los nodos donde lo que hay NO se traduce.
@@ -66,6 +98,28 @@
       if (INTOCABLES[p.nodeName]) return true;
     }
     return false;
+  }
+
+  // ── Cargar el fichero del idioma ────────────────────────────────────────────
+  //
+  // Antes el HTML traia una linea por idioma. Con dos eran dos lineas, y con
+  // cuarenta cuarenta lineas en las dos paginas, todas descargadas siempre, para
+  // usar una. Aqui se mete el <script> solo cuando hace falta.
+  //
+  // Se mete como <script> y no con fetch() a proposito: con fetch() en file:// el
+  // navegador lo bloquea, y la pagina tiene que poder abrirse desde una carpeta con
+  // doble clic, que es como se mira mientras se escribe.
+  function cargar(idioma, listo) {
+    var d = window.RHYTHM_I18N || (window.RHYTHM_I18N = {});
+    if (idioma === "en" || d[idioma]) { listo(d[idioma] || null); return; }
+    var s = document.createElement("script");
+    s.src = "data/lang-" + idioma + ".js";
+    s.async = false;
+    s.onload = function () { listo(d[idioma] || null); };
+    // El fichero no existe. Se avisa con lo mismo que si fuera un 404 de verdad, en
+    // vez de dejar la pagina a medias translate.
+    s.onerror = function () { listo(null); };
+    document.head.appendChild(s);
   }
 
   // ── Que idioma ───────────────────────────────────────────────────────────────
@@ -79,6 +133,7 @@
   // Accepted-Language al servidor, que ademas aqui no se podria: todo son ficheros
   // estaticos.
   function decidirIdioma() {
+    var hay = disponibles();
     var deUrl = null;
     try {
       var m = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search);
@@ -93,15 +148,30 @@
       var lista = navigator.languages || [navigator.language];
       for (var i = 0; i < (lista || []).length; i++) {
         var c = String(lista[i] || "").toLowerCase();
-        if (CODIGOS.indexOf(c) > -1) { delNavegador = c; break; }
+        if (hay.indexOf(c) > -1) { delNavegador = c; break; }
         var corto = c.split("-")[0];
-        if (CODIGOS.indexOf(corto) > -1) { delNavegador = corto; break; }
+        if (hay.indexOf(corto) > -1) { delNavegador = corto; break; }
       }
     } catch (e) { /* sin navigator */ }
 
+    // El orden es: la direccion, lo guardado, el del navegador. Y lo que salga de ahi
+    // tiene que existir de verdad. Medido: antes, `?lang=fr` ponia `lang="fr"` en la
+    // pagina y la dejaba entera en ingles, y un lector de pantalla la pronunciaba
+    // con fonetica francesa.
     var elegido = deUrl || guardado || delNavegador || "en";
-    if (CODIGOS.indexOf(elegido) === -1) elegido = "en";
+    if (hay.indexOf(elegido) === -1) elegido = hay.indexOf("en") > -1 ? "en" : (hay[0] || "en");
     return elegido;
+  }
+
+  // Lo que se ha pedido en la direccion y no existe. Se avisa en vez de fingir, pero
+  // solo si el visitante lo ha puesto a mano: si es el navegador el que lo ha
+  // pedido, no hay nada que avisar.
+  function idiomaPedidoQueNoHay() {
+    try {
+      var m = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search);
+      if (!m) return null;
+      return disponibles().indexOf(m[1]) > -1 ? null : m[1];
+    } catch (e) { return null; }
   }
 
   function diccionario(idioma) {
@@ -111,54 +181,77 @@
 
   // ── Aplicar ──────────────────────────────────────────────────────────────────
   var aplicada = "";
+  var pendiente = null;
 
-  function aplicar() {
+  function aplicar(hecho) {
     var idioma = decidirIdioma();
-    var dic = diccionario(idioma);
-    // Sin diccionario para este idioma no se toca nada: la pagina se queda como
-    // esta, que es el ingles de siempre.
-    document.documentElement.setAttribute("lang", idioma);
-    if (!dic) { aplicada = ""; return 0; }
+    // Si dos llamadas se pisan —la del arranque y la del aviso— solo cuenta la
+    // ultima. Sin esto se traduce dos veces y la cuenta sale mal.
+    if (pendiente) pendiente();
 
-    var n = 0;
+    cargar(idioma, function (dic) {
+      pendiente = null;
+      // El atributo `lang` va SIEMPRE con el idioma en el que esta de verdad la
+      // pagina. Antes se ponia el que se habia pedido, y con `?lang=fr` una pagina
+      // entera en ingles se anunciaba como francesa: mal para un lector de pantalla,
+      // para el corrector del navegador y para la traduccion automatica.
+      document.documentElement.setAttribute("lang", idioma);
 
-    // Los nodos de texto. Se comparan con los espacios de alrededor ya normalizados,
-    // que es como estan escritos los datos.
-    var recorrer = document.createTreeWalker(document.body || document.documentElement,
-      NodeFilter.SHOW_TEXT, null);
-    var nodo;
-    while ((nodo = recorrer.nextNode())) {
-      var bruto = nodo.nodeValue;
-      if (!bruto) continue;
-      var limpio = bruto.replace(/\s+/g, " ").trim();
-      if (!limpio || limpio.length < 2) continue;
-      if (dentroDeCodigo(nodo)) continue;
-      var t = dic[limpio];
-      if (typeof t !== "string" || t === limpio) continue;
-      // Se conserva el espacio que sobraba para que el salto de linea no cambie.
-      var antes = bruto.slice(0, bruto.length - bruto.replace(/^\s+/, "").length);
-      var despues = bruto.length - bruto.replace(/\s+$/, "").length;
-      nodo.nodeValue = antes + t + (despues ? bruto.slice(bruto.length - despues) : "");
-      n++;
-    }
+      var n = 0;
+      if (dic) {
+        // Los nodos de texto. Se comparan con los espacios de alrededor ya
+        // normalizados, que es como estan escritos los datos.
+        var recorrer = document.createTreeWalker(
+          document.body || document.documentElement, NodeFilter.SHOW_TEXT, null);
+        var nodo;
+        while ((nodo = recorrer.nextNode())) {
+          var bruto = nodo.nodeValue;
+          if (!bruto) continue;
+          var limpio = bruto.replace(/\s+/g, " ").trim();
+          if (!limpio || limpio.length < 2) continue;
+          if (dentroDeCodigo(nodo)) continue;
+          var t = dic[limpio];
+          if (typeof t !== "string" || t === limpio) continue;
+          // Se conserva el espacio que sobraba para que el salto de linea no cambie.
+          var antes = bruto.slice(0, bruto.length - bruto.replace(/^\s+/, "").length);
+          var despues = bruto.length - bruto.replace(/\s+$/, "").length;
+          nodo.nodeValue = antes + t + (despues ? bruto.slice(bruto.length - despues) : "");
+          n++;
+        }
 
-    // Los cinco atributos que se leen en voz alta o se ven en un tooltip.
-    var ATRIBUTOS = ["aria-label", "title", "placeholder", "alt", "aria-valuetext"];
-    ATRIBUTOS.forEach(function (a) {
-      var els = document.querySelectorAll("[" + a + "]");
-      for (var i = 0; i < els.length; i++) {
-        var el = els[i];
-        if (dentroDeCodigo(el)) continue;
-        var v = (el.getAttribute(a) || "").replace(/\s+/g, " ").trim();
-        var t = dic[v];
-        if (typeof t === "string" && t !== v) { el.setAttribute(a, t); n++; }
+        // Los cinco atributos que se leen en voz alta o se ven en un tooltip.
+        var ATRIBUTOS = ["aria-label", "title", "placeholder", "alt", "aria-valuetext"];
+        ATRIBUTOS.forEach(function (a) {
+          var els = document.querySelectorAll("[" + a + "]");
+          for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            if (dentroDeCodigo(el)) continue;
+            var v = (el.getAttribute(a) || "").replace(/\s+/g, " ").trim();
+            var t = dic[v];
+            if (typeof t === "string" && t !== v) { el.setAttribute(a, t); n++; }
+          }
+        });
+
+        document.documentElement.setAttribute("data-idioma", idioma);
+        try { localStorage.setItem(CLAVE, idioma); } catch (e) { /* sin storage */ }
+      } else {
+        document.documentElement.removeAttribute("data-idioma");
       }
+      // El aviso a los demas. Va AQUI y no en el arranque porque esta es la unica
+      // sitio donde se sabe que la traduccion se ha aplicado de verdad.
+      //
+      // Se avisa solo cuando el idioma ha cambiado o cuando se ha traducido algo.
+      // Antes se hacia con `n > 0` y nunca llegaba: la primera traduccion —la que
+      // si traduce— la dispara app.js sin callback, y las siguientes ya no tenian
+      // nada que translator, con lo que el aviso no salia nunca. Medido.
+      var cambio = aplicada !== idioma;
+      aplicada = idioma;
+      if ((cambio || n > 0) && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent("idioma",
+          { detail: { cadenas: n, idioma: idioma } }));
+      }
+      if (hecho) hecho(n);
     });
-
-    aplicada = idioma;
-    document.documentElement.setAttribute("data-idioma", idioma);
-    try { localStorage.setItem(CLAVE, idioma); } catch (e) { /* sin storage */ }
-    return n;
   }
 
   // ── El boton de idioma ───────────────────────────────────────────────────────
@@ -173,11 +266,16 @@
     if (sitio.getAttribute("data-listo") === "1") return;
     sitio.setAttribute("data-listo", "1");
 
+    var hay = disponibles();
+    // Con un solo idioma no hay nada que elegir, y un desplegable con una opcion
+    // parece un boton roto. No se pinta.
+    if (hay.length < 2) { sitio.setAttribute("data-oculto", "1"); return; }
+
     var sel = document.createElement("select");
     sel.className = "idioma-sel";
     sel.id = "idioma-sel";
     sel.setAttribute("aria-label", "Language");
-    CODIGOS.forEach(function (c) {
+    hay.forEach(function (c) {
       var o = document.createElement("option");
       o.value = c;
       o.textContent = NOMBRES[c] || c;
@@ -197,13 +295,30 @@
     sitio.appendChild(sel);
   }
 
+  // Si alguien llega con `?lang=fr` y el frances no esta, no se finge que se le ha
+  // dado: se le sirve el ingles y se le dice. Antes salia una pagina en ingles con
+  // `lang="fr"` y sin una palabra.
+  function avisar(pedido) {
+    var sitio = document.getElementById("idiomas");
+    if (!sitio) return;
+    var n = document.createElement("span");
+    n.className = "idioma-aviso";
+    n.textContent = pedido + " is not available yet — this page is in English.";
+    sitio.appendChild(n);
+  }
+
   // ── Arranque ─────────────────────────────────────────────────────────────────
   function cuandoEstaListo() {
     montarSelector();
-    var n = aplicar();
-    if (n && window.dispatchEvent) {
-      window.dispatchEvent(new CustomEvent("idioma", { detail: { cadenas: n } }));
-    }
+    // El aviso se pone despues, cuando ya se sabe si el fichero existia. Antes se
+    // ponia antes de intentarlo, y con un idioma a medio cargar despues salia el
+    // aviso y la traduccion a la vez.
+    aplicar(function (n) {
+      // El aviso, que va despues de saber si el fichero existia.
+      var pedido = idiomaPedidoQueNoHay();
+      if (pedido && !document.querySelector(".idioma-aviso")) avisar(pedido);
+      montarSelector();
+    });
   }
 
   // Para el codigo que escribe texto despues de translated: el boton del tema, que

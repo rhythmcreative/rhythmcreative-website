@@ -9,10 +9,14 @@
      analytics, ni un script de un tercero. Todo lo que necesita esta aqui. Por
      eso se puede cerrar del todo, que es lo que hace esta linea.
 
-     Lo que mas hace es lo ultimo: connect-src 'none'. Aunque alguien dejara un
-     error manana y lograra meter codigo en la pagina, no podria llamar a
-     ningun sitio: ni a mandarse tus datos, ni a una pagina de anuncios. No
-     puede hablar con nadie porque la pagina no habla.
+     connect-src es lo que mas hace, y antes era 'none': la pagina no podia llamar a
+     nadie. Aunque alguien dejara un error manana y lograra meter codigo en ella, no
+     podria mandarse tus datos ni hablar con una pagina de anuncios.
+
+     AHORA NO ES 'none'. El buscador de Algolia necesita salir, asi que se ha abierto
+     solo a los dos dominios de Algolia y no a '*'. Sigue sin poder hablar con nadie mas,
+     y el unico dato que sale es lo que escribe quien esta buscando, y solo si busca.
+     Lo demas —lo que se descarga, de donde— sigue siendo cero y sigue siendo de aqui.
 
      El script de arriba es el unico script en linea, y va con su huella, que es
      una suma del texto exacto. Si alguien anade otro script en linea, el
@@ -27,7 +31,21 @@
      frame-ancestors no esta porque en un <meta> el navegador lo ignora: solo
      cuenta en una cabecera HTTP, que en GitHub Pages no se puede poner. Lo de
      que nadie meta esta pagina en un iframe tiene que ir en la cabecera. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<!--
+  connect-src estaba en 'none', que hacia que esta pagina no pudiera llamar a nadie:
+  ni a un servidor de analiticas, ni a una fuente externa, ni a un buscador. Con el
+  buscador de Algolia se ha abierto, pero solo a UN host: el exacto que usa el
+  buscador, que se sabe porque el Application ID esta escrito en assets/buscador.js.
+
+  Primero se puso con un comodin, *.algolia.net, para no depender de que alguien se
+  acuerde de tocar la CSP al rellenar el ID. Con el ID ya puesto se ha cerrado al
+  host solo. Estrecharlo no rompe nada —solo se usa ese— y deja menos sitios por los
+  que pueda colarse algo, que es de lo que sirve una CSP.
+
+  Lo que sale por esa puerta no es la pagina, es lo que escribe quien busca, y solo
+  si busca. assets/buscador.js lo tiene escrito en su cabecera, sin rodeos.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -141,6 +159,27 @@
       a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
       document.head.appendChild(a);
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
+    /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
+       no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
+       red lenta se ve primero la pagina en ingles y luego el cambiazo. Creandolo
+       aqui, que va antes de la hoja, baja en paralelo con el CSS y cuando i18n.js
+       lo pide ya esta en cache.
+
+       Solo si no es ingles: en ingles no hay fichero que traer, la pagina ya esta
+       escrita en ingles. Y el valor se limpia con la misma expresion que usa
+       i18n.js, para que un parametro raro no acabe en un href. La clave tiene que
+       coincidir con la de i18n.js; si se cambia una, hay que cambiar las dos. */
+    try {
+      var mu = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search || "");
+      var ml = mu ? mu[1] : null;
+      if (!ml) { try { ml = localStorage.getItem("rhythm-crea-idioma"); } catch (e) { /* sin storage */ } }
+      if (ml && ml !== "en" && /^[a-z-]{2,5}$/.test(ml)) {
+        var l = document.createElement("link");
+        l.rel = "preload"; l.as = "script";
+        l.href = "data/lang-" + ml + ".js";
+        document.head.appendChild(l);
+      }
+    } catch (e) { /* sin DOM: el diccionario llegara cuando lo pida i18n.js */ }
   } catch (e) {
     /* Si ha petado algo de lo de arriba —que no deberia, porque cada paso va
        protegido por su propio try— el <html> se queda sin tema y la pagina sale
@@ -165,6 +204,7 @@
        la pagina. Es el segundo. -->
   <link rel="preload" as="image" href="assets/hyprland-poster.webp">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/buscador.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
      que la pagina ya comparte con la barra: un anillo de oxido sobre el suelo
      oscuro. Antes era un punto suelto, que era un placeholder de los primeros
@@ -340,8 +380,9 @@
 <script src="assets/hyprland.js"></script>
 <script src="assets/capa-datos.js"></script>
 <script src="assets/capa.js"></script>
-<script src="data/lang-es.js"></script>
 <script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
+<script src="data/buscador-local.js"></script>
+<script src="assets/buscador.js"></script>
 </body>
 </html>

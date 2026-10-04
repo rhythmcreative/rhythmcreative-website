@@ -7,7 +7,7 @@
      script es la misma porque el script del tema es el mismo fichero con el
      mismo texto: si algun dia divergieran, hay que volver a mirar este numero.
      El detalle de cada palabra esta escrito alli. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-s2TikfyJOBwbNHWOji/2LWxw3ZS0nmKyUR10ZwApEDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -77,6 +77,27 @@
       a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
       document.head.appendChild(a);
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
+    /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
+       no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
+       red lenta se ve primero la pagina en ingles y luego el cambiazo. Creandolo
+       aqui, que va antes de la hoja, baja en paralelo con el CSS y cuando i18n.js
+       lo pide ya esta en cache.
+
+       Solo si no es ingles: en ingles no hay fichero que traer, la pagina ya esta
+       escrita en ingles. Y el valor se limpia con la misma expresion que usa
+       i18n.js, para que un parametro raro no acabe en un href. La clave tiene que
+       coincidir con la de i18n.js; si se cambia una, hay que cambiar las dos. */
+    try {
+      var mu = /[?&]lang=([a-zA-Z-]{2,5})/.exec(location.search || "");
+      var ml = mu ? mu[1] : null;
+      if (!ml) { try { ml = localStorage.getItem("rhythm-crea-idioma"); } catch (e) { /* sin storage */ } }
+      if (ml && ml !== "en" && /^[a-z-]{2,5}$/.test(ml)) {
+        var l = document.createElement("link");
+        l.rel = "preload"; l.as = "script";
+        l.href = "data/lang-" + ml + ".js";
+        document.head.appendChild(l);
+      }
+    } catch (e) { /* sin DOM: el diccionario llegara cuando lo pida i18n.js */ }
   } catch (e) {
     /* Si ha petado algo de lo de arriba —que no deberia, porque cada paso va
        protegido por su propio try— el <html> se queda sin tema y la pagina sale
@@ -88,6 +109,7 @@
 
 <link rel="preload" as="font" href="assets/fuentes/jetbrains-var.woff2" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/buscador.css">
 <!-- El mismo icono que la principal, y por el mismo motivo: va en un data URI
      para no pedir una peticion mas y que se vea en la pestana antes de que la
      pagina haya descargado nada. -->
@@ -191,9 +213,6 @@
     <!-- Las secciones las mete pintarManual() en app.js. -->
     <div id="manual"></div>
 
-    <p class="manual-fin">This page is generated from the repository by
-      <code>scripts/collect-docs.py</code>. When you change a keybinding or a flag,
-      run it again and commit the file it writes.</p>
   </main>
 </div>
 
@@ -224,8 +243,9 @@
      dentro de documentacion.js porque son 1.7 MB de binarios y mezclarlas con el
      texto haria que el navegador descargase las fotos para pintar el indice. -->
 <script src="data/imagenes.js"></script>
-<script src="data/lang-es.js"></script>
 <script src="assets/i18n.js"></script>
 <script src="assets/app.js"></script>
+<script src="data/buscador-local.js"></script>
+<script src="assets/buscador.js"></script>
 </body>
 </html>

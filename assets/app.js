@@ -29,10 +29,18 @@
     var t = new Date(String(fecha).replace(" ", "T"));
     if (isNaN(t)) return esc(fecha);
     var min = Math.floor((Date.now() - t.getTime()) / 60000);
-    if (min < 1) return "just now";
-    if (min < 60) return min + " min ago";
+    // El idioma se pregunta aqui y no en el diccionario porque la forma es distinta:
+    // el ingles pone la unidad delante y el español detrás ("12 h" contra "h 12"), y
+    // el español además quiere el "hace" delante. Con un diccionario de frases
+    // enteras esto no se podria hacer: la cifra cambia cada minuto.
+    var T = window.traducir || function (x) { return x; };
+    var es = T("just now") !== "just now";
+    if (min < 1) return T("just now");
+    if (min < 60) return es ? T("hace") + " " + min + " " + T("min") : min + " " + T("min ago");
     var h = Math.floor(min / 60);
-    return h < 24 ? h + " h ago" : Math.floor(h / 24) + " d ago";
+    if (h < 24) return es ? T("hace") + " " + h + " h" : h + " " + T("h ago");
+    var d = Math.floor(h / 24);
+    return es ? T("hace") + " " + d + " " + T("d") : d + " " + T("d ago");
   }
 
   // ── La temperatura. Ya no hay punto en la barra: el termometro vive en el
@@ -960,11 +968,15 @@
 
     var b = $("#interruptor");
     if (b) {
-      // Los dos rotulos de este boton pasan por el traductor, y no por una razon
-      // estetica: ESTA FUNCION SE REPITE CADA SEGUNDO —el reloj llama a tic() cada
-      // 1000 ms—. Si escribiera el ingles cada vez, borraria lo que el traductor
-      // hizo y este boton se quedaria en ingles con la pagina entera ya
-      // traducida. Medido: era el unico elemento que se quedaba fuera.
+      // Los dos rotulos de este boton pasan por el traductor porque se componen de
+      // trozos y el traductor no puede rehacerlos: "Theme" + ": " + el modo + ". "
+      // + "Change it." no existe como frase en ninguna parte de la pagina.
+      //
+      // Ojo con lo que decia antes este comentario, que era falso: NO es el reloj
+      // quien lo repinta cada segundo. `tic()` solo pone la hora, y esta funcion
+      // se llama una vez, al arrancar. Por eso, cuando el diccionario llega mas
+      // tarde —que es lo que pasa ahora que se carga bajo demanda— hay que
+      // volver a llamarla desde el evento `idioma`. Abajo, donde se hace.
       //
       // Y no se traduce el rotulo ENTERO, porque se compone de tres trozos y hay
       // nueve combinaciones: tres modos por los tres que puede ser el siguiente. Si
@@ -1000,6 +1012,46 @@
     if (window.__capa && window.__capa.avisarCambio) window.__capa.avisarCambio();
   }
 
+  // Cambiar de tema CON la transicion. Es lo que se llama desde el boton y desde
+  // el aviso del sistema, en los dos sentidos: de oscuro a claro y de claro a
+  // oscuro, que la raja es la misma se vaya o se venga.
+  //
+  // Como lo hace omarchy-site: se congela la pagina en una foto, se cambia la clase
+  // por debajo y la foto vieja se abre con la raja. Todo lo que cambia el tema —
+  // la clase, el data-tema, los rotulos, el theme-color del movil y el aviso al
+  // canvas— esta dentro de aplicarTema(), asi que la foto nueva sale completa.
+  //
+  // Sin View Transitions en el navegador, o con movimiento reducido, es un cambio
+  // instantaneo como el de antes: mejor eso que una raja a medias o un error.
+  var cambiando = false;
+
+  function cambiarTema(modo, guardar) {
+    var cambia = function () {
+      aplicarTema(modo);
+      if (guardar) {
+        try { localStorage.setItem(CLAVE, modo); } catch (e) { /* sin storage */ }
+      }
+    };
+    var reduc = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (cambiando || !document.startViewTransition || reduc) { cambia(); return; }
+    cambiando = true;
+    // Sin transiciones propias durante el cambio: ver la nota en style.css.
+    document.documentElement.classList.add("sin-transicion");
+    var quita = function () {
+      document.documentElement.classList.remove("sin-transicion");
+      cambiando = false;
+    };
+    try {
+      var v = document.startViewTransition(function () { cambia(); });
+      if (v && v.finished && v.finished.then) v.finished.then(quita, quita);
+      else quita();
+    } catch (e) {
+      cambia();
+      quita();
+    }
+  }
+
   function interruptor() {
     var b = $("#interruptor");
     if (!b) return;
@@ -1008,8 +1060,7 @@
 
     b.addEventListener("click", function () {
       modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
-      aplicarTema(modo);
-      try { localStorage.setItem(CLAVE, modo); } catch (e) { /* sin storage */ }
+      cambiarTema(modo, true);
     });
 
     // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo
@@ -1017,7 +1068,7 @@
     // claro de noche se queda con la pagina en claro hasta que recarga.
     if (window.matchMedia) {
       var avisa = function () {
-        if (modoActual() === "auto") aplicarTema("auto");
+        if (modoActual() === "auto") cambiarTema("auto", false);
       };
       var mq = matchMedia("(prefers-color-scheme: light)");
       if (mq.addEventListener) mq.addEventListener("change", avisa);
@@ -1830,10 +1881,18 @@
     if (!D) { el.textContent = ""; return; }
     // "in N projects" solo cuando hay mas de uno. Con uno solo sale
     // "1 projects", que es ingles mal dicho y se ve en la pagina.
-    el.textContent = "documents " + (D.version || "the repository") +
-      " · " + PLANO.length + " sections" +
-      (PROYECTOS.length > 1 ? " in " + PROYECTOS.length + " projects" : "") +
-      " · collected " + hace(D.recogido);
+    //
+    // Todo esto se compone de trozos traducidos, y no como una frase entera, porque
+    // lleva un numero dentro. La linea que sale es
+    //   "documents v0.24 · 13 sections · collected 12 h ago"
+    // y la hora cambia cada minuto, asi que como cadena entera jamas podria estar en
+    // un diccionario: habria que escribir una entrada por cada edad posible.
+    // Medido: asi se quedaba en ingles con el dictionary lleno.
+    var T = window.traducir || function (x) { return x; };
+    el.textContent = T("documents") + " " + (D.version || T("the repository")) +
+      " · " + PLANO.length + " " + T("sections") +
+      (PROYECTOS.length > 1 ? " " + T("in") + " " + PROYECTOS.length + " " + T("projects") : "") +
+      " · " + T("collected") + " " + hace(D.recogido);
   }
 
   // ── Arranque ───────────────────────────────────────────────────────────────
@@ -1983,6 +2042,22 @@
     try {
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     } catch (e) { /* sin matchMedia: se anima */ }
+
+    // Y tampoco en una recarga. La entrada es para la primera vez que se ve la
+    // pagina; recargar arriba y verla entrar otra vez no es una bienvenida, es
+    // un retraso de medio segundo en una pagina que ya se conoce. Omarchy carga
+    // directa, sin coreografia, y la recarga tiene que sentirse igual: la pagina
+    // ya puesta, sin pasar por el estado invisible.
+    //
+    // Se mira el tipo de navegacion, con el API viejo de respaldo. Todo dentro de
+    // un try: si no se puede saber, se anima, que es lo de antes.
+    try {
+      var nav = (performance.getEntriesByType &&
+        performance.getEntriesByType("navigation")[0]) || null;
+      var tipo = nav ? nav.type : ((performance.navigation &&
+        performance.navigation.type === 1) ? "reload" : "");
+      if (tipo === "reload") return;
+    } catch (e) { /* sin performance: se anima */ }
 
     document.documentElement.classList.add("entrando");
 
@@ -2158,8 +2233,34 @@
   var arranque = function () {
     inicio();
     window.__RHYTHM_LISTO = true;
+    // Ademas de la bandera, un aviso. La bandera la puede mirar quien quiera en
+    // cualquier momento; el aviso es para el que necesita ENTER EN ESTE MOMENTO, y
+    // solo funciona si se dispara de verdad.
+    //
+    // Existia la bandera y ningun aviso, y el buscador —que se montaba al oir ese
+    // aviso que nunca llegaba— se quedaba sin botón. El diálogo sí abría, porque
+    // `abrir()` lo construye si no existe, y por eso el fallo parecía parcial.
+    if (window.dispatchEvent) window.dispatchEvent(new Event("listo"));
     if (window.aplicarIdioma) window.aplicarIdioma();
   };
+  // Cuando el traductor acaba, hay que rehacer lo que se compone con datos dentro.
+  //
+  // El boton del tema dice "Tema: Como el del sistema. Cambialo.", que son tres
+  // trozos pegados y ninguna frase entera: el traductor, que va de nodo en nodo, no
+  // puede rehacerla. La construye `interruptor()`, y `interruptor()` se llama una
+  // sola vez, al arrancar.
+  //
+  // Con el diccionario cargado en el HTML eso no pasaba: ya estaba ahi cuando se
+  // llamaba. Al cargar el fichero bajo demanda, todavia no esta, y el boton se
+  // quedaba en ingles con la pagina entera traduicda. Medido.
+  //
+  // El sello de arriba tiene el mismo problema —lleva la hora y el numero de
+  // capitulos— y se rehace tambien.
+  window.addEventListener("idioma", function () {
+    interruptor();
+    selloDocs();
+  });
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arranque);
   else arranque();
 

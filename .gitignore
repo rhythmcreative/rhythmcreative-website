@@ -5,3 +5,12 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# El indexador de Algolia lee la clave de escritura de la variable de entorno, no de
+# un fichero, asi que aqui no deberia haber nunca nada. Estas lineas estan por si
+# alguien copia un .env o un volcado del panel por costumbre: si alguna vez aparece un
+# fichero con una clave dentro, que no acabe en un commit.
+.env
+.env.*
+*.env
+algolia-clave*
