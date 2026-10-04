@@ -1849,6 +1849,48 @@
       clipMontado = true;
       montarVideos();
       $$("#hyprland-caja video").forEach(reproductor);
+      pararCuandoNoSeMira();
+    }
+
+    // El clip se para solo en cuanto deja de mirarse. Antes no habia nada de esto
+    // y el sonido se quedaba: el clip va en bucle, asi que en cuanto arrancaba
+    // seguia sonando mientras el visitante leia el resto de la pagina, y seguia
+    // sonando con la pestaña en segundo plano. Medido: 50 s de clip en bucle, o sea
+    // que el sonido no se acababa nunca.
+    //
+    // Tres cosas lo paran, y las tres son "ya no te estan mirando":
+    //
+    //   1. Que el recuadro se salga de la pantalla. Se corta antes de que salga
+    //      entero, a media caja, para que no haya un momento en que se ve la
+    //      imagen y no se oye.
+    //   2. Que la pestaña pase a segundo plano. Un movil al que te llamar o que
+    //      abres otra app lo deja en visibilitychange.
+    //   3. Que te vayas de la pagina, en pagehide, que en movil es lo que salta al
+    //      cerrar la pestaña o al ir atras.
+    //
+    // Al volver a mirarlo NO se reanuda solo: reanudar un video por accident es
+    // justo el fallo que se esta arreglando. Quien lo quiere, pulsa play.
+    function pararCuandoNoSeMira() {
+      $$("#hyprland-caja video").forEach(function (video) {
+        var escena = video.parentNode;
+        if (!video.paused) video.pause();
+        if ("IntersectionObserver" in window) {
+          new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) {
+              // media caja visible todavia cuenta como mirarse.
+              if (e.isIntersecting) return;
+              if (!video.paused) video.pause();
+            });
+          }, { threshold: [0, 0.5, 1] }).observe(escena);
+        }
+      });
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState !== "hidden") return;
+        $$("#hyprland-caja video").forEach(function (v) { if (!v.paused) v.pause(); });
+      });
+      addEventListener("pagehide", function () {
+        $$("#hyprland-caja video").forEach(function (v) { if (!v.paused) v.pause(); });
+      });
     }
 
     if ("IntersectionObserver" in window) {
