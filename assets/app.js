@@ -1710,6 +1710,14 @@
       g.classList.toggle("activo", g.querySelector("h3").textContent ===
         (PROYECTOS.filter(function (p) { return p.id === proyecto; })[0] || {}).titulo);
     });
+
+    if (history.replaceState) {
+      if (actual && location.hash !== "#" + actual) {
+        history.replaceState(null, "", "#" + actual);
+      } else if (!actual && location.hash) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+    }
   }
 
   // Lleva el enlace activo de la tira a la vista, sin mover la pagina.
@@ -1931,9 +1939,18 @@
   //
   // Y hay una excepcion: si la URL lleva #algo manda el ancla. El usuario ha pedido
   // un sitio concreto y devolverle "donde estaba" le haria caso omiso.
-  var paginaId = (location.pathname || "").split("/").pop() || "index";
+  var paginaId = ((location.pathname || "").split("/").pop() || "index").replace(/\.html$/, "") || "index";
   var CLAVE_POS = "rhythm-scroll-" + paginaId;
-  var posGuardada = 0;
+  var posGuardada = leerPos();
+  var restaurado = false;
+
+  var esRecarga = false;
+  try {
+    var nav = (performance.getEntriesByType &&
+      performance.getEntriesByType("navigation")[0]) || null;
+    esRecarga = nav ? nav.type === "reload" : ((performance.navigation &&
+      performance.navigation.type === 1) ? true : false);
+  } catch (e) { esRecarga = false; }
 
   try {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -1945,6 +1962,7 @@
   }
 
   function guardarPos() {
+    if (!restaurado && posGuardada > 0) return;
     try {
       sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
     } catch (e) { /* sin storage */ }
@@ -1958,44 +1976,71 @@
     guardarPos();
   }, { passive: true });
 
-  addEventListener("beforeunload", guardarPos);
-  addEventListener("pagehide", guardarPos);
+  addEventListener("beforeunload", function () {
+    try {
+      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+    } catch (e) { /* sin storage */ }
+  });
+  addEventListener("pagehide", function () {
+    try {
+      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+    } catch (e) { /* sin storage */ }
+  });
   addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") guardarPos();
+    if (document.visibilityState === "hidden") {
+      try {
+        sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+      } catch (e) { /* sin storage */ }
+    }
   });
 
   // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-  // Se restaura de forma inmediata tras inyectar el DOM dinamico para evitar
-  // el salto brusco de varios segundos despues del evento load.
+  // Si es una recarga, la prioridad absoluta es devolver al usuario exactamente
+  // donde estaba leyendo, sin importar si habia un ancla en la URL de una accion
+  // anterior. Solo si es una navegacion fresca con ancla se salta directo a ella.
   function devolverPos() {
-    if (location.hash) {
+    if (!esRecarga && location.hash) {
       var id = decodeURIComponent(location.hash.slice(1));
       var el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "auto", block: "start" });
+        restaurado = true;
+        return;
+      }
+    }
+
+    var y = posGuardada;
+    if (y <= 0) {
+      restaurado = true;
+      if (location.hash) {
+        var elAncla = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (elAncla) elAncla.scrollIntoView({ behavior: "auto", block: "start" });
       }
       return;
     }
-    var y = posGuardada;
-    if (y <= 0) return;
 
     var aplicar = function () {
       var alto = document.documentElement.scrollHeight - innerHeight;
       if (alto > 0) {
         var destino = Math.min(y, Math.max(0, alto));
-        scrollTo(0, destino);
+        window.scrollTo(0, destino);
       }
     };
 
-    // Restaurar de inmediato y en los primeros fotogramas de render
     aplicar();
     requestAnimationFrame(function () {
       aplicar();
-      requestAnimationFrame(aplicar);
+      requestAnimationFrame(function () {
+        aplicar();
+        restaurado = true;
+      });
     });
 
     if (document.readyState !== "complete") {
-      addEventListener("load", aplicar, { once: true });
+      addEventListener("load", function () {
+        aplicar();
+        restaurado = true;
+      }, { once: true });
     }
   }
 
