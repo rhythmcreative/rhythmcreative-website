@@ -3049,6 +3049,8 @@ html.claro .distro-tipo {
   transition: height 0.08s ease-out;
 }
 .hitos-lista {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
@@ -3058,20 +3060,25 @@ html.claro .distro-tipo {
   grid-template-columns: 2.8rem 1fr;
   gap: 0.8rem;
   align-items: start;
-  opacity: 0.52;
-  transform: translateY(6px);
-  transition: opacity 0.32s ease, transform 0.32s ease;
+  transform: translateY(4px);
+  transition: transform 0.32s ease;
 }
 .hito-roadmap.alcanzado {
-  opacity: 1;
   transform: translateY(0);
+}
+.hito-cuerpo {
+  opacity: 0.55;
+  transition: opacity 0.32s ease;
+}
+.hito-roadmap.alcanzado .hito-cuerpo {
+  opacity: 1;
 }
 .hito-dot-col {
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  z-index: 2;
+  z-index: 3;
   padding-top: 0.15rem;
 }
 .hito-dot {
@@ -3081,56 +3088,52 @@ html.claro .distro-tipo {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--suelo);
+  background: var(--suelo) !important;
   border: 2px solid var(--linea);
   position: relative;
-  z-index: 2;
-  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  z-index: 4;
+  opacity: 1 !important;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 html.claro .hito-dot {
-  background: #ffffff;
-  border-color: rgba(20, 22, 24, 0.16);
+  background: #ffffff !important;
+  border-color: rgba(20, 22, 24, 0.2);
 }
 .ico-dot-check {
   width: 13px;
   height: 13px;
-  color: var(--gris);
-  opacity: 0.2;
-  transform: scale(0.65);
-  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.28s ease;
+  color: var(--azul-4);
+  opacity: 1;
+  transition: color 0.28s ease;
+}
+html.claro .ico-dot-check {
+  color: var(--azul-2);
+}
+.hito-completado .hito-dot {
+  border-color: var(--azul-4);
+}
+html.claro .hito-completado .hito-dot {
+  border-color: var(--azul-2);
 }
 .hito-completado.alcanzado .hito-dot {
   border-color: var(--azul-4);
-  background: var(--suelo);
-  box-shadow: 0 0 14px rgba(153, 186, 201, 0.45);
-  transform: scale(1.08);
-}
-.hito-completado.alcanzado .ico-dot-check {
-  opacity: 1;
-  transform: scale(1);
-  color: var(--azul-4);
+  box-shadow: 0 0 12px rgba(153, 186, 201, 0.45);
 }
 html.claro .hito-completado.alcanzado .hito-dot {
   border-color: var(--azul-2);
-  background: #ffffff;
   box-shadow: 0 0 10px rgba(40, 80, 110, 0.25);
-}
-html.claro .hito-completado.alcanzado .ico-dot-check {
-  opacity: 1;
-  transform: scale(1);
-  color: var(--azul-2);
 }
 
 /* Hito actual con radar / pulso continuo */
 .hito-actual .hito-dot {
   border-color: var(--oxido);
-  background: var(--suelo);
+  background: var(--suelo) !important;
   box-shadow: 0 0 14px rgba(184, 91, 53, 0.5);
   position: relative;
-  z-index: 2;
+  z-index: 4;
 }
 html.claro .hito-actual .hito-dot {
-  background: #ffffff;
+  background: #ffffff !important;
 }
 .hito-actual .dot-nucleo {
   width: 10px;
