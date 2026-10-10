@@ -18,30 +18,34 @@
       sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* El botón, delante del interruptor del tema. El margen izquierdo lo separa de los
-   enlaces; sin él se pega al último. */
+/* El botón, delante del interruptor del tema. */
 .buscador-boton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45em;
-  height: 36px;
-  min-width: 36px;
-  margin-left: 0.55rem;
-  padding: 0 0.5em;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  margin-left: 0.25rem;
   border: 1px solid var(--linea);
   border-radius: var(--r);
   background: transparent;
   color: var(--ceniza);
   font: inherit;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
   flex: none;
 }
 
-.buscador-boton:hover { color: var(--hielo); border-color: var(--linea-alta); }
+.buscador-boton:hover {
+  color: var(--hielo);
+  border-color: var(--linea-alta);
+  background: rgba(153, 186, 201, 0.08);
+}
+html.claro .buscador-boton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(20, 22, 24, 0.22);
+}
+.buscador-boton:active { transform: scale(0.9); }
 .buscador-boton:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 
 /* La lupa, dibujada con dos bordes en vez de con una fuente de iconos: un SVG o
@@ -321,22 +325,15 @@
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse), (any-pointer: coarse) {
-  /* Las dos: `pointer` es lo que se está usando y `any-pointer` lo que hay. Con
-     "modo escritorio" en el móvil, el navegador finge ratón —pointer:fine— pero
-     el táctil sigue estando y any-pointer:coarse lo delata. Sin la segunda, con
-     ese modo puesto el botón se quedaba en 26 px y no había forma de saber por
-     qué mirando el CSS. */
-  /* En el dedo el botón crece a 52 px, como el interruptor del tema, y la lupa
-     crece con él: con el dibujo pequeño en caja grande se veía vacío al lado del
-     icono del tema. */
+  /* En el dedo el botón mide 44 px, exactamente igual que el interruptor del tema y el botón de contenidos */
   .buscador-boton {
-    height: 52px;
-    min-width: 52px;
-    margin-left: 0.4rem;
-    padding: 0 0.7em;
-    font-size: 0.78rem;
+    height: 44px;
+    min-width: 44px;
+    margin-left: 0.25rem;
+    padding: 0 0.55rem;
+    font-size: 0.76rem;
   }
-  .buscador-boton span { width: 15px; height: 15px; border-width: 2px; }
+  .buscador-boton span { width: 14px; height: 14px; border-width: 1.8px; }
   .buscador-panel { padding-top: 0.5rem; align-items: stretch; }
   .buscador-resultado { padding: 0.85rem 0.9rem; }
 }

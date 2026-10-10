@@ -117,6 +117,36 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
 }
 ::selection { background: var(--oxido); color: var(--suelo); }
 
+/* Barras de scroll sutiles estilo omarchy */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(153, 186, 201, 0.18);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(153, 186, 201, 0.32); }
+html.claro ::-webkit-scrollbar-thumb { background: rgba(20, 22, 24, 0.16); }
+html.claro ::-webkit-scrollbar-thumb:hover { background: rgba(20, 22, 24, 0.28); }
+
+kbd {
+  font-family: var(--f);
+  font-size: 0.78em;
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-bottom: 2px solid var(--linea-alta);
+  border-radius: 4px;
+  padding: 0.1em 0.38em;
+  color: var(--hielo);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+html.claro kbd {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.14);
+  border-bottom-color: rgba(20, 22, 24, 0.30);
+  color: #1b1d1f;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 .cola { max-width: var(--ancho); margin: 0 auto;
         padding: 0 clamp(1rem, 0.5rem + 2vw, 2rem); }
 
@@ -180,10 +210,10 @@ a:focus-visible, button:focus-visible, .escena:focus-visible {
   background: var(--cristal-barra);
   backdrop-filter: blur(10px) saturate(1.3);
   -webkit-backdrop-filter: blur(10px) saturate(1.3);
-  border: 0;
+  border: 1px solid var(--linea);
   border-radius: var(--r-isla);
   padding: 0.4rem 0.55rem;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -287,12 +317,14 @@ html.claro .isla nav a:hover { background: rgba(0, 0, 0, 0.06); }
    estas en blanco y estas a punto de pasar a negro. */
 .interruptor { display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
                color: var(--gris); cursor: pointer; border-radius: var(--r);
-               border-left: 1px solid var(--linea);
-               transition: color 0.2s, background 0.2s; }
-.interruptor:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
-html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.06); }
+               border: 1px solid var(--linea); margin-left: 0.25rem;
+               transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+               flex: none; }
+.interruptor:hover { color: var(--hielo); border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.08); }
+html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.05); border-color: rgba(20, 22, 24, 0.22); }
+.interruptor:active { transform: scale(0.88); }
 .interruptor .ic { width: 1.05rem; height: 1.05rem; grid-area: 1 / 1;
-                   transition: opacity 0.25s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+                   transition: opacity 0.28s ease, transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1); }
 /* Los tres iconos del tema, uno solo a la vez.
    --
    Antes eran dos y se elegian con la clase .claro del <html>: en oscuro se
@@ -306,25 +338,36 @@ html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.06); }
    de esconder el anterior. */
 html[data-tema="auto"]  .ic-auto,
 html[data-tema="claro"] .ic-sol,
-html[data-tema="negro"] .ic-luna { opacity: 1; transform: none; }
-html[data-tema="auto"]  .ic-sol,
-html[data-tema="auto"]  .ic-luna,
+html[data-tema="negro"] .ic-luna {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
 html[data-tema="claro"] .ic-auto,
-html[data-tema="claro"] .ic-luna,
+html[data-tema="claro"] .ic-luna {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+  pointer-events: none;
+}
+
 html[data-tema="negro"] .ic-auto,
 html[data-tema="negro"] .ic-sol {
-  opacity: 0; transform: rotate(-70deg) scale(0.6);
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  pointer-events: none;
 }
-/* El giro va para el lado contrario segun cual entre, para que no parezca que
-   los dos iconos cruzan la misma puerta. */
-html[data-tema="claro"] .ic-auto,
-html[data-tema="claro"] .ic-luna,
-html[data-tema="negro"] .ic-auto,
-html[data-tema="negro"] .ic-sol { transform: rotate(70deg) scale(0.6); }
+
+html[data-tema="auto"] .ic-sol,
+html[data-tema="auto"] .ic-luna {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  pointer-events: none;
+}
+
 /* Antes de que app.js ponga data-tema —si algo falla al arrancar— se ve la luna,
    que es el estado por defecto de la pagina. Sin esto el boton sale vacio. */
-html:not([data-tema]) .ic-auto { opacity: 0; transform: rotate(70deg) scale(0.6); }
-html:not([data-tema]) .ic-sol  { opacity: 0; }
+html:not([data-tema]) .ic-auto { opacity: 0; transform: rotate(90deg) scale(0.5); }
+html:not([data-tema]) .ic-sol  { opacity: 0; transform: rotate(-90deg) scale(0.5); }
 
 /* Solo para lectores de pantalla: el icono no dice nada por si mismo. */
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -489,8 +532,8 @@ html.claro {
      no les hace falta el tono aclarado: detras de la barra el angel en blanco y
      negro esta en 252 y el blanco del cristal tapa casi todo. Se deja --
      gris a proposito, para que este valor no sea una excepcion sin motivo. */
-  --cristal-barra: rgba(255, 255, 255, 0.76);
-  --enlace-barra:  var(--gris);
+  --cristal-barra: rgba(255, 255, 255, 0.88);
+  --enlace-barra:  #25292e;
   --cristal-opaco: rgba(252, 251, 249, 0.94);
   --hielo:    #1b1d1f;
   --oxido:    #9a5638;
@@ -758,6 +801,7 @@ html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
 .instalar {
   margin-top: 3.4rem; padding-top: 2.4rem;
   border-top: 1px solid var(--linea);
+  scroll-margin-top: 5rem;
 }
 .instalar-titulo {
   display: flex; align-items: center; gap: 0.6rem;
@@ -771,7 +815,29 @@ html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
 }
 .instalar-texto {
   font-size: 0.78rem; color: var(--gris); max-width: 58ch;
-  margin: 0 0 1.4rem;
+  margin: 0 0 1rem;
+}
+
+.distros-soportadas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin: 0 0 1.2rem;
+}
+.distros-soportadas .chip-distro {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--ceniza);
+  padding: 0.16rem 0.48rem;
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  background: var(--cristal-opaco);
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.distros-soportadas .chip-distro:hover {
+  color: var(--hielo);
+  border-color: var(--linea-alta);
 }
 
 .instalar .instalar-cmd {
@@ -1662,38 +1728,65 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
 .isla .der { justify-self: end; display: flex; align-items: center; gap: 0.1rem; }
 
 @media (max-width: 620px) {
-  /* 44 px es el objetivo tactil minimo (WCAG 2.5.5 y las guias de Apple y
-     Android). Todo lo que se pueda pulsar llega a esa altura. */
-  .barra-z { padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
-             padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-             padding-right: max(0.5rem, env(safe-area-inset-right, 0px)); }
+  .barra-z { padding-top: max(0.55rem, env(safe-area-inset-top, 0px));
+             padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+             padding-right: max(0.75rem, env(safe-area-inset-right, 0px)); }
 
-  /* En movil la barra ocupa todo el ancho disponible, como la de una app. Antes
-     se quedaba en los 330 px del clamp de --ancho, que a 390 de pantalla la
-     dejaban con 30 px de margen a cada lado. Con el hueco que sobra, las columnas
-     de los lados miden lo mismo y el reloj vuelve a caer en el centro: medido,
-     de 3 px de desvio a cero.
-
-     El ancho lo pone el padding de .barra-z, que ya lleva los safe-area. */
-  .isla { min-height: 44px; padding: 0.3rem 0.4rem;
+  .isla { min-height: 44px; padding: 0.25rem 0.45rem 0.25rem 1rem;
+          border-radius: var(--r-isla);
           max-width: none; width: 100%; }
 
-  /* El nombre se queda: es lo unico que sobrevive cuando se baja, y sin el no se
-     sabe donde estas. */
-  .isla .rotulo { font-size: 0.84rem; letter-spacing: 0.16em; padding-left: 0.25rem; }
+  .isla .rotulo-enlace { margin-left: 0 !important; padding: 0 0.2rem; }
 
-  /* El reloj es lo que mas se mira en una barra: sube mas que el nombre, para
-     que sea el elemento legible de un vistazo. */
-  .isla .reloj { font-size: 0.92rem; letter-spacing: 0.04em; padding: 0 0.25rem; }
+  .isla .rotulo { font-size: 0.78rem; letter-spacing: 0.12em; padding-left: 0; }
 
-  /* Los enlaces tambien se quedan si caben, y con 44 px de alto. Antes se
-     ocultaban enteros y no quedaba nada pulsable a la derecha. */
-  .isla nav { display: flex; gap: 0.1rem; }
-  .isla nav a { font-size: 0.72rem; padding: 0 0.5rem; min-height: 44px;
+  .isla .reloj { font-size: 0.80rem; letter-spacing: 0.03em; padding: 0 0.2rem; }
+
+  .isla .der { gap: 0.3rem; }
+
+  .isla nav { display: flex; gap: 0.15rem; }
+  .isla nav a { font-size: 0.72rem; padding: 0 0.4rem; min-height: 38px;
                 display: grid; place-items: center; }
 
-  .interruptor { width: 44px; height: 44px; border-left-color: var(--linea); }
-  .interruptor .ic { width: 1.2rem; height: 1.2rem; }
+  .interruptor,
+  .buscador-boton,
+  .contenidos {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+  }
+  .interruptor .ic { width: 1.1rem; height: 1.1rem; }
+}
+
+@media (max-width: 620px) {
+  .mapa-roadmap {
+    margin: 1.2rem 0;
+  }
+  .hito-roadmap {
+    grid-template-columns: 2.2rem 1fr;
+    gap: 0.6rem;
+  }
+  .timeline-riel {
+    left: calc(1.1rem - 1.5px);
+  }
+  .hito-dot {
+    width: 22px;
+    height: 22px;
+  }
+  .ico-dot-check {
+    width: 11px;
+    height: 11px;
+  }
+  .hito-actual .pulso-radar {
+    width: 18px;
+    height: 18px;
+  }
+  .hito-cuerpo {
+    padding: 0.75rem 0.85rem;
+  }
 }
 
 /* La zona derecha no cabe en su columna de 1fr, y cuando no cabe la columna se
@@ -2079,18 +2172,10 @@ html.entrando #hyprland.hyprland-visto {
    El <pre> lleva overflow-x:auto, asi que con esto sale el scroll DENTRO del bloque
    de texto, que es donde tiene que estar. */
 .manual-envoltorio > * { min-width: 0; }
-/* Nota: hay un desborre lateral sin resolver a 900-1024 px de ventana, que se
-   NO se ha podido quitar. Con esas pantallas la columna del indice (15 rem) se
-   come el ancho y al texto le quedan 290-372 px, y alguna de las rejillas de dos
-   columnas del texto se sale: scrollWidth 1000 con 900 de ventana, y se puede
-   arrastrar 115 px hacia una franja vacia. Se ha buscado elemento a elemento y
-   sale de dentro de .bloque-proyecto, pero no de un solo elemento: tapar cualquiera
-   de sus hijos lo quita y ninguno es el culpable por si solo. El min-width:0 de
-   arriba es lo correcto en teoria y no lo arregla.
-   --
-   Se deja escrito para que no se vuelva a perder el tiempo, y para que el boton
-   de las tres rayas de mas abajo sea la respuesta: al plegar el indice el texto
-   pasa de 290 px a 698 px en una pantalla de 900, que es de donde salio el boton. */
+/* Desborre lateral resuelto: a 900-1060 px de ventana la columna del indice
+   (15 rem) reducia el espacio para las dos columnas de .bandera, .fila y .componentes.
+   Con @media (max-width: 1060px) colapsan a una sola columna de lectura limpia,
+   eliminando cualquier scroll lateral residual. */
 /* Indice plegado en escritorio: la columna se va a cero y el hueco tambien, para
    que el texto no deje un margen muerto a la izquierda. */
 .sin-indice .manual-envoltorio {
@@ -2131,21 +2216,56 @@ html.entrando #hyprland.hyprland-visto {
              border-left: 1px solid var(--linea); }
 .indice li a {
   display: flex; align-items: baseline; gap: 0.5rem;
-  padding: 0.24rem 0 0.24rem 0.8rem;
+  padding: 0.28rem 0.5rem 0.28rem 0.75rem;
   margin-left: -1px;
   border-left: 2px solid transparent;
+  border-radius: 0 4px 4px 0;
   color: var(--gris);
   text-decoration: none;
-  transition: color 0.16s, border-color 0.16s;
+  transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
 }
-.indice li a:hover { color: var(--hielo); }
-/* La seccion en la que se esta. El borde se mueve en vez del color: con el color
-   solo no se distingue en el tema claro, y el indice es lo que dice donde estas
-   cuando el texto es largo. */
-.indice li a.activo { color: var(--hielo); border-left-color: var(--hielo); }
-/* Los <span> del indice se fueron con lo de "10 groups". No queda ninguno: el
-   rotulo de cada capitulo es lo unico que hay dentro del enlace. */
+.indice li a:hover {
+  color: var(--hielo);
+  background: rgba(153, 186, 201, 0.05);
+}
+.indice li a.activo {
+  color: var(--hielo);
+  border-left-color: var(--azul-4);
+  background: rgba(153, 186, 201, 0.09);
+  font-weight: 500;
+}
+html.claro .indice li a:hover { background: rgba(20, 24, 28, 0.04); }
+html.claro .indice li a.activo {
+  color: #1b1d1f;
+  border-left-color: var(--azul-1);
+  background: rgba(20, 24, 28, 0.07);
+}
 .indice-sello { margin-top: 0.9rem; font-size: 0.62rem; color: rgba(107, 130, 140, 0.6); }
+
+/* ── Línea de progreso de lectura ─────────────────────────────────────────────
+   Barra fija en el borde superior de la pantalla con gradiente animado, resplandor
+   brillante y transición suave al hacer scroll. */
+.linea-progreso {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  z-index: 1000;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--azul-4) 0%, var(--oxido) 50%, #4ecdc4 100%);
+  background-size: 200% 100%;
+  box-shadow: 0 0 10px rgba(153, 186, 201, 0.65), 0 0 4px var(--oxido);
+  animation: brillo-progreso 2.6s linear infinite;
+  transition: width 0.08s ease-out;
+}
+@keyframes brillo-progreso {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+html.claro .linea-progreso {
+  box-shadow: 0 0 8px rgba(32, 90, 120, 0.4), 0 0 3px var(--oxido);
+}
 
 /* ── El texto ───────────────────────────────────────────────────────────────── */
 .manual { min-width: 0; }
@@ -2158,43 +2278,158 @@ html.entrando #hyprland.hyprland-visto {
                 max-width: 46ch; line-height: 1.55; }
 .manual-sello { margin-top: 0.5rem; font-size: 0.64rem; color: rgba(107, 130, 140, 0.65); }
 
-.seccion-manual { margin-bottom: clamp(2.6rem, 7vh, 4.5rem); scroll-margin-top: 6rem; }
-/* El h2 del manual va en frase, no en mayusculas como los titulos de la portada.
-   Esos llevan text-transform: uppercase y 0.3em de espaciado de la clase
-   .cabecera-seccion, y como el selector es igual de especifico (0,1,1) el que
-   gana es el ultimo: el mio. Sin esto el titulo salia en mayusculas con el
-   espaciado del otro, que es las dos cosas a la vez. */
-.seccion-manual h2 { font: 600 0.95rem/1.25 var(--f); letter-spacing: 0;
-                     text-transform: none; color: var(--hielo); }
-.seccion-manual h4 { font: 600 0.76rem/1 var(--f); letter-spacing: 0.1em;
-                     text-transform: uppercase; color: rgba(107, 130, 140, 0.8);
-                     margin: 1.6rem 0 0.6rem; }
-.seccion-manual p { font-size: 0.86rem; line-height: 1.65; color: var(--gris);
-                     max-width: 62ch; margin-top: 0.7rem; }
-.seccion-manual p.destacado { font-size: 0.95rem; color: var(--hielo); }
-.seccion-manual a { color: var(--hielo); }
-.seccion-manual code { font-size: 0.86em; }
+.seccion-manual { margin-bottom: clamp(2.8rem, 7vh, 4.8rem); scroll-margin-top: 7.2rem; }
+.seccion-manual .cabecera-seccion {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  margin-bottom: 1.15rem;
+  border-bottom: 1px solid var(--linea);
+}
+.seccion-manual .punto-mini { display: none; }
+.seccion-manual h2 {
+  font: 600 clamp(1.1rem, 2.2vw, 1.32rem)/1.2 var(--f);
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--hielo);
+  margin: 0;
+}
+.seccion-manual .seccion-n {
+  font: 700 0.8rem/1 var(--f);
+  font-variant-numeric: tabular-nums;
+  color: var(--azul-4);
+  background: rgba(153, 186, 201, 0.08);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  padding: 0.2rem 0.45rem;
+  letter-spacing: 0.02em;
+}
+html.claro .seccion-manual .seccion-n {
+  color: var(--azul-2);
+  background: rgba(20, 22, 24, 0.05);
+  border-color: rgba(20, 22, 24, 0.12);
+}
+.manual-titulo-link {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+}
+.manual-hash {
+  color: var(--azul-4);
+  opacity: 0;
+  font-size: 0.85em;
+  font-weight: 400;
+  transition: opacity 0.16s ease, color 0.16s ease;
+}
+.cabecera-seccion:hover .manual-hash,
+.cabecera-proyecto:hover .manual-hash,
+.manual-titulo-link:focus-visible .manual-hash {
+  opacity: 0.75;
+}
+.manual-titulo-link:hover .manual-hash {
+  opacity: 1;
+  color: var(--oxido);
+}
+.seccion-manual h4 {
+  font: 600 0.78rem/1.2 var(--f);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--azul-4);
+  margin: 2rem 0 0.75rem;
+}
+.seccion-manual p {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--gris);
+  max-width: 68ch;
+  margin-top: 0.75rem;
+}
+.seccion-manual p.destacado {
+  font-size: 0.94rem;
+  line-height: 1.68;
+  color: var(--hielo);
+  background: rgba(184, 91, 53, 0.06);
+  border-left: 3px solid var(--oxido);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 0.8rem 1.1rem;
+  margin: 1.1rem 0;
+  max-width: 72ch;
+}
+html.claro .seccion-manual p.destacado {
+  background: rgba(184, 91, 53, 0.07);
+  color: #1a1c1e;
+  border-left-color: var(--oxido);
+}
+.seccion-manual a:not(.siguiente):not(.proyecto-repo):not(.manual-titulo-link) {
+  color: var(--hielo);
+  text-decoration: underline;
+  text-decoration-color: var(--linea-alta);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.16s ease, color 0.16s ease;
+}
+.seccion-manual a:not(.siguiente):not(.proyecto-repo):not(.manual-titulo-link):hover {
+  text-decoration-color: var(--oxido);
+}
+.seccion-manual code:not(.comando code):not(.bandera code) {
+  font-size: 0.84em;
+  background: rgba(153, 186, 201, 0.08);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  padding: 0.12em 0.38em;
+  color: var(--hielo);
+}
+html.claro .seccion-manual code:not(.comando code):not(.bandera code) {
+  background: rgba(20, 22, 24, 0.06);
+  border-color: rgba(20, 22, 24, 0.12);
+  color: #1b1d1f;
+}
+.seccion-manual .nota-dato {
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: rgba(107, 130, 140, 0.75);
+  margin-top: 0.95rem;
+  border-top: 1px dashed var(--linea);
+  padding-top: 0.55rem;
+}
+.seccion-manual .nota-dato code {
+  font-size: 0.85em;
+  color: var(--azul-4);
+}
+html.claro .seccion-manual .nota-dato {
+  color: rgba(30, 32, 34, 0.62);
+}
+html.claro .seccion-manual .nota-dato code {
+  color: var(--azul-2);
+}
 
 /* Las frases de la pieza. Es una lista y no un bloque de parrafos porque se
    leen como puntos: cada uno es una cosa distinta que hace. */
-.prosa { margin: 0.7rem 0 0; padding-left: 1.1rem; max-width: 68ch; }
-.prosa li { font-size: 0.86rem; line-height: 1.6; color: var(--gris); margin-bottom: 0.4rem; }
-.prosa li::marker { color: rgba(107, 130, 140, 0.5); }
+.prosa { margin: 0.8rem 0 0; padding-left: 1.25rem; max-width: 70ch; }
+.prosa li { font-size: 0.88rem; line-height: 1.68; color: var(--gris); margin-bottom: 0.45rem; }
+.prosa li::marker { color: var(--azul-4); }
+html.claro .prosa li::marker { color: var(--azul-2); }
 
-/* Los chips de la cabecera de seccion. En el manual se pintan dentro de un div
-   con esta clase, y con hueco en el contenedor: los .chip sueltos, sin nada que
-   los separa, salian pegados ("install.sharchsinglepass"), porque .chip no tiene
-   margenes propios —solo los tiene dentro de .muestra, que es una muestra de
-   color—. El hueco va aqui y no en cada chip para que no haya que tocar el
-   marcado cada vez que se anade uno. */
-.chips { display: flex; flex-wrap: wrap; gap: 0.3rem 0.55rem; margin-left: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem 0.45rem; margin-left: auto; }
 .chips .chip {
-  font-size: 0.6rem; letter-spacing: 0.1em;
+  font-size: 0.6rem; letter-spacing: 0.08em;
   color: var(--gris);
-  padding: 0.16rem 0.42rem;
-  border: 1px solid var(--linea-alta);
+  background: var(--cristal-opaco);
+  padding: 0.16rem 0.5rem;
+  border: 1px solid var(--linea);
   border-radius: 999px;
   white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.chips .chip:hover {
+  border-color: var(--linea-alta);
+  color: var(--hielo);
+}
+html.claro .chips .chip {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.12);
 }
 
 /* El buscador. Con 78 atajos en diez grupos, buscar es la unica manera practica
@@ -2215,40 +2450,69 @@ html.entrando #hyprland.hyprland-visto {
                    white-space: nowrap; }
 
 /* Las banderas del instalador. */
-.banderas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
+.banderas { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.1rem; }
 .bandera { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
-           gap: 0.5rem 1.2rem; padding: 0.42rem 0;
-           border-top: 1px solid var(--linea); }
+           gap: 0.6rem 1.3rem; padding: 0.55rem 0.7rem;
+           border-top: 1px solid var(--linea);
+           border-radius: 4px;
+           transition: background 0.15s ease; }
 .bandera:first-child { border-top: 0; }
-.bandera .nombres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.bandera code { font-size: 0.74rem; color: var(--hielo); white-space: nowrap; }
-.bandera .que { font-size: 0.82rem; color: var(--gris); line-height: 1.5; }
+@media (hover: hover) {
+  .bandera:hover { background: rgba(153, 186, 201, 0.04); }
+}
+html.claro .bandera:hover { background: rgba(20, 22, 24, 0.03); }
+.bandera .nombres { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: baseline; }
+.bandera code { font-size: 0.76rem; color: var(--hielo); white-space: nowrap; }
+.bandera .que { font-size: 0.84rem; color: var(--gris); line-height: 1.55; }
 
 /* Los componentes: definicion y descripcion, en dos columnas. */
-.componentes { margin-top: 0.7rem; display: grid;
-               grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
-               gap: 0.42rem 1.4rem; }
-.componentes dt { font-size: 0.8rem; color: var(--hielo); }
-.componentes dd { margin: 0; font-size: 0.8rem; color: var(--gris); line-height: 1.5; }
+.componentes { margin-top: 0.85rem; display: grid;
+               grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+               gap: 0.45rem 1.3rem; }
+.componentes dt {
+  font-size: 0.82rem; font-weight: 600; color: var(--hielo);
+  padding: 0.4rem 0.65rem; background: rgba(153, 186, 201, 0.05);
+  border-radius: 4px; border-left: 2px solid var(--azul-4);
+}
+.componentes dd { margin: 0; font-size: 0.82rem; color: var(--gris); line-height: 1.55;
+                  padding: 0.4rem 0.2rem; }
+html.claro .componentes dt {
+  background: rgba(20, 22, 24, 0.04);
+  border-left-color: var(--azul-2);
+}
 
 /* El arbol: ruta, cifra y para que sirve. */
-.arbol { margin-top: 0.7rem; }
-.fila-arbol { display: grid; grid-template-columns: minmax(0, 16rem) 4rem minmax(0, 1fr);
-              gap: 0.5rem 1rem; padding: 0.42rem 0; border-top: 1px solid var(--linea);
+.arbol { margin-top: 0.85rem; }
+.fila-arbol { display: grid; grid-template-columns: minmax(0, 16rem) 4.5rem minmax(0, 1fr);
+              gap: 0.6rem 1.2rem; padding: 0.55rem 0.7rem; border-top: 1px solid var(--linea);
+              border-radius: 4px;
+              transition: background 0.15s ease;
               align-items: baseline; }
+@media (hover: hover) {
+  .fila-arbol:hover { background: rgba(153, 186, 201, 0.04); }
+}
+html.claro .fila-arbol:hover { background: rgba(20, 22, 24, 0.03); }
 .fila-arbol:first-child { border-top: 0; }
-.fila-arbol .ruta { font-size: 0.76rem; color: var(--hielo); }
-.fila-arbol .cifra { font-size: 0.8rem; color: var(--hielo); text-align: right; }
-.fila-arbol .nota { font-size: 0.78rem; color: var(--gris); }
+.fila-arbol .ruta { font-size: 0.78rem; font-weight: 500; color: var(--hielo); }
+.fila-arbol .cifra { font-size: 0.82rem; font-variant-numeric: tabular-nums;
+                     color: var(--azul-4); text-align: right; font-weight: 600; }
+html.claro .fila-arbol .cifra { color: var(--azul-2); }
+.fila-arbol .nota { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
 
 /* Las filas de "cuando algo va mal": el sintoma a la izquierda, lo que hacer a
    la derecha. */
-.filas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
-.fila { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-        gap: 0.4rem 1.4rem; padding: 0.45rem 0; border-top: 1px solid var(--linea); }
+.filas { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.fila { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+        gap: 0.6rem 1.3rem; padding: 0.55rem 0.7rem; border-top: 1px solid var(--linea);
+        border-radius: 4px;
+        transition: background 0.15s ease; }
 .fila:first-child { border-top: 0; }
-.fila .k { font-size: 0.78rem; color: var(--hielo); }
-.fila .v { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
+@media (hover: hover) {
+  .fila:hover { background: rgba(153, 186, 201, 0.04); }
+}
+html.claro .fila:hover { background: rgba(20, 22, 24, 0.03); }
+.fila .k { font-size: 0.8rem; font-weight: 500; color: var(--hielo); }
+.fila .v { font-size: 0.84rem; color: var(--gris); line-height: 1.58; }
 
 
 /* ── El cambio de tema ─────────────────────────────────────────────────────────
@@ -2267,50 +2531,47 @@ html.entrando #hyprland.hyprland-visto {
    animarla dentro del keyframe. Sin la declaracion seria una cadena y el
    fundido saldria de golpe en el ultimo fotograma. */
 
-@property --barrido {
-  syntax: "<length-percentage>";
-  inherits: false;
-  initial-value: 0px;
-}
-
-/* La foto nueva, quieta debajo. La vieja, con la raja, encima. */
-::view-transition-new(root) { animation: none; }
-
+/* Onda circular expansiva que nace de las coordenadas del interruptor (--vt-x, --vt-y).
+   El tema nuevo se despliega con clip-path circular y el anterior se desvanece suavemente. */
 ::view-transition-old(root) {
-  animation: barrido-tema 240ms ease-out both;
-  mask-image: linear-gradient(
-    100deg,
-    #000 0,
-    #000 calc(50% - var(--barrido)),
-    transparent calc(50% - var(--barrido)),
-    transparent calc(50% + var(--barrido)),
-    #000 calc(50% + var(--barrido)),
-    #000 100%
-  );
-  mask-mode: alpha;
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
+  animation: vt-fade-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-@keyframes barrido-tema {
-  from { --barrido: 0px; }
-  to { --barrido: 75%; }
+::view-transition-new(root) {
+  animation: vt-wipe 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* Mientras se cambia la clase, ninguna transicion propia: si no, los colores
-   intentarian fundirse por su cuenta debajo de la foto congelada y al quitar la
-   raja se veria el fundido a medias. Se pone y se quita desde app.js. */
-html.sin-transicion *,
-html.sin-transicion *::before,
-html.sin-transicion *::after {
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes vt-wipe {
+  from { clip-path: circle(0% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+  to { clip-path: circle(150% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+}
+
+/* Transición suave para navegadores sin View Transitions */
+html:not(.sin-transicion),
+html:not(.sin-transicion) body,
+html:not(.sin-transicion) .isla,
+html:not(.sin-transicion) .barra-z,
+html:not(.sin-transicion) .indice,
+html:not(.sin-transicion) #contenido,
+html:not(.sin-transicion) .cuadro,
+html:not(.sin-transicion) .panel,
+html:not(.sin-transicion) .hito-cuerpo {
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+}
+
+/* Mientras se cambia la clase, silenciar transiciones excepto las del interruptor */
+html.sin-transicion *:not(.interruptor):not(.interruptor *) {
   transition: none !important;
 }
 
-/* Con movimiento reducido, o donde no hay View Transitions, el cambio es
-   instantaneo: es lo mismo que pedia el sistema, y una raja de 240 ms tambien
-   es movimiento. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root) { animation: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
 }
 
 /* ── El tema claro ───────────────────────────────────────────────────────────── */
@@ -2362,6 +2623,9 @@ html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
   .indice li a.activo { border-bottom-color: var(--hielo); border-left-color: transparent; }
   .indice-sello { margin-top: 0.5rem; }
   .seccion-manual h2 { font-size: 0.86rem; }
+}
+
+@media (max-width: 1060px) {
   .bandera, .fila, .fila-arbol, .componentes { grid-template-columns: 1fr; }
   .fila-arbol .cifra { text-align: left; }
   .componentes { gap: 0.1rem 0; }
@@ -2443,7 +2707,23 @@ html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
   background: var(--cristal-opaco);
   border: 1px solid var(--linea);
   border-radius: var(--r);
-  padding: 0.95rem 1.05rem 1.05rem;
+  padding: 1.05rem 1.15rem 1.2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.proyecto:hover {
+  border-color: var(--linea-alta);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+html.claro .proyecto {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+html.claro .proyecto:hover {
+  border-color: rgba(20, 22, 24, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 .proyecto h2 {
   font: 600 0.8rem/1 var(--f); letter-spacing: 0.1em;
@@ -2613,11 +2893,20 @@ html.claro .proyecto-subs .n { color: rgba(30, 32, 34, 0.45); }
   border: 1px solid var(--linea);
   border-radius: var(--r);
   background: var(--suelo);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .figura a { display: block; line-height: 0; }
-.figura a:hover img { border-color: var(--linea-alta); }
+.figura a:hover img {
+  border-color: var(--linea-alta);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.42);
+}
 .figura a:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 2px;
                          border-radius: var(--r); }
+html.claro .figura img {
+  border-color: rgba(20, 22, 24, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
 
 .figura figcaption {
   margin-top: 0.4rem;
@@ -2642,6 +2931,343 @@ html.claro .figura figcaption { color: rgba(30, 32, 34, 0.6); }
   .figuras-varias,
   .figuras-serie { grid-template-columns: 1fr; }
   .figura figcaption { font-size: 0.66rem; }
+}
+
+/* ── Rejilla de distribuciones soportadas ───────────────────────────────────── */
+.rejilla-distros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.2rem;
+  margin: 1.4rem 0 1rem;
+}
+.tarjeta-distro {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .tarjeta-distro:hover {
+    border-color: var(--linea-alta);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.38);
+  }
+}
+html.claro .tarjeta-distro {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+html.claro .tarjeta-distro:hover {
+  border-color: rgba(20, 22, 24, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.distro-visual {
+  position: relative;
+  overflow: hidden;
+  background: var(--suelo);
+  border-bottom: 1px solid var(--linea);
+}
+.distro-visual a {
+  display: block;
+  line-height: 0;
+}
+.distro-visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+.tarjeta-distro:hover .distro-visual img {
+  transform: scale(1.02);
+}
+.distro-info {
+  padding: 0.95rem 1.05rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.distro-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.distro-titulo {
+  margin: 0 !important;
+  font: 600 0.92rem/1.2 var(--f) !important;
+  color: var(--hielo) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+.distro-tipo {
+  font-size: 0.72rem;
+  color: var(--azul-4);
+  margin-top: 0.35rem;
+  font-family: var(--f);
+}
+html.claro .distro-tipo {
+  color: var(--azul-2);
+}
+.distro-desc {
+  font-size: 0.82rem !important;
+  line-height: 1.55 !important;
+  color: var(--gris) !important;
+  margin-top: 0.6rem !important;
+  flex: 1;
+}
+
+/* ── Mapa de dots animado: Roadmap ────────────────────────────────────────────
+   Línea de tiempo vertical con riel dinámico y dots que se iluminan al hacer
+   scroll. El hito actual pulsa con onda de radar. */
+.mapa-roadmap {
+  position: relative;
+  margin: 1.8rem 0 1.5rem;
+  padding-left: 0;
+}
+.timeline-riel {
+  position: absolute;
+  left: calc(1.4rem - 1.5px);
+  top: 1.3rem;
+  bottom: 2.2rem;
+  width: 3px;
+  background: var(--linea);
+  border-radius: 999px;
+  overflow: hidden;
+  z-index: 1;
+}
+.timeline-linea-progreso {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, var(--azul-4) 0%, var(--oxido) 55%, #4ecdc4 100%);
+  box-shadow: 0 0 10px rgba(153, 186, 201, 0.7), 0 0 5px var(--oxido);
+  border-radius: 999px;
+  transition: height 0.08s ease-out;
+}
+.hitos-lista {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.hito-roadmap {
+  display: grid;
+  grid-template-columns: 2.8rem 1fr;
+  gap: 0.8rem;
+  align-items: start;
+  transform: translateY(4px);
+  transition: transform 0.32s ease;
+}
+.hito-roadmap.alcanzado {
+  transform: translateY(0);
+}
+.hito-cuerpo {
+  opacity: 0.55;
+  transition: opacity 0.32s ease;
+}
+.hito-roadmap.alcanzado .hito-cuerpo {
+  opacity: 1;
+}
+.hito-dot-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+  padding-top: 0.15rem;
+}
+.hito-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--suelo) !important;
+  border: 2px solid var(--linea);
+  position: relative;
+  z-index: 4;
+  opacity: 1 !important;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+html.claro .hito-dot {
+  background: #ffffff !important;
+  border-color: rgba(20, 22, 24, 0.2);
+}
+.ico-dot-check {
+  width: 13px;
+  height: 13px;
+  color: var(--azul-4);
+  opacity: 1;
+  transition: color 0.28s ease;
+}
+html.claro .ico-dot-check {
+  color: var(--azul-2);
+}
+.hito-completado .hito-dot {
+  border-color: var(--azul-4);
+}
+html.claro .hito-completado .hito-dot {
+  border-color: var(--azul-2);
+}
+.hito-completado.alcanzado .hito-dot {
+  border-color: var(--azul-4);
+  box-shadow: 0 0 12px rgba(153, 186, 201, 0.45);
+}
+html.claro .hito-completado.alcanzado .hito-dot {
+  border-color: var(--azul-2);
+  box-shadow: 0 0 10px rgba(40, 80, 110, 0.25);
+}
+
+/* Hito actual con radar / pulso continuo */
+.hito-actual .hito-dot {
+  border-color: var(--oxido);
+  background: var(--suelo) !important;
+  box-shadow: 0 0 14px rgba(184, 91, 53, 0.5);
+  position: relative;
+  z-index: 4;
+}
+html.claro .hito-actual .hito-dot {
+  background: #ffffff !important;
+}
+.hito-actual .dot-nucleo {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--oxido);
+  box-shadow: 0 0 8px var(--oxido);
+  z-index: 2;
+}
+.hito-actual .pulso-radar {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--oxido);
+  animation: pulso-radar-onda 2s cubic-bezier(0.1, 0.8, 0.2, 1) infinite;
+  pointer-events: none;
+}
+@keyframes pulso-radar-onda {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Hitos futuros */
+.hito-futuro .hito-dot {
+  border: 2px dashed var(--linea);
+  color: var(--gris);
+  background: var(--suelo);
+  position: relative;
+  z-index: 2;
+}
+html.claro .hito-futuro .hito-dot {
+  background: #ffffff;
+}
+.hito-futuro .dot-num {
+  font: 600 0.62rem/1 var(--f);
+  font-variant-numeric: tabular-nums;
+  color: rgba(107, 130, 140, 0.65);
+}
+.hito-futuro.alcanzado .hito-dot {
+  border-color: var(--linea-alta);
+  box-shadow: 0 0 8px rgba(153, 186, 201, 0.25);
+  color: var(--hielo);
+  transform: scale(1.05);
+}
+.hito-futuro.alcanzado .dot-num {
+  color: var(--azul-4);
+}
+html.claro .hito-futuro.alcanzado .dot-num {
+  color: var(--azul-2);
+}
+
+/* Tarjeta del hito */
+.hito-cuerpo {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  padding: 0.95rem 1.15rem 1.05rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.hito-roadmap.alcanzado .hito-cuerpo {
+  border-color: var(--linea-alta);
+}
+.hito-actual .hito-cuerpo {
+  border-color: rgba(184, 91, 53, 0.45);
+  background: rgba(184, 91, 53, 0.04);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), 0 0 20px rgba(184, 91, 53, 0.08);
+}
+html.claro .hito-cuerpo {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+html.claro .hito-actual .hito-cuerpo {
+  background: rgba(184, 91, 53, 0.05);
+  border-color: rgba(184, 91, 53, 0.35);
+}
+.hito-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.hito-tag {
+  font: 600 0.58rem/1 var(--f);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+.hito-tag-completado {
+  background: rgba(153, 186, 201, 0.12);
+  color: var(--azul-4);
+  border: 1px solid rgba(153, 186, 201, 0.25);
+}
+.hito-tag-actual {
+  background: rgba(184, 91, 53, 0.2);
+  color: var(--oxido);
+  border: 1px solid var(--oxido);
+}
+.hito-tag-futuro {
+  background: rgba(107, 130, 140, 0.1);
+  color: var(--gris);
+  border: 1px solid var(--linea);
+}
+.hito-fase {
+  font-size: 0.65rem;
+  color: rgba(107, 130, 140, 0.7);
+  font-family: var(--f);
+}
+.hito-titulo {
+  font: 600 0.94rem/1.25 var(--f) !important;
+  color: var(--hielo) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  margin: 0.2rem 0 0.45rem !important;
+}
+.hito-desc {
+  font-size: 0.83rem !important;
+  line-height: 1.6 !important;
+  color: var(--gris) !important;
+  margin: 0 0 0.75rem !important;
+  max-width: 64ch !important;
+}
+.hito-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
 }
 
 /* ══ LA SALIDA DE UN COMANDO ═════════════════════════════════════════════════
@@ -2710,21 +3336,21 @@ html.claro .salida .linea-ok { color: var(--hielo); }
      La de arriba se va deslizando el `background-position` hacia arriba, fuera de
      la caja: como el fondo se dibuja recortado a la caja del boton, al salirse
      desaparece, y eso si se puede transicionar. */
-  width: 44px; height: 44px; min-width: 44px;
+  width: 1.9rem; height: 1.9rem; min-width: 1.9rem;
   padding: 0; margin: 0;
   position: relative;
   color: var(--enlace-barra);
   background-image: linear-gradient(currentColor 0 0);
   background-repeat: no-repeat;
   background-position: center 34%;
-  background-size: 17px 1.6px;
-  border: 0; border-left: 1px solid var(--linea);
+  background-size: 15px 1.6px;
+  border: 1px solid var(--linea);
   border-radius: var(--r); cursor: pointer;
   /* El background-position va en la lista. Sin el, la raya de arriba se teletransporta
      y el efecto se pierde entero. */
-  transition: color 0.2s, background-color 0.2s, background-position 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, background-position 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.contenidos:hover { color: var(--hielo); background-color: rgba(153, 186, 201, 0.09); }
+.contenidos:hover { color: var(--hielo); border-color: var(--linea-alta); background-color: rgba(153, 186, 201, 0.08); }
 .contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 html.claro .contenidos:hover { background-color: rgba(0, 0, 0, 0.06); }
 
@@ -2927,23 +3553,33 @@ html.con-indice { overflow: hidden; }
    Los dos en una fila: con uno solo no hay vuelta atras, que es justo lo que
    hace falta en un movil donde el indice cuesta de abrir. */
 .siguientes {
-  display: flex; align-items: stretch; gap: 1.5rem;
-  margin-top: 1.6rem; padding-top: 0.8rem;
+  display: flex; align-items: stretch; gap: 1rem;
+  margin-top: 2rem; padding-top: 1.2rem;
   border-top: 1px solid var(--linea);
   flex-wrap: wrap;
 }
 .siguiente {
-  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  display: inline-flex; align-items: center; gap: 0.65rem;
   flex: 1 1 12rem;
   font-size: 0.8rem; color: var(--gris); text-decoration: none;
-  padding: 0.35rem 0;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  background: var(--cristal-opaco);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
 .siguiente.anterior { justify-content: flex-start; }
 .siguiente:not(.anterior) { justify-content: flex-end; text-align: right; }
 .siguiente span { font-size: 0.6rem; letter-spacing: 0.16em;
                   text-transform: uppercase; color: rgba(107, 130, 140, 0.65);
                   white-space: nowrap; }
-.siguiente:hover { color: var(--hielo); }
+.siguiente:hover {
+  color: var(--hielo);
+  border-color: var(--linea-alta);
+  background: rgba(153, 186, 201, 0.08);
+  transform: translateY(-1px);
+}
 .siguiente:hover span { color: var(--azul-4); }
 .siguiente i { width: 0; height: 0; align-self: center; flex: none;
                border-left: 5px solid currentColor;
@@ -2959,7 +3595,7 @@ html.con-indice { overflow: hidden; }
 /* En movil los dos van apilados y con altura de dedo, no en fila: con 390 px de
    ancho, dos botones de texto largo en fila se parten en tres lineas cada uno. */
 @media (max-width: 620px) {
-  .siguientes { flex-direction: column; gap: 0; }
+  .siguientes { flex-direction: column; gap: 0.6rem; }
   .siguiente { flex: none; justify-content: flex-start !important;
                text-align: left !important; min-height: 44px;
                align-items: center; }
@@ -2967,7 +3603,17 @@ html.con-indice { overflow: hidden; }
   .siguiente i { display: none; }
 }
 
-html.claro .siguiente { color: var(--gris); }
+html.claro .siguiente {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.12);
+  color: var(--gris);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+html.claro .siguiente:hover {
+  background: rgba(20, 22, 24, 0.03);
+  border-color: rgba(20, 22, 24, 0.22);
+  color: #1b1d1f;
+}
 html.claro .siguiente span { color: rgba(30, 32, 34, 0.55); }
 
 @media (prefers-reduced-motion: reduce) {

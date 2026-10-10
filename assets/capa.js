@@ -438,6 +438,7 @@
       var fondo = getComputedStyle(c).backgroundImage.match(/url\(["']?([^"')]+)/);
       if (!fondo) return;
       var img = new Image();
+      img.decoding = "async";
       img.onload = medir;
       img.src = fondo[1];
     });

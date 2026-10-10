@@ -45,7 +45,7 @@
   Lo que sale por esa puerta no es la pagina, es lo que escribe quien busca, y solo
   si busca. assets/buscador.js lo tiene escrito en su cabecera, sin rodeos.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nAK7VnBp6G/vtc4ozdrEE5vGXXSnXOh21k8N/k3+oUQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -154,10 +154,12 @@
        Y al crearlo desde aqui, que va antes de la hoja, adelanta el angel: empieza
        a bajar mientras se descarga el CSS, en vez de despues. */
     try {
-      var a = document.createElement("link");
-      a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
-      a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
-      document.head.appendChild(a);
+      if (!/manual(\.html)?$/.test(location.pathname)) {
+        var a = document.createElement("link");
+        a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
+        a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
+        document.head.appendChild(a);
+      }
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
     /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
        no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
@@ -203,6 +205,7 @@
        con el angel y con la hoja, y este no es el elemento mas importante de
        la pagina. Es el segundo. -->
   <link rel="preload" as="image" href="assets/hyprland-poster.webp">
+  <link rel="preload" as="font" href="assets/fuentes/jetbrains-var.woff2" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/buscador.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
@@ -217,6 +220,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230b0d0f'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ba5f44' stroke-width='4.5'/%3E%3C/svg%3E">
 </head>
 <body>
+<div class="linea-progreso" id="linea-progreso" aria-hidden="true"></div>
 
 <!-- Enlace de salto. Es lo primero que hay en el DOM y esta oculto hasta que le
      llega el foco por el teclado, que es justo cuando hace falta: saltar la barra
@@ -233,7 +237,7 @@
        mida cada lado. -->
   <div class="isla" tabindex="0" aria-label="Navigation">
     <div class="izq">
-      <span class="rotulo">Rhythmcrea</span>
+      <a class="rotulo rotulo-enlace" href="#campo">Rhythmcrea</a>
     </div>
     <span class="reloj" id="reloj">--:--:--</span>
     <!-- La zona derecha: los enlaces y el interruptor. Van en un div porque el
@@ -325,7 +329,23 @@
 
 <!-- Hyprland. Lo unico que hay, con su seccion entera. -->
 <section class="cola seccion" id="hyprland">
-  <div id="hyprland-caja"></div>
+  <div id="hyprland-caja">
+<div class="cabecera-seccion"><span class="punto-mini"></span><h2>hyprland</h2><span class="meta">v0.25  ·  17 h ago</span></div><figure class="clip"><div class="escena-clip"><video id="clip-hyprland" width="1280" height="720" poster="assets/hyprland-poster.webp" preload="none" playsinline  data-desde="5" loop aria-label="hyprland, the desktop"><source data-src="assets/hyprland-demo.webm" type="video/webm"><source data-src="assets/hyprland-demo.mp4" type="video/mp4">This browser cannot play the clip. It is 50 seconds of the desktop: the launcher, the control centre and the end.</video><button class="clip-play" type="button" data-play="clip-hyprland" aria-label="Reproducir el clip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"/></svg></button></div><div class="clip-barra"><button class="clip-btn" type="button" data-accion="play" aria-label="Reproducir"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico-play"><path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="ico-pausa"><path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"/></svg></button><div class="clip-pista" role="slider" tabindex="0" aria-label="Posicion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="clip-barra-rota"></span><span class="clip-mando"></span></div><span class="clip-tiempo"><b class="clip-actual">0:00</b><i>/</i><span class="clip-total">--:--</span></span><div class="clip-vol"><button class="clip-btn" type="button" data-accion="mute" aria-label="Quitar el sonido"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico-son"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" class="ico-mudo"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="m16 9 5 6M21 9l-5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><div class="clip-pista clip-vol-pista" role="slider" tabindex="0" aria-label="Volumen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="clip-barra-rota"></span><span class="clip-mando"></span></div></div></div><figcaption class="nota-dato">Recorded off a real session.</figcaption></figure><div class="acciones-seccion"><a class="b b-gh" href="https://github.com/rhythmcreative/hyprland" target="_blank" rel="noopener"><span class="marca" aria-hidden="true"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></span>Github</a><a class="b b-flecha" href="manual.html"><span>Manual</span><i aria-hidden="true"></i></a></div><div class="instalar" id="instalar"><h3 class="instalar-titulo">Install</h3><p class="instalar-texto">One line. It asks before changing anything, automatically detects your distro, and sets up the desktop cleanly.</p><div class="distros-soportadas" aria-label="Supported distributions"><span class="chip-distro">Arch</span><span class="chip-distro">NixOS</span><span class="chip-distro">openSUSE</span><span class="chip-distro">Fedora</span><span class="chip-distro">Debian</span><span class="chip-distro">Ubuntu</span><span class="chip-distro">Alpine</span></div><div class="comando instalar-cmd"><code>curl -fsSL https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh | bash</code><button class="copiar" type="button" data-copiar="curl -fsSL https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh | bash">copy</button></div></div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </section>
 
 </main>
@@ -336,8 +356,7 @@
 <footer class="cola pie-menu" id="fuera">
   <div class="marca-menu">
     <a class="rotulo-menu" href="#campo">Rhythmcrea</a>
-    <p>An Arch desktop that doesn&#8217;t break.</p>
-
+    <p>A Hyprland desktop that doesn&#8217;t break across modern Linux distributions.</p>
   </div>
 
   <!-- Esta pagina. Solo lo que hay dentro: hyprland, que es donde esta el
@@ -376,13 +395,13 @@
     </div>
 </footer>
 
-<script src="data/github.js"></script>
-<script src="assets/hyprland.js"></script>
-<script src="assets/capa-datos.js"></script>
-<script src="assets/capa.js"></script>
-<script src="assets/i18n.js"></script>
-<script src="assets/app.js"></script>
-<script src="data/buscador-local.js"></script>
-<script src="assets/buscador.js"></script>
+<script src="data/github.js" defer></script>
+<script src="assets/hyprland.js" defer></script>
+<script src="assets/capa-datos.js" defer></script>
+<script src="assets/capa.js" defer></script>
+<script src="assets/i18n.js" defer></script>
+<script src="assets/app.js" defer></script>
+<script src="data/buscador-local.js" defer></script>
+<script src="assets/buscador.js" defer></script>
 </body>
 </html>

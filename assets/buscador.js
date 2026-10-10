@@ -451,6 +451,10 @@
       location.href = "manual.html#" + ancla;
       return;
     }
+    if (pagina !== "manual" && aquí) {
+      location.href = "index.html#" + ancla;
+      return;
+    }
     cerrar();
     var destino = document.getElementById(ancla);
     if (destino) {
@@ -528,6 +532,7 @@
     b.type = "button";
     b.className = "buscador-boton";
     b.setAttribute("aria-label", T("Search this site"));
+    b.setAttribute("title", T("Search this site"));
     b.innerHTML = '<span aria-hidden="true"></span>';
     b.addEventListener("click", function (e) {
       e.preventDefault();

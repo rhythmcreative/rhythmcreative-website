@@ -141,8 +141,8 @@
     // un numero que sube y baja por gente que marca el repo sin abrirlo, y
     // delante de la version la hacia leer como si fuera el dato de la release.
     var meta = [];
-    if (d.release) meta.push(LOGO_ARCH + esc(d.release));
-    else if (d.lenguaje) meta.push(LOGO_ARCH + esc(d.lenguaje));
+    if (d.release) meta.push(esc(d.release));
+    else if (d.lenguaje) meta.push(esc(d.lenguaje));
     if (d.push) meta.push(esc(hace(d.push)));
     out.push('<span class="meta">' + meta.join("  ·  ") + "</span>");
     out.push("</div>");
@@ -156,19 +156,7 @@
     // El de github lleva el mark de verdad (el octocat del set oficial, que es
     // una sola ruta SVG) en un cuadrado con radio. Va en currentColor, asi que
     // no hay dos iconos que mantener ni que cambiar con el tema.
-    // El "_blank" del boton del manual se decide aqui y no en la cadena: el manual
-    // es una pagina de ESTE sitio, y abrir una pestana nueva para saltar dentro
-    // deja al visitante con dos pestanas y sin pila de retroceso. Si algun dia
-    // vuelve a apuntar a algo externo (un README, un foro), se vuelve a abrir en
-    // pestana nueva sin tocar nada mas.
     var manualExt = /^https?:/i.test(H.manual || "");
-
-      // El "_blank" del boton del manual se decide aqui y no dentro de la cadena: el
-      // manual es una pagina de ESTE sitio, y abrir una pestana nueva para saltar
-      // dentro deja al visitante con dos pestanas y sin pila de retroceso. Si
-      // algun dia vuelve a apuntar a algo externo (un README, un foro), se vuelve
-      // a abrir en pestana nueva sin tocar nada mas.
-      var manualExt = /^https?:/i.test(H.manual || "");
 
     out.push('<div class="acciones-seccion">' +
       '<a class="b b-gh" href="https://github.com/' + esc(H.repo) +
@@ -195,14 +183,22 @@
     out.push('<div class="instalar" id="instalar">' +
       '<h3 class="instalar-titulo">' + esc(H.instalar.titulo) + "</h3>" +
       '<p class="instalar-texto">' + esc(H.instalar.texto) + "</p>" +
+      '<div class="distros-soportadas" aria-label="Supported distributions">' +
+        '<span class="chip-distro">Arch</span>' +
+        '<span class="chip-distro">NixOS</span>' +
+        '<span class="chip-distro">openSUSE</span>' +
+        '<span class="chip-distro">Fedora</span>' +
+        '<span class="chip-distro">Debian</span>' +
+        '<span class="chip-distro">Ubuntu</span>' +
+        '<span class="chip-distro">Alpine</span>' +
+      '</div>' +
       '<div class="comando instalar-cmd"><code>' + esc(H.instalar.comando) + "</code>" +
       '<button class="copiar" type="button" data-copiar="' + esc(H.instalar.comando) +
       '">copy</button></div>' +
       "</div>");
 
-
     var caja = $("#hyprland-caja");
-    if (caja) caja.innerHTML = out.join("");
+    if (caja && !caja.children.length) caja.innerHTML = out.join("");
   }
 
 
@@ -597,6 +593,11 @@
         });
       }
 
+      // Pinchar sobre el propio video cuando esta en marcha lo pausa.
+      video.addEventListener("click", function () {
+        if (!video.paused) alternar();
+      });
+
       // Pinchar en el clip lo para y lo reanuda. Antes no habia nada: como el
       // boton grande se apaga en cuanto arranca y ademas con pointer-events:
       // none, la unica manera de parar era el boton de la barra de abajo. En un
@@ -771,10 +772,22 @@
         pintar();
       });
 
-      // Espacio y k sobre el video, sin capturar la tecla en la pagina entera.
+      // Teclado sobre el video: espacio/k para alternar, m para silenciar, flechas para saltar 5s.
       video.setAttribute("tabindex", "0");
       video.addEventListener("keydown", function (ev) {
-        if (ev.key === " " || ev.key === "k") { ev.preventDefault(); alternar(); }
+        if (ev.key === " " || ev.key === "k" || ev.key === "K") {
+          ev.preventDefault();
+          alternar();
+        } else if (ev.key === "m" || ev.key === "M") {
+          ev.preventDefault();
+          btnMute.click();
+        } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+          if (!video.duration) return;
+          ev.preventDefault();
+          var salta = ev.key === "ArrowRight" ? 5 : -5;
+          video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + salta));
+          pintar();
+        }
       });
 
       pintar();
@@ -895,7 +908,16 @@
         var aviso = caja.querySelector(".copiar");
         if (!aviso) return;
         var antes = aviso.textContent;
-        aviso.textContent = "copied";
+        var tCopiado = (window.traducir && window.traducir("copied")) || "copied";
+        if (tCopiado === "copied") {
+          var idm = document.documentElement.getAttribute("data-idioma") || document.documentElement.getAttribute("lang");
+          if (idm === "es") tCopiado = "copiado";
+          else if (idm === "ca") tCopiado = "copiat";
+          else if (idm === "fr") tCopiado = "copié";
+          else if (idm === "it") tCopiado = "copiato";
+          else if (idm === "pt") tCopiado = "copiado";
+        }
+        aviso.textContent = tCopiado;
         aviso.classList.add("hecho");
         setTimeout(function () {
           aviso.textContent = antes;
@@ -1058,9 +1080,17 @@
     var modo = modoActual();
     aplicarTema(modo);
 
-    b.addEventListener("click", function () {
-      modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
-      cambiarTema(modo, true);
+    b.addEventListener("click", function (ev) {
+      if (ev) {
+        var rect = b.getBoundingClientRect();
+        var x = ev.clientX || (rect.left + rect.width / 2);
+        var y = ev.clientY || (rect.top + rect.height / 2);
+        document.documentElement.style.setProperty("--vt-x", x + "px");
+        document.documentElement.style.setProperty("--vt-y", y + "px");
+      }
+      var actual = modoActual();
+      var sig = MODOS[(MODOS.indexOf(actual) + 1) % MODOS.length];
+      cambiarTema(sig, true);
     });
 
     // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo
@@ -1151,7 +1181,12 @@
     }
 
     var porGrupo = {}, orden = [];
+    var vistos = {}, conteoUnico = 0;
     lista.forEach(function (a) {
+      var clave = (a.grupo + "|" + a.tecla.toLowerCase() + "|" + (a.nota || a.que)).trim();
+      if (vistos[clave]) return;
+      vistos[clave] = true;
+      conteoUnico++;
       if (!porGrupo[a.grupo]) { porGrupo[a.grupo] = []; orden.push(a.grupo); }
       porGrupo[a.grupo].push(a);
     });
@@ -1178,7 +1213,7 @@
     }).join("");
 
     return buscadorAtajos() + '<div class="atajos" id="lista-atajos">' + cuerpo + "</div>" +
-      '<p class="nota-dato">' + lista.length + " keybindings, parsed from " +
+      '<p class="nota-dato">' + conteoUnico + " keybindings, parsed from " +
       "<code>hyprland.lua</code>" +
       (D && D.version ? " on " + esc(D.version) : "") +
       ". Read from the repository, not from a running compositor, so this is the " +
@@ -1307,28 +1342,15 @@
   }
 
   function seccionBarra() {
-    return '<p class="destacado">The strip along the top of the screen. A dynamic ' +
-      "island for Hyprland written in QML, from " +
-      '<a href="https://github.com/k4ditano/k4" target="_blank" rel="noopener">k4ditano/k4</a>' +
-      ". It is the one piece of this desktop written by somebody else, and the " +
-      "installer puts it in place along with everything else.</p>" +
+    return '<p class="destacado">The status bar at the top of the screen. Powered by Waybar, styled to match the active Pywal wallpaper palette automatically.</p>' +
       '<div class="filas">' +
-      fila("What it is", "Media keys, a control centre, notifications, an app " +
-        "launcher, screen capture, and a video editor, all in one strip that " +
-        "expands when you touch it and folds away when you do not.") +
-      fila("Dual mode", "The bar leaves the top of the screen and becomes a dock. " +
-        "Same process, same configuration, different place.") +
-      fila("Plugins", "Its own plugin API, and a documented one. Install from the " +
-        "bar itself, write one, or ask your agent for one.") +
-      fila("Wallpapers", "It pulls its colours out of the wallpaper, so the bar " +
-        "changes with the desktop instead of asking you to pick a palette twice.") +
+      fila("Workspaces & windows", "Shows your active workspaces, workspace indicators, and the title of the focused window.") +
+      fila("System monitors", "Real-time indicators for CPU, memory, temperatures, battery status, network connection, and audio volume.") +
+      fila("Dynamic theming", "Reloads colors automatically on wallpaper change without restarting the compositor.") +
+      fila("Tray and clock", "System tray icons for background services and a clean clock with date and calendar popover.") +
       "</div>" +
-      "<h4>What it does not do</h4>" +
-      "<p>It is not configurable from <code>hyprland.lua</code>. Everything about " +
-      "the bar lives in its own files under <code>~/.config/k4</code>, and a " +
-      "broken plugin there shows up in the bar and nowhere else — so when " +
-      "<code>rhythm-doctor</code> says the compositor is fine and the bar is not, " +
-      "the answer is in that directory.</p>";
+      "<h4>Configuration</h4>" +
+      "<p>Everything lives in <code>~/.config/waybar/config.jsonc</code> and <code>~/.config/waybar/style.css</code>. Custom module scripts reside in <code>scripts/waybar/</code> and can be tweaked without breaking the base layout.</p>";
   }
 
   // ── Desde un movil ──────────────────────────────────────────────────────────
@@ -1342,39 +1364,187 @@
   //   si      ssh, cliphist.service, grim, slurp
   //   no      wtype, wlrctl, ydotool, syncthing, kdeconnect
   //
-  // Ese "no" es el contenido de la seccion. Un movil puede entrar por ssh y ya
-  // esta; no puede tocar la pantalla porque las tres herramientas que lo hacen
-  // posibles no estan instaladas, y no hay nada que las instale.
-  function seccionMovil() {
-    return '<p class="destacado">Hyprland needs a GPU and a Wayland session, so ' +
-      "it does not run on Android or iOS. This desktop is on the laptop. What " +
-      "follows is what does and does not cross over.</p>" +
-      '<div class="filas">' +
-      fila("This page", "Works on a phone. The index along the side becomes one " +
-        "row you slide sideways, the screenshots stack in a single column, and " +
-        "the bar at the top drops its links so the clock and the theme switch " +
-        "have room. Measured at 390 px wide.") +
-      fila("Getting in", "ssh is installed. From a phone you can open a session " +
-        "and drive the machine from the command line: hyprctl, the wallpaper " +
-        "script, the doctor. What you cannot do from there is see what you are " +
-        "doing.") +
-      fila("The clipboard", "cliphist.service is running, so anything copied on " +
-        "the desktop is still waiting when you get in. That is the easiest way " +
-        "to move text in either direction, and it needs nothing else installed.") +
-      fila("A phone as a trackpad", "Not set up. It takes one of wtype, wlrctl " +
-        "or ydotool to turn a phone into a pointer and a keyboard, and none of " +
-        "the three is here. Nothing in the installer adds them.") +
-      fila("Files and clipboard, automatically", "No syncthing and no KDE Connect. " +
-        "The two desktops do not talk to each other on their own; you move " +
-        "things over ssh or by hand.") +
-      "</div>" +
-      "<h4>The one place touch is handled</h4>" +
-      "<p>On a touchscreen laptop — not a phone, a laptop with a screen you can " +
-      "touch — the bar is handled properly. It matches on <code>(hover: none)</code> " +
-      "and then gives every control a 44 px target instead of the 28 px it " +
-      "gives a mouse, and moves the clock up in size so it is the thing you can " +
-      "read from an arm's length away. It is the only part of the desktop that " +
-      "was built with a finger in mind.</p>";
+  function seccionDistros() {
+    var distrosData = [
+      {
+        nombre: "CachyOS",
+        tipo: "Arch-based (Bore / Linux-cachyos kernel)",
+        pkg: "pacman / paru",
+        img: "assets/manual/distro_cachyos.webp",
+        w: 1280, h: 720,
+        desc: "High-performance Arch derivative with optimized x86-64-v3/v4 binaries. Full hardware acceleration, dynamic Pywal color integration, and native compositor support out of the box."
+      },
+      {
+        nombre: "Debian",
+        tipo: "Debian 13 (Trixie) & 12 (Bookworm)",
+        pkg: "apt",
+        img: "assets/manual/distro_debian.webp",
+        w: 1280, h: 720,
+        desc: "Stable and testing releases supported. Includes targeted QML6 declarative dependencies, PAM configuration, custom Astronaut SDDM session handoff, and Wayland compositor integration."
+      },
+      {
+        nombre: "Fedora",
+        tipo: "Fedora 40 & 41 (Workstation / Server)",
+        pkg: "dnf",
+        img: "assets/manual/distro_fedora.webp",
+        w: 1280, h: 720,
+        desc: "Modern Red Hat base with PipeWire audio, systemd user services, and SELinux-aware wrappers. Waybar, Quickshell, and full font stack installed and themed automatically."
+      },
+      {
+        nombre: "NixOS",
+        tipo: "NixOS 24.05 & Unstable",
+        pkg: "nix / flake",
+        img: "assets/manual/distro_nixos.webp",
+        w: 1280, h: 720,
+        desc: "Declarative and reproducible installation. Integrates rust-dock placement, standalone quickshell components, Pywal color generation, and complete Wayland environment."
+      },
+      {
+        nombre: "openSUSE",
+        tipo: "Tumbleweed, Slowroll & Leap",
+        pkg: "zypper",
+        img: "assets/manual/distro_opensuse.webp",
+        w: 1280, h: 720,
+        desc: "Rolling and stable openSUSE branches. Resolves pywal color scheme transitions, colors-rofi-dark integration, SUPER+Shift+W wallpaper toggles, and Waybar monitoring."
+      },
+      {
+        nombre: "Ubuntu",
+        tipo: "Ubuntu 24.04 LTS & 24.10",
+        pkg: "apt",
+        img: "assets/manual/distro_ubuntu.webp",
+        w: 1280, h: 720,
+        desc: "Canonical LTS platform support. Handles Wayland compositor dependencies, audio/brightness keybindings, SDDM login screen setup, and cliphist clipboard daemon."
+      }
+    ];
+
+    var tarjetas = distrosData.map(function (d) {
+      return '<div class="tarjeta-distro">' +
+        '<div class="distro-visual">' +
+        '<a href="' + esc(d.img) + '" target="_blank" rel="noopener" title="View ' + esc(d.nombre) + ' screenshot">' +
+        '<img src="' + esc(d.img) + '" alt="Hyprland running on ' + esc(d.nombre) + '" width="' + d.w + '" height="' + d.h + '" loading="lazy" decoding="async">' +
+        '</a>' +
+        '</div>' +
+        '<div class="distro-info">' +
+        '<div class="distro-cabecera">' +
+        '<h4 class="distro-titulo">' + esc(d.nombre) + '</h4>' +
+        '<span class="chip">' + esc(d.pkg) + '</span>' +
+        '</div>' +
+        '<span class="distro-tipo">' + esc(d.tipo) + '</span>' +
+        '<p class="distro-desc">' + esc(d.desc) + '</p>' +
+        '</div>' +
+        '</div>';
+    }).join("");
+
+    return '<p class="destacado">Real installations tested and verified across every supported Linux distribution. The installer detects your package manager and kernel environment automatically.</p>' +
+      '<div class="rejilla-distros">' + tarjetas + '</div>' +
+      '<p class="nota-dato">6 distribution families captured and validated with live testing builds.</p>';
+  }
+
+  function seccionFuturo() {
+    var hitos = [
+      {
+        estado: "completado",
+        fase: "Milestone 1",
+        tag: "Completed",
+        titulo: "First release: Arch Linux & base installer",
+        desc: "Initial stable release featuring native Arch Linux support and the automated base installer engine.",
+        tech: ["Arch Linux", "Base installer", "First release"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 2",
+        tag: "Completed",
+        titulo: "Independent multi-monitor & Rofi support",
+        desc: "Multi-monitor workspace support with independent display handling and dynamic per-monitor Rofi launcher integration.",
+        tech: ["Multi-monitor", "Independent screens", "Rofi"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 3",
+        tag: "Completed",
+        titulo: "Quickshell implementation",
+        desc: "Native integration of Quickshell in QML, bringing the top dynamic island, reactive media controls, and status widgets.",
+        tech: ["Quickshell", "QML", "Dynamic island"]
+      },
+      {
+        estado: "actual",
+        fase: "Milestone 4",
+        tag: "Current status",
+        titulo: "Release v0.25 & multi-distro verification",
+        desc: "Current verified milestone. Fully tested across all 6 active distribution families with live testing builds, instant scroll restoration, and comprehensive manual docs.",
+        tech: ["Release v0.25", "Current stable", "Verified builds"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 5",
+        tag: "Planned",
+        titulo: "Replace Waybar with Quickshell",
+        desc: "Migrate the status bar entirely to Quickshell in native QML, merging the top island and bar into a single reactive, unified framework.",
+        tech: ["Quickshell", "Native QML", "Unified bar & island"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 6",
+        tag: "Planned",
+        titulo: "Full tablet & touchscreen support",
+        desc: "Complete touch and tablet experience: touch gestures, on-screen keyboard (wvkbd), auto-rotation sensor integration (iio-sensor-proxy), and 44px touch targets.",
+        tech: ["Tablets", "wvkbd", "Auto-rotate", "Touch gestures"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 7",
+        tag: "Planned",
+        titulo: "Niri window manager support",
+        desc: "Native integration for the Niri scrollable-tiling Wayland compositor alongside Hyprland, sharing the same Pywal palette, Quickshell island, and configs.",
+        tech: ["Niri", "Scrollable tiling", "Wayland compositor"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 8",
+        tag: "Planned",
+        titulo: "Complete standalone Live ISO",
+        desc: "Full standalone bootable Live ISO ready to download, test in live session, and install out-of-the-box without requiring a pre-existing Linux install.",
+        tech: ["Live ISO", "Bootable image", "Offline installer"]
+      }
+    ];
+
+    var htmlHitos = hitos.map(function (h, i) {
+      var dotContent = "";
+      if (h.estado === "completado") {
+        dotContent = '<svg class="ico-dot-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" fill="currentColor"/></svg>';
+      } else if (h.estado === "actual") {
+        dotContent = '<span class="pulso-radar" aria-hidden="true"></span><span class="dot-nucleo" aria-hidden="true"></span>';
+      } else {
+        dotContent = '<span class="dot-num" aria-hidden="true">' + (i + 1) + '</span>';
+      }
+
+      var chipsHtml = h.tech.map(function (t) {
+        return '<span class="chip">' + esc(t) + '</span>';
+      }).join("");
+
+      return '<article class="hito-roadmap hito-' + h.estado + '" data-estado="' + h.estado + '">' +
+        '<div class="hito-dot-col">' +
+        '<div class="hito-dot">' + dotContent + '</div>' +
+        '</div>' +
+        '<div class="hito-cuerpo">' +
+        '<div class="hito-meta">' +
+        '<span class="hito-tag hito-tag-' + h.estado + '">' + esc(h.tag) + '</span>' +
+        '<span class="hito-fase">' + esc(h.fase) + '</span>' +
+        '</div>' +
+        '<h4 class="hito-titulo">' + esc(h.titulo) + '</h4>' +
+        '<p class="hito-desc">' + esc(h.desc) + '</p>' +
+        '<div class="hito-chips">' + chipsHtml + '</div>' +
+        '</div>' +
+        '</article>';
+    }).join("");
+
+    return '<p class="destacado">An interactive timeline tracking shipped capabilities, our current active status, and planned developments for upcoming releases.</p>' +
+      '<div class="mapa-roadmap" id="mapa-roadmap">' +
+      '<div class="timeline-riel" aria-hidden="true">' +
+      '<div class="timeline-linea-progreso" id="timeline-linea-progreso"></div>' +
+      '</div>' +
+      '<div class="hitos-lista">' + htmlHitos + '</div>' +
+      '</div>' +
+      '<p class="nota-dato">Scroll through the roadmap to trace completed milestones up to the current release and into future planned features.</p>';
   }
 
   function fila(a, b) {
@@ -1439,11 +1609,12 @@
     var propias = {
       atajos: atajos,
       instalado: componentes,
+      distros: seccionDistros,
       actualizar: seccionActualizar,
       arbol: arbol,
       problemas: seccionProblemas,
       barra: seccionBarra,
-      movil: seccionMovil
+      futuro: seccionFuturo
     };
 
     // Y las que salen de una pieza de hyprland.js. Puede haber mas de una: la
@@ -1507,7 +1678,7 @@
   // enlace a otra persona se lea "4. The island" y no un numero suelto.
   function pintarIndice() {
     var caja = $("#indice");
-    if (!caja) return;
+    if (!caja || caja.children.length) return;
     var D = window.RHYTHM_DOCS || null;
 
     // Antes al lado de "Hotkeys" salia "10 groups", el numero de grupos de atajos
@@ -1534,92 +1705,98 @@
   function pintarManual() {
     var caja = $("#manual");
     if (!caja) return;                    // no estamos en la pagina del manual
-    if (!PROYECTOS.length) {
-      caja.innerHTML = '<p class="sin-datos">No projects in <code>H.proyectos</code>.</p>';
-      return;
+    if (!caja.children.length) {
+      if (!PROYECTOS.length) {
+        caja.innerHTML = '<p class="sin-datos">No projects in <code>H.proyectos</code>.</p>';
+        return;
+      }
+
+      // La portada: los proyectos y lo que hay dentro de cada uno. Es el mismo
+      // dato que el indice, en grande. En omarchy esta lista es la pagina entera y
+      // cada capitulo tiene su URL; aqui la lista esta arriba y las dos coisas
+      // comparten fuente.
+      var portada = '<div class="portada' + (PROYECTOS.length === 1 ? " portada-una" : "") +
+        '">' + PROYECTOS.map(function (proy) {
+        var subs = proy.subs.map(function (sub) {
+          var e = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
+          return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
+            '<i class="n">' + (e ? e.n : "?") + "</i>" + esc(sub.t) + "</a></li>";
+        }).join("");
+        return '<article class="proyecto">' +
+          '<h2>' + esc(proy.titulo) + "</h2>" +
+          '<p class="proyecto-res">' + esc(proy.resumen || "") + "</p>" +
+          (proy.repo
+            ? '<a class="proyecto-repo" href="https://github.com/' + esc(proy.repo) +
+              '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
+            : "") +
+          '<ol class="proyecto-subs">' + subs + "</ol></article>";
+      }).join("") + "</div>";
+
+      // Las secciones. Cada proyecto abre con un encabezado propio y sus
+      // subsecciones van debajo, para que al leer en scroll largo se sepa de que
+      // parte se esta hablando.
+      var secciones = PROYECTOS.map(function (proy) {
+        var cuerpo = proy.subs.map(function (sub) {
+          var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
+          // PLANO va de 0 y la entrada n va de 1, asi que el siguiente es
+          // PLANO[entrada.n] y el anterior es PLANO[entrada.n - 2]. Con el -2
+          // al principio: la entrada numero 1 no tiene anterior y sale undefined,
+          // que es justo lo que hace falta para no pintarlo.
+          var siguiente = entrada ? PLANO[entrada.n] : null;
+          var anterior = entrada ? PLANO[entrada.n - 2] : null;
+          var chips = (piezaPorId(sub.pieza) || {}).chips || [];
+
+          return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
+            '<div class="cabecera-seccion">' +
+            '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
+            '<h2><a class="manual-titulo-link" href="#' + esc(idDe(proy, sub)) + '">' + esc(sub.t) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
+            (chips.length
+              ? '<span class="chips">' + chips.map(function (c) {
+                  return '<span class="chip">' + esc(c) + "</span>";
+                }).join("") + "</span>"
+              : "") +
+            "</div>" + cuerpoSeccion(proy, sub) +
+            // Abajo van los dos: antes solo el siguiente, con lo que en movil no
+            // habia manera de volver atras sin tirar del indice. Y en la ultima
+            // seccion, en vez de eso, un vuelta arriba —que es lo que se quiere
+            // pulsar al terminar, no un enlace a la portada.
+            (anterior || siguiente
+              ? '<div class="siguientes">' +
+                (anterior
+                  ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
+                    '<i aria-hidden="true"></i><span>Previous</span>' +
+                    esc(anterior.sub.t) + "</a>"
+                  : "") +
+                (siguiente
+                  ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
+                    "<span>Next</span>" + esc(siguiente.sub.t) +
+                    '<i aria-hidden="true"></i></a>'
+                  : '<a class="siguiente anterior arriba" href="#contenido">' +
+                    '<i aria-hidden="true"></i><span>End of the manual</span>' +
+                    "Back to the top</a>") +
+                "</div>"
+              : "") +
+            "</section>";
+        }).join("");
+
+        var cabecera = PROYECTOS.length > 1
+          ? ('<div class="cabecera-proyecto">' +
+             '<h2><a class="manual-titulo-link" href="#proy-' + esc(proy.id) + '">' + esc(proy.titulo) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
+             '<p>' + esc(proy.resumen || "") + "</p>" +
+             (proy.repo
+               ? '<a href="https://github.com/' + esc(proy.repo) +
+                 '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
+               : "") +
+             "</div>")
+          : "";
+
+        return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
+          cabecera + cuerpo + "</div>";
+      }).join("");
+
+      caja.innerHTML = portada + secciones;
+      pintarIndice();
     }
-
-    // La portada: los proyectos y lo que hay dentro de cada uno. Es el mismo
-    // dato que el indice, en grande. En omarchy esta lista es la pagina entera y
-    // cada capitulo tiene su URL; aqui la lista esta arriba y las dos coisas
-    // comparten fuente.
-    var portada = '<div class="portada' + (PROYECTOS.length === 1 ? " portada-una" : "") +
-      '">' + PROYECTOS.map(function (proy) {
-      var subs = proy.subs.map(function (sub) {
-        var e = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
-          '<i class="n">' + (e ? e.n : "?") + "</i>" + esc(sub.t) + "</a></li>";
-      }).join("");
-      return '<article class="proyecto">' +
-        '<h2>' + esc(proy.titulo) + "</h2>" +
-        '<p class="proyecto-res">' + esc(proy.resumen || "") + "</p>" +
-        (proy.repo
-          ? '<a class="proyecto-repo" href="https://github.com/' + esc(proy.repo) +
-            '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-          : "") +
-        '<ol class="proyecto-subs">' + subs + "</ol></article>";
-    }).join("") + "</div>";
-
-    // Las secciones. Cada proyecto abre con un encabezado propio y sus
-    // subsecciones van debajo, para que al leer en scroll largo se sepa de que
-    // parte se esta hablando.
-    var secciones = PROYECTOS.map(function (proy) {
-      var cuerpo = proy.subs.map(function (sub) {
-        var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        // PLANO va de 0 y la entrada n va de 1, asi que el siguiente es
-        // PLANO[entrada.n] y el anterior es PLANO[entrada.n - 2]. Con el -2
-        // al principio: la entrada numero 1 no tiene anterior y sale undefined,
-        // que es justo lo que hace falta para no pintarlo.
-        var siguiente = entrada ? PLANO[entrada.n] : null;
-        var anterior = entrada ? PLANO[entrada.n - 2] : null;
-        var chips = (piezaPorId(sub.pieza) || {}).chips || [];
-
-        return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
-          '<div class="cabecera-seccion">' +
-          '<span class="punto-mini"></span>' +
-          '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
-          "<h2>" + esc(sub.t) + "</h2>" +
-          (chips.length
-            ? '<span class="chips">' + chips.map(function (c) {
-                return '<span class="chip">' + esc(c) + "</span>";
-              }).join("") + "</span>"
-            : "") +
-          "</div>" + cuerpoSeccion(proy, sub) +
-          // Abajo van los dos: antes solo el siguiente, con lo que en movil no
-          // habia manera de volver atras sin tirar del indice. Y en la ultima
-          // seccion, en vez de eso, un vuelta arriba —que es lo que se quiere
-          // pulsar al terminar, no un enlace a la portada.
-          (anterior || siguiente
-            ? '<div class="siguientes">' +
-              (anterior
-                ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
-                  '<i aria-hidden="true"></i><span>Previous</span>' +
-                  esc(anterior.sub.t) + "</a>"
-                : "") +
-              (siguiente
-                ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
-                  "<span>Next</span>" + esc(siguiente.sub.t) +
-                  '<i aria-hidden="true"></i></a>'
-                : '<a class="siguiente anterior arriba" href="#contenido">' +
-                  '<i aria-hidden="true"></i><span>End of the manual</span>' +
-                  "Back to the top</a>") +
-              "</div>"
-            : "") +
-          "</section>";
-      }).join("");
-
-      return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
-        '<div class="cabecera-proyecto">' +
-        '<h2>' + esc(proy.titulo) + "</h2>" +
-        '<p>' + esc(proy.resumen || "") + "</p>" +
-        (proy.repo
-          ? '<a href="https://github.com/' + esc(proy.repo) +
-            '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-          : "") +
-        "</div>" + cuerpo + "</div>";
-    }).join("");
-
-    caja.innerHTML = portada + secciones;
 
     // El indice antes que nada: necesita el DOM ya pintado para poder medir, y
     // se pinta desde PLANO, no desde las secciones, asi que el orden entre estas
@@ -1629,12 +1806,43 @@
     indicePanel();
     montarBuscador();
     marcarIndice();
+    animarRoadmap();
 
-    // Un solo listener para todo el scroll, no uno por seccion. Con doce
-    // secciones, doce listeners cada uno midiendo doce rectangulos, es trabajo
-    // en cada fotograma por algo que aqui son doce medidas y un bucle.
-    addEventListener("scroll", marcarIndice, { passive: true });
-    addEventListener("resize", marcarIndice, { passive: true });
+    var enScroll = function () {
+      marcarIndice();
+      animarRoadmap();
+    };
+
+    addEventListener("scroll", enScroll, { passive: true });
+    addEventListener("resize", enScroll, { passive: true });
+  }
+
+  function animarRoadmap() {
+    var mapa = $("#mapa-roadmap");
+    if (!mapa) return;
+    var riel = $("#timeline-linea-progreso");
+    var hitos = $$("#mapa-roadmap .hito-roadmap");
+    if (!hitos.length) return;
+
+    var rect = mapa.getBoundingClientRect();
+    var viewH = window.innerHeight;
+    var puntoLectura = viewH * 0.65;
+    var distancia = puntoLectura - rect.top;
+    var pct = Math.max(0, Math.min(100, (distancia / rect.height) * 100));
+
+    if (riel) {
+      riel.style.height = pct.toFixed(1) + "%";
+    }
+
+    hitos.forEach(function (h) {
+      var hRect = h.getBoundingClientRect();
+      var hitoCentro = hRect.top + (hRect.height * 0.35);
+      if (hitoCentro <= puntoLectura) {
+        h.classList.add("alcanzado");
+      } else {
+        h.classList.remove("alcanzado");
+      }
+    });
   }
 
   function montarBuscador() {
@@ -1661,6 +1869,13 @@
       });
     };
     busca.addEventListener("input", marcar, { passive: true });
+    busca.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && busca.value) {
+        e.preventDefault();
+        busca.value = "";
+        marcar();
+      }
+    });
     marcar();
   }
 
@@ -1697,6 +1912,11 @@
       g.classList.toggle("activo", g.querySelector("h3").textContent ===
         (PROYECTOS.filter(function (p) { return p.id === proyecto; })[0] || {}).titulo);
     });
+
+    // Como en omarchy, no se cambia el hash de la URL al hacer scroll:
+    // cambiar location.hash mientras se lee ensucia la direccion y hace que
+    // una recarga salte a la cabecera de la seccion en vez de restaurar la
+    // linea exacta donde se habia quedado el lector.
   }
 
   // Lleva el enlace activo de la tira a la vista, sin mover la pagina.
@@ -1707,15 +1927,14 @@
   // solo se mueve la tira, y solo si el enlaceactivo esta fuera de su hueco.
   function sigueAlActivo(el) {
     if (!el) return;
-    var tira = el.closest(".indice");
-    if (!tira || tira.scrollWidth <= tira.clientWidth + 2) return;  // cabe entero
+    var tira = el.closest(".indice ol") || el.closest(".subs") || el.closest(".indice");
+    if (!tira || tira.scrollWidth <= tira.clientWidth + 2) return;
     var a = el.getBoundingClientRect(), t = tira.getBoundingClientRect();
-    // Un margen de un lado y medio del otro, para que el enlace no quede
-    // pegado al borde: se lee mejor con un poco de aire delante y detras.
-    var izquierda = tira.scrollLeft + (a.left - t.left) - 24;
-    var derecha = tira.scrollLeft + (a.right - t.left) - tira.clientWidth + 24;
-    if (izquierda > 0) tira.scrollLeft = izquierda;              // esta a la derecha
-    else if (derecha > 0) tira.scrollLeft = derecha;              // esta a la izquierda
+    if (a.left < t.left + 16) {
+      tira.scrollLeft += (a.left - t.left - 16);
+    } else if (a.right > t.right - 16) {
+      tira.scrollLeft += (a.right - t.right + 16);
+    }
   }
 
   // La altura de la barra, en una variable de CSS.
@@ -1918,86 +2137,178 @@
   //
   // Y hay una excepcion: si la URL lleva #algo manda el ancla. El usuario ha pedido
   // un sitio concreto y devolverle "donde estaba" le haria caso omiso.
-  var CLAVE_POS = "rhythm-crea-scroll";
-  var posGuardada = 0;
+  // Con el HTML pre-renderizado (como omarchy), el navegador ya conoce la altura
+  // real del documento en el primer tick de parseo. La restauracion nativa
+  // de scroll funciona de forma instantanea sin saltos ni pantallas negras.
+  //
+  // Guardamos la posicion en sessionStorage y localStorage como respaldo
+  // para cuando se abre una pestana nueva o se vuelve despues de cerrar el navegador.
+  var paginaId = ((location.pathname || "").split("/").pop() || "index").replace(/\.html$/, "") || "index";
+  var CLAVE_POS = "rhythm-scroll-" + paginaId;
+  var posGuardada = leerPos();
+  var restaurado = false;
+
+  var esRecarga = false;
+  try {
+    var nav = (performance.getEntriesByType &&
+      performance.getEntriesByType("navigation")[0]) || null;
+    esRecarga = nav ? nav.type === "reload" : ((performance.navigation &&
+      performance.navigation.type === 1) ? true : false);
+  } catch (e) { esRecarga = false; }
 
   try {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  } catch (e) { /* sin scrollRestoration */ }
+  } catch (e) { /* sin history */ }
 
   function leerPos() {
-    try { return parseInt(sessionStorage.getItem(CLAVE_POS), 10) || 0; }
-    catch (e) { return 0; }        // sin storage: se empieza arriba, que es lo de siempre
+    try {
+      var v = parseInt(sessionStorage.getItem(CLAVE_POS), 10) ||
+              parseInt(sessionStorage.getItem(CLAVE_POS + ".html"), 10) ||
+              parseInt(sessionStorage.getItem("rhythm-crea-scroll"), 10);
+      if (v > 0) return v;
+      var local = parseInt(localStorage.getItem(CLAVE_POS), 10) ||
+                  parseInt(localStorage.getItem(CLAVE_POS + ".html"), 10) ||
+                  parseInt(localStorage.getItem("rhythm-crea-scroll"), 10);
+      if (local > 0) return local;
+      return 0;
+    } catch (e) { return 0; }
   }
 
   function guardarPos() {
-    try { sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY))); }
-    catch (e) { /* sin storage */ }
+    if (!restaurado) return;
+    try {
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      localStorage.setItem(CLAVE_POS, val);
+    } catch (e) { /* sin storage */ }
   }
 
-  // Con throttle y no en cada scroll: el evento salta a 60 por segundo, y escribir
-  // en storage ese numero de veces funciona en una maquina y va mal en un movil con
-  // la pestana en segundo plano.
   var ultimoGuardado = 0;
   addEventListener("scroll", function () {
     var ahora = Date.now();
-    if (ahora - ultimoGuardado < 300) return;
+    if (ahora - ultimoGuardado < 100) return;
     ultimoGuardado = ahora;
     guardarPos();
   }, { passive: true });
 
-  // En pagehide y en visibilitychange, y no solo en unload: en movil cambiar de
-  // pestana o cerrar la del navegador no dispara unload. Sin esto, recargar sin
-  // haber hecho scroll lately guardaba una posicion de hace medio minuto.
-  addEventListener("pagehide", guardarPos);
+  addEventListener("beforeunload", function () {
+    try {
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      localStorage.setItem(CLAVE_POS, val);
+    } catch (e) { /* sin storage */ }
+  });
+  addEventListener("pagehide", function () {
+    try {
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      localStorage.setItem(CLAVE_POS, val);
+    } catch (e) { /* sin storage */ }
+  });
   addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") guardarPos();
+    if (document.visibilityState === "hidden") {
+      try {
+        var val = String(Math.round(window.scrollY));
+        sessionStorage.setItem(CLAVE_POS, val);
+        localStorage.setItem(CLAVE_POS, val);
+      } catch (e) { /* sin storage */ }
+    }
   });
 
-    // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-    //
-    // NO vale con esperar dos fotogramas. Al principio lo hacia asi y el resultado
-    // era abrir la pagina ABAJO del todo, en el final del documento. El motivo es
-    // que a los dos fotogramas la pagina todavia esta CORTA: la foto del angel, la
-    // fuente y el cartel del clip se estan descargando, y el alto que se mide ahi no
-    // es el alto bueno. La posicion recordada era mas grande que ese alto corto, y
-    // el tope que se ponia para no salirse (min(y, max)) la convertia en el final
-    // del documento. O sea: abrir abajo, que es justo el fallo.
-    //
-    // Ahora se espera al evento load, que es cuando ya han llegado las imagenes y
-    // la fuente y el alto por fin es el definitivo. Si load ya ha pasado, que es el
-    // caso de cuando se navega con la cache en calor, se va directo.
-    function devolverPos() {
-      if (location.hash) return;                 // manda el ancla
-      var y = posGuardada;
-      if (y <= 0) return;
-
-      var poner = function () {
-        // Dos fotogramas DESPUES de load: el layout ya esta resuelto, y un
-        // requestAnimationFrame mas asegura que el navegador aplico los estilos
-        // calculados con los recursos nuevos.
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            var alto = document.documentElement.scrollHeight - innerHeight;
-            //
-            // NUNCA al final del documento. Este era el fallo de verdad y hacia mas
-            // de lo que parece. Si el punto guardado no existe ya —la pagina quedo
-            // mas corta que la ultima vez, o la ventana es mas baja, o el ancho
-            // cambio y la foto de las alas ocupa otra altura—, lo unico que se
-            // puede hacer con un tope es ir al final. Y "abajo del todo" es
-            // justamente lo que se quejaba el visitante: recargar y verse en la
-            // ultima linea del documento.
-            //
-            // Si el punto no existe, se empieza por arriba. Arriba siempre es un
-            // sitio del que se sale, y es lo que espera cualquiera que recarga.
-            scrollTo(0, y > alto ? 0 : y);
-          });
-        });
-      };
-
-      if (document.readyState === "complete") poner();
-      else addEventListener("load", poner, { once: true });
+  // ── Animacion de desplazamiento suave al restaurar ─────────────────────────
+  function animarScroll(destino, cb) {
+    var inicio = window.scrollY;
+    var distancia = Math.abs(destino - inicio);
+    if (distancia < 10) {
+      window.scrollTo(0, destino);
+      if (cb) cb();
+      return;
     }
+
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        window.scrollTo(0, destino);
+        if (cb) cb();
+        return;
+      }
+    } catch (e) { /* sin matchMedia */ }
+
+    var t0 = performance.now();
+    var duracion = Math.min(750, Math.max(450, Math.round(Math.sqrt(distancia) * 15)));
+
+    function ease(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    var cancelado = false;
+    function cancelar() {
+      cancelado = true;
+      quitar();
+    }
+    function quitar() {
+      window.removeEventListener("wheel", cancelar);
+      window.removeEventListener("touchstart", cancelar);
+      window.removeEventListener("keydown", cancelar);
+    }
+    window.addEventListener("wheel", cancelar, { passive: true });
+    window.addEventListener("touchstart", cancelar, { passive: true });
+    window.addEventListener("keydown", cancelar, { passive: true });
+
+    function paso(ahora) {
+      if (cancelado) {
+        quitar();
+        if (cb) cb();
+        return;
+      }
+      var p = Math.min(1, (ahora - t0) / duracion);
+      var y = Math.round(inicio + (destino - inicio) * ease(p));
+      window.scrollTo(0, y);
+      if (p < 1) {
+        requestAnimationFrame(paso);
+      } else {
+        quitar();
+        if (cb) cb();
+      }
+    }
+
+    requestAnimationFrame(paso);
+  }
+
+  // ── Cuando se devuelve la posicion ─────────────────────────────────────────
+  function devolverPos() {
+    var hashActual = location.hash || "";
+    var destino = 0;
+
+    if (hashActual && !esRecarga) {
+      var id = decodeURIComponent(hashActual.slice(1));
+      var el = document.getElementById(id);
+      if (el) {
+        var r = el.getBoundingClientRect();
+        var alto = document.documentElement.scrollHeight - innerHeight;
+        destino = Math.min(Math.round(r.top + window.scrollY), Math.max(0, alto));
+      }
+    }
+
+    if (!destino && posGuardada > 0) {
+      var altoDoc = document.documentElement.scrollHeight - innerHeight;
+      if (altoDoc > 0) {
+        destino = Math.min(posGuardada, altoDoc);
+      }
+    }
+
+    if (destino > 20) {
+      if (window.scrollY > 0) {
+        window.scrollTo(0, 0);
+      }
+      setTimeout(function () {
+        animarScroll(destino, function () {
+          restaurado = true;
+        });
+      }, 70);
+    } else {
+      restaurado = true;
+    }
+  }
 
   // ── La entrada ─────────────────────────────────────────────────────────────
   //
@@ -2033,7 +2344,7 @@
     // la portada entrar. Recargar y que la portada entre animada cuando ya estas
     // mil pixeles mas abajo, no es una entrada: es un retraso en un sitio donde no
     // se nota.
-    if (posGuardada > 40 || location.hash) return;
+    if (paginaId === "manual" || window.scrollY > 20 || posGuardada > 20 || location.hash) return;
 
     // Tambien se mira aqui y no solo en el CSS. Es lo que hace omarchy.org: si el
     // sistema pide menos movimiento, la clase NO se pone. Es distinto de anularla
@@ -2098,7 +2409,41 @@
     if (r) r.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
   }
 
+  function montarProgreso() {
+    var barra = $("#linea-progreso");
+    if (!barra) {
+      barra = document.createElement("div");
+      barra.id = "linea-progreso";
+      barra.className = "linea-progreso";
+      barra.setAttribute("aria-hidden", "true");
+      document.body.prepend(barra);
+    }
+    var raf = null;
+    function actualizar() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - window.innerHeight;
+      if (max <= 0) {
+        barra.style.width = "0%";
+        return;
+      }
+      var y = window.scrollY || window.pageYOffset || 0;
+      var pct = Math.min(100, Math.max(0, (y / max) * 100));
+      barra.style.width = pct.toFixed(2) + "%";
+    }
+    function onScroll() {
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = null;
+        actualizar();
+      });
+    }
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", onScroll, { passive: true });
+    actualizar();
+  }
+
   function inicio() {
+    montarProgreso();
     // La posicion se lee PRIMERO, antes de la entrada: entrada() necesita saber si
     // la pagina se abre por arriba o por el medio, y esa respuesta esta en la
     // posicion guardada. Todavia no se ha restaurado nada, que es justo lo que hace

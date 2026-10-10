@@ -350,6 +350,13 @@ def main():
         print("  describe %s, recogido %s" % (cuerpo["version"], cuerpo["recogido"]))
     for a in avisos:
         print("  AVISO %s" % a)
+
+    prerender = os.path.join(SITIO, "scripts", "prerender.js")
+    if os.path.isfile(prerender):
+        try:
+            subprocess.run(["node", prerender], check=False, cwd=SITIO)
+        except Exception:
+            pass
     return 0
 
 
