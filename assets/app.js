@@ -1958,6 +1958,18 @@
   var posGuardada = leerPos();
   var restaurado = false;
 
+  var esRecarga = false;
+  try {
+    var nav = (performance.getEntriesByType &&
+      performance.getEntriesByType("navigation")[0]) || null;
+    esRecarga = nav ? nav.type === "reload" : ((performance.navigation &&
+      performance.navigation.type === 1) ? true : false);
+  } catch (e) { esRecarga = false; }
+
+  try {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  } catch (e) { /* sin history */ }
+
   function leerPos() {
     try {
       var v = parseInt(sessionStorage.getItem(CLAVE_POS), 10) ||
@@ -1973,6 +1985,7 @@
   }
 
   function guardarPos() {
+    if (!restaurado) return;
     try {
       var val = String(Math.round(window.scrollY));
       sessionStorage.setItem(CLAVE_POS, val);
@@ -1989,45 +2002,122 @@
   }, { passive: true });
 
   addEventListener("beforeunload", function () {
-    guardarPos();
+    try {
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      localStorage.setItem(CLAVE_POS, val);
+    } catch (e) { /* sin storage */ }
   });
   addEventListener("pagehide", function () {
-    guardarPos();
+    try {
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      localStorage.setItem(CLAVE_POS, val);
+    } catch (e) { /* sin storage */ }
   });
   addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") guardarPos();
+    if (document.visibilityState === "hidden") {
+      try {
+        var val = String(Math.round(window.scrollY));
+        sessionStorage.setItem(CLAVE_POS, val);
+        localStorage.setItem(CLAVE_POS, val);
+      } catch (e) { /* sin storage */ }
+    }
   });
 
-  // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-  function devolverPos() {
-    // Si el navegador ya ha restaurado la posicion nativamente (como en una recarga normal),
-    // no se toca nada: el usuario ya esta donde estaba sin tirones.
-    if (window.scrollY > 0) {
-      restaurado = true;
+  // ── Animacion de desplazamiento suave al restaurar ─────────────────────────
+  function animarScroll(destino, cb) {
+    var inicio = window.scrollY;
+    var distancia = Math.abs(destino - inicio);
+    if (distancia < 10) {
+      window.scrollTo(0, destino);
+      if (cb) cb();
       return;
     }
 
-    var hashActual = location.hash || "";
-    if (hashActual) {
-      var id = decodeURIComponent(hashActual.slice(1));
-      var el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "auto", block: "start" });
-        restaurado = true;
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        window.scrollTo(0, destino);
+        if (cb) cb();
         return;
+      }
+    } catch (e) { /* sin matchMedia */ }
+
+    var t0 = performance.now();
+    var duracion = Math.min(750, Math.max(450, Math.round(Math.sqrt(distancia) * 15)));
+
+    function ease(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    var cancelado = false;
+    function cancelar() {
+      cancelado = true;
+      quitar();
+    }
+    function quitar() {
+      window.removeEventListener("wheel", cancelar);
+      window.removeEventListener("touchstart", cancelar);
+      window.removeEventListener("keydown", cancelar);
+    }
+    window.addEventListener("wheel", cancelar, { passive: true });
+    window.addEventListener("touchstart", cancelar, { passive: true });
+    window.addEventListener("keydown", cancelar, { passive: true });
+
+    function paso(ahora) {
+      if (cancelado) {
+        quitar();
+        if (cb) cb();
+        return;
+      }
+      var p = Math.min(1, (ahora - t0) / duracion);
+      var y = Math.round(inicio + (destino - inicio) * ease(p));
+      window.scrollTo(0, y);
+      if (p < 1) {
+        requestAnimationFrame(paso);
+      } else {
+        quitar();
+        if (cb) cb();
       }
     }
 
-    // Respaldo cuando se vuelve a la pagina y el navegador empieza en 0:
-    var y = posGuardada;
-    if (y > 0) {
-      var alto = document.documentElement.scrollHeight - innerHeight;
-      if (alto > 0) {
-        var destino = Math.min(y, Math.max(0, alto));
-        window.scrollTo(0, destino);
+    requestAnimationFrame(paso);
+  }
+
+  // ── Cuando se devuelve la posicion ─────────────────────────────────────────
+  function devolverPos() {
+    var hashActual = location.hash || "";
+    var destino = 0;
+
+    if (hashActual && !esRecarga) {
+      var id = decodeURIComponent(hashActual.slice(1));
+      var el = document.getElementById(id);
+      if (el) {
+        var r = el.getBoundingClientRect();
+        var alto = document.documentElement.scrollHeight - innerHeight;
+        destino = Math.min(Math.round(r.top + window.scrollY), Math.max(0, alto));
       }
     }
-    restaurado = true;
+
+    if (!destino && posGuardada > 0) {
+      var altoDoc = document.documentElement.scrollHeight - innerHeight;
+      if (altoDoc > 0) {
+        destino = Math.min(posGuardada, altoDoc);
+      }
+    }
+
+    if (destino > 20) {
+      if (window.scrollY > 0) {
+        window.scrollTo(0, 0);
+      }
+      setTimeout(function () {
+        animarScroll(destino, function () {
+          restaurado = true;
+        });
+      }, 70);
+    } else {
+      restaurado = true;
+    }
   }
 
   // ── La entrada ─────────────────────────────────────────────────────────────
