@@ -1711,7 +1711,7 @@
         (PROYECTOS.filter(function (p) { return p.id === proyecto; })[0] || {}).titulo);
     });
 
-    if (history.replaceState) {
+    if (restaurado && history.replaceState) {
       if (actual && location.hash !== "#" + actual) {
         history.replaceState(null, "", "#" + actual);
       } else if (!actual && location.hash) {
@@ -1943,6 +1943,7 @@
   var CLAVE_POS = "rhythm-scroll-" + paginaId;
   var posGuardada = leerPos();
   var restaurado = false;
+  var hashInicial = location.hash || "";
 
   var esRecarga = false;
   try {
@@ -1957,14 +1958,25 @@
   } catch (e) { /* sin scrollRestoration */ }
 
   function leerPos() {
-    try { return parseInt(sessionStorage.getItem(CLAVE_POS), 10) || 0; }
-    catch (e) { return 0; }
+    try {
+      var v = parseInt(sessionStorage.getItem(CLAVE_POS), 10);
+      if (v > 0) return v;
+      if (paginaId === "manual") {
+        var local = parseInt(localStorage.getItem(CLAVE_POS), 10);
+        if (local > 0) return local;
+      }
+      return 0;
+    } catch (e) { return 0; }
   }
 
   function guardarPos() {
     if (!restaurado && posGuardada > 0) return;
     try {
-      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      if (paginaId === "manual") {
+        localStorage.setItem(CLAVE_POS, val);
+      }
     } catch (e) { /* sin storage */ }
   }
 
@@ -1978,44 +1990,68 @@
 
   addEventListener("beforeunload", function () {
     try {
-      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
     } catch (e) { /* sin storage */ }
   });
   addEventListener("pagehide", function () {
     try {
-      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+      var val = String(Math.round(window.scrollY));
+      sessionStorage.setItem(CLAVE_POS, val);
+      if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
     } catch (e) { /* sin storage */ }
   });
   addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden") {
       try {
-        sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+        var val = String(Math.round(window.scrollY));
+        sessionStorage.setItem(CLAVE_POS, val);
+        if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
       } catch (e) { /* sin storage */ }
     }
   });
 
   // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-  // Si es una recarga, la prioridad absoluta es devolver al usuario exactamente
-  // donde estaba leyendo, sin importar si habia un ancla en la URL de una accion
-  // anterior. Solo si es una navegacion fresca con ancla se salta directo a ella.
+  // Si es una recarga o vuelta a la pagina, la prioridad absoluta es devolver
+  // al usuario exactamente donde estaba leyendo ("donde lo dejamos").
+  // Si es una navegacion fresca con ancla, se salta al ancla asegurando que
+  // los fotogramas de render y el layout hayan calculado la altura real.
   function devolverPos() {
-    if (!esRecarga && location.hash) {
-      var id = decodeURIComponent(location.hash.slice(1));
+    var hashObjetivo = location.hash || hashInicial;
+    var saltarAHash = function () {
+      if (!hashObjetivo) return false;
+      var id = decodeURIComponent(hashObjetivo.slice(1));
       var el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "auto", block: "start" });
-        restaurado = true;
-        return;
+        return true;
       }
+      return false;
+    };
+
+    if (!esRecarga && hashObjetivo) {
+      saltarAHash();
+      requestAnimationFrame(function () {
+        saltarAHash();
+        requestAnimationFrame(function () {
+          saltarAHash();
+          restaurado = true;
+        });
+      });
+      if (document.readyState !== "complete") {
+        addEventListener("load", function () {
+          saltarAHash();
+          restaurado = true;
+        }, { once: true });
+      }
+      return;
     }
 
     var y = posGuardada;
     if (y <= 0) {
       restaurado = true;
-      if (location.hash) {
-        var elAncla = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-        if (elAncla) elAncla.scrollIntoView({ behavior: "auto", block: "start" });
-      }
+      if (hashObjetivo) saltarAHash();
       return;
     }
 
