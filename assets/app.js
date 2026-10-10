@@ -1711,26 +1711,8 @@
         return;
       }
 
-      // La portada: los proyectos y lo que hay dentro de cada uno. Es el mismo
-      // dato que el indice, en grande. En omarchy esta lista es la pagina entera y
-      // cada capitulo tiene su URL; aqui la lista esta arriba y las dos coisas
-      // comparten fuente.
-      var portada = '<div class="portada' + (PROYECTOS.length === 1 ? " portada-una" : "") +
-        '">' + PROYECTOS.map(function (proy) {
-        var subs = proy.subs.map(function (sub) {
-          var e = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-          return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
-            '<i class="n">' + (e ? e.n : "?") + "</i>" + esc(sub.t) + "</a></li>";
-        }).join("");
-        return '<article class="proyecto">' +
-          '<h2>' + esc(proy.titulo) + "</h2>" +
-          '<p class="proyecto-res">' + esc(proy.resumen || "") + "</p>" +
-          (proy.repo
-            ? '<a class="proyecto-repo" href="https://github.com/' + esc(proy.repo) +
-              '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-            : "") +
-          '<ol class="proyecto-subs">' + subs + "</ol></article>";
-      }).join("") + "</div>";
+      // La portada del manual se omite para que el lector entre directo a las secciones.
+
 
       // Las secciones. Cada proyecto abre con un encabezado propio y sus
       // subsecciones van debajo, para que al leer en scroll largo se sepa de que
@@ -1794,7 +1776,7 @@
           cabecera + cuerpo + "</div>";
       }).join("");
 
-      caja.innerHTML = portada + secciones;
+      caja.innerHTML = secciones;
       pintarIndice();
     }
 
