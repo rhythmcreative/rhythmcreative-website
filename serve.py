@@ -17,6 +17,8 @@ autenticacion, atado a loopback. No lo pongas en un sitio publico.
 """
 
 import argparse
+import gzip
+import io
 import os
 import re
 import sys
@@ -122,6 +124,36 @@ class ConRangos(SimpleHTTPRequestHandler):
             return None
 
         if not rango:
+            ruta = self.translate_path(self.path)
+            if os.path.isdir(ruta):
+                for idx in ("index.html", "index.htm"):
+                    cand = os.path.join(ruta, idx)
+                    if os.path.exists(cand):
+                        ruta = cand
+                        break
+            if not os.path.isdir(ruta) and os.path.exists(ruta):
+                ae = self.headers.get("Accept-Encoding", "")
+                ctype = self.guess_type(ruta)
+                es_texto = (
+                    ctype.startswith("text/")
+                    or ctype in ("application/javascript", "application/json", "image/svg+xml")
+                )
+                if "gzip" in ae and es_texto:
+                    try:
+                        with open(ruta, "rb") as f_in:
+                            datos = f_in.read()
+                        if len(datos) > 200:
+                            gz_datos = gzip.compress(datos, compresslevel=6)
+                            self.send_response(200)
+                            self.send_header("Content-Type", ctype)
+                            self.send_header("Content-Encoding", "gzip")
+                            self.send_header("Content-Length", str(len(gz_datos)))
+                            fs = os.stat(ruta)
+                            self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+                            self.end_headers()
+                            return io.BytesIO(gz_datos)
+                    except OSError:
+                        pass
             return super().send_head()
 
         coincide = RANGO.match(rango.strip())

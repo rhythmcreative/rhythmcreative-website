@@ -7,7 +7,7 @@
      script es la misma porque el script del tema es el mismo fichero con el
      mismo texto: si algun dia divergieran, hay que volver a mirar este numero.
      El detalle de cada palabra esta escrito alli. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nAK7VnBp6G/vtc4ozdrEE5vGXXSnXOh21k8N/k3+oUQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -72,10 +72,12 @@
        Y al crearlo desde aqui, que va antes de la hoja, adelanta el angel: empieza
        a bajar mientras se descarga el CSS, en vez de despues. */
     try {
-      var a = document.createElement("link");
-      a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
-      a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
-      document.head.appendChild(a);
+      if (!/manual(\.html)?$/.test(location.pathname)) {
+        var a = document.createElement("link");
+        a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
+        a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
+        document.head.appendChild(a);
+      }
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
     /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
        no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
@@ -235,20 +237,20 @@
   </div>
 </footer>
 
-<script src="data/github.js"></script>
-<script src="assets/hyprland.js"></script>
+<script src="data/github.js" defer></script>
+<script src="assets/hyprland.js" defer></script>
 <!-- El dato de la documentacion, ESTATICO y commiteado. Alguien visiting la
      web published on GitHub Pages ve exactamente lo mismo que el autor: sale
      del repositorio de hyprland, no de la maquina de nadie. -->
-<script src="data/documentacion.js"></script>
+<script src="data/documentacion.js" defer></script>
 <!-- Las fotos, tambien estaticas y commiteadas: scripts/collect-imagenes.py las
      copia del repo de hyprland y las deja en WebP. Van en un fichero aparte y no
      dentro de documentacion.js porque son 1.7 MB de binarios y mezclarlas con el
      texto haria que el navegador descargase las fotos para pintar el indice. -->
-<script src="data/imagenes.js"></script>
-<script src="assets/i18n.js"></script>
-<script src="assets/app.js"></script>
-<script src="data/buscador-local.js"></script>
-<script src="assets/buscador.js"></script>
+<script src="data/imagenes.js" defer></script>
+<script src="assets/i18n.js" defer></script>
+<script src="assets/app.js" defer></script>
+<script src="data/buscador-local.js" defer></script>
+<script src="assets/buscador.js" defer></script>
 </body>
 </html>

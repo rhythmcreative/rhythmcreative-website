@@ -45,7 +45,7 @@
   Lo que sale por esa puerta no es la pagina, es lo que escribe quien busca, y solo
   si busca. assets/buscador.js lo tiene escrito en su cabecera, sin rodeos.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-AFTKx/zl5ndx5X0A9DbSsnYVQFvZxBiC7hkk87D3fdU='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nAK7VnBp6G/vtc4ozdrEE5vGXXSnXOh21k8N/k3+oUQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src https://0wwmdplf0w-dsn.algolia.net; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="permissions-policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -154,10 +154,12 @@
        Y al crearlo desde aqui, que va antes de la hoja, adelanta el angel: empieza
        a bajar mientras se descarga el CSS, en vez de despues. */
     try {
-      var a = document.createElement("link");
-      a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
-      a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
-      document.head.appendChild(a);
+      if (!/manual(\.html)?$/.test(location.pathname)) {
+        var a = document.createElement("link");
+        a.rel = "preload"; a.as = "image"; a.fetchPriority = "high";
+        a.href = claro ? "assets/angel-claro.webp" : "assets/angel-oscuro.webp";
+        document.head.appendChild(a);
+      }
     } catch (e) { /* sin DOM: el angel se pedira con la hoja */ }
     /* El diccionario del idioma, adelantado. Sin esto el fichero de la lengua
        no empieza a bajar hasta que i18n.js se ejecuta al final del <body>: con la
@@ -203,6 +205,7 @@
        con el angel y con la hoja, y este no es el elemento mas importante de
        la pagina. Es el segundo. -->
   <link rel="preload" as="image" href="assets/hyprland-poster.webp">
+  <link rel="preload" as="font" href="assets/fuentes/jetbrains-var.woff2" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/buscador.css">
 <!-- El icono de la pestana. Es el halo de la cabeza del angel, que es el motivo
@@ -379,13 +382,13 @@
     </div>
 </footer>
 
-<script src="data/github.js"></script>
-<script src="assets/hyprland.js"></script>
-<script src="assets/capa-datos.js"></script>
-<script src="assets/capa.js"></script>
-<script src="assets/i18n.js"></script>
-<script src="assets/app.js"></script>
-<script src="data/buscador-local.js"></script>
-<script src="assets/buscador.js"></script>
+<script src="data/github.js" defer></script>
+<script src="assets/hyprland.js" defer></script>
+<script src="assets/capa-datos.js" defer></script>
+<script src="assets/capa.js" defer></script>
+<script src="assets/i18n.js" defer></script>
+<script src="assets/app.js" defer></script>
+<script src="data/buscador-local.js" defer></script>
+<script src="assets/buscador.js" defer></script>
 </body>
 </html>
