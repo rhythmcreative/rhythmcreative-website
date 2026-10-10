@@ -358,6 +358,7 @@ window.RHYTHM_I18N.it = {
   "and": "e",
   "both": "entrambi",
   "copy": "copia",
+  "copied": "copiato",
   "cursor theme 'Bibata-Modern-Ice' is installed": "il tema del cursore 'Bibata-Modern-Ice' \u00e8 installato",
   "deployed": "messo a posto",
   "diagnostics": "diagnostica",

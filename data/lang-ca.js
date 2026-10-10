@@ -357,6 +357,7 @@ window.RHYTHM_I18N.ca = {
   "and": "i",
   "both": "els dos",
   "copy": "copiar",
+  "copied": "copiat",
   "cursor theme 'Bibata-Modern-Ice' is installed": "el tema del cursor 'Bibata-Modern-Ice' est\u00e0 instal\u00b7lat",
   "deployed": "desplegat",
   "diagnostics": "diagn\u00f2stic",

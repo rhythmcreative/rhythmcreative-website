@@ -62,6 +62,11 @@ html.claro .buscador-boton:hover {
   border: 1px solid var(--linea);
 }
 @media (max-width: 680px) {
+  .buscador-boton {
+    width: 1.9rem;
+    min-width: 1.9rem;
+    padding: 0;
+  }
   .buscador-boton .tecla-atajo { display: none; }
 }
 
@@ -342,22 +347,15 @@ html.claro .buscador-boton:hover {
 /* ── En el dedo ─────────────────────────────────────────────────────────── */
 
 @media (pointer: coarse), (any-pointer: coarse) {
-  /* Las dos: `pointer` es lo que se está usando y `any-pointer` lo que hay. Con
-     "modo escritorio" en el móvil, el navegador finge ratón —pointer:fine— pero
-     el táctil sigue estando y any-pointer:coarse lo delata. Sin la segunda, con
-     ese modo puesto el botón se quedaba en 26 px y no había forma de saber por
-     qué mirando el CSS. */
-  /* En el dedo el botón crece a 52 px, como el interruptor del tema, y la lupa
-     crece con él: con el dibujo pequeño en caja grande se veía vacío al lado del
-     icono del tema. */
+  /* En el dedo el botón mide 44 px, exactamente igual que el interruptor del tema y el botón de contenidos */
   .buscador-boton {
-    height: 52px;
-    min-width: 52px;
-    margin-left: 0.4rem;
-    padding: 0 0.7em;
-    font-size: 0.78rem;
+    height: 44px;
+    min-width: 44px;
+    margin-left: 0.25rem;
+    padding: 0 0.55rem;
+    font-size: 0.76rem;
   }
-  .buscador-boton span { width: 15px; height: 15px; border-width: 2px; }
+  .buscador-boton span { width: 14px; height: 14px; border-width: 1.8px; }
   .buscador-panel { padding-top: 0.5rem; align-items: stretch; }
   .buscador-resultado { padding: 0.85rem 0.9rem; }
 }

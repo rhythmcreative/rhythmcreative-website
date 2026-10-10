@@ -909,7 +909,16 @@
         var aviso = caja.querySelector(".copiar");
         if (!aviso) return;
         var antes = aviso.textContent;
-        aviso.textContent = "copied";
+        var tCopiado = (window.traducir && window.traducir("copied")) || "copied";
+        if (tCopiado === "copied") {
+          var idm = document.documentElement.getAttribute("data-idioma") || document.documentElement.getAttribute("lang");
+          if (idm === "es") tCopiado = "copiado";
+          else if (idm === "ca") tCopiado = "copiat";
+          else if (idm === "fr") tCopiado = "copié";
+          else if (idm === "it") tCopiado = "copiato";
+          else if (idm === "pt") tCopiado = "copiado";
+        }
+        aviso.textContent = tCopiado;
         aviso.classList.add("hecho");
         setTimeout(function () {
           aviso.textContent = antes;
@@ -1728,15 +1737,14 @@
   // solo se mueve la tira, y solo si el enlaceactivo esta fuera de su hueco.
   function sigueAlActivo(el) {
     if (!el) return;
-    var tira = el.closest(".indice");
-    if (!tira || tira.scrollWidth <= tira.clientWidth + 2) return;  // cabe entero
+    var tira = el.closest(".indice ol") || el.closest(".subs") || el.closest(".indice");
+    if (!tira || tira.scrollWidth <= tira.clientWidth + 2) return;
     var a = el.getBoundingClientRect(), t = tira.getBoundingClientRect();
-    // Un margen de un lado y medio del otro, para que el enlace no quede
-    // pegado al borde: se lee mejor con un poco de aire delante y detras.
-    var izquierda = tira.scrollLeft + (a.left - t.left) - 24;
-    var derecha = tira.scrollLeft + (a.right - t.left) - tira.clientWidth + 24;
-    if (izquierda > 0) tira.scrollLeft = izquierda;              // esta a la derecha
-    else if (derecha > 0) tira.scrollLeft = derecha;              // esta a la izquierda
+    if (a.left < t.left + 16) {
+      tira.scrollLeft += (a.left - t.left - 16);
+    } else if (a.right > t.right - 16) {
+      tira.scrollLeft += (a.right - t.right + 16);
+    }
   }
 
   // La altura de la barra, en una variable de CSS.
