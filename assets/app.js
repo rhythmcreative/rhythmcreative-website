@@ -1931,7 +1931,8 @@
   //
   // Y hay una excepcion: si la URL lleva #algo manda el ancla. El usuario ha pedido
   // un sitio concreto y devolverle "donde estaba" le haria caso omiso.
-  var CLAVE_POS = "rhythm-crea-scroll";
+  var paginaId = (location.pathname || "").split("/").pop() || "index";
+  var CLAVE_POS = "rhythm-scroll-" + paginaId;
   var posGuardada = 0;
 
   try {
@@ -1940,92 +1941,63 @@
 
   function leerPos() {
     try { return parseInt(sessionStorage.getItem(CLAVE_POS), 10) || 0; }
-    catch (e) { return 0; }        // sin storage: se empieza arriba, que es lo de siempre
+    catch (e) { return 0; }
   }
 
   function guardarPos() {
-    try { sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY))); }
-    catch (e) { /* sin storage */ }
+    try {
+      sessionStorage.setItem(CLAVE_POS, String(Math.round(window.scrollY)));
+    } catch (e) { /* sin storage */ }
   }
 
-  // Con throttle y no en cada scroll: el evento salta a 60 por segundo, y escribir
-  // en storage ese numero de veces funciona en una maquina y va mal en un movil con
-  // la pestana en segundo plano.
   var ultimoGuardado = 0;
   addEventListener("scroll", function () {
     var ahora = Date.now();
-    if (ahora - ultimoGuardado < 300) return;
+    if (ahora - ultimoGuardado < 100) return;
     ultimoGuardado = ahora;
     guardarPos();
   }, { passive: true });
 
-  // En pagehide y en visibilitychange, y no solo en unload: en movil cambiar de
-  // pestana o cerrar la del navegador no dispara unload. Sin esto, recargar sin
-  // haber hecho scroll lately guardaba una posicion de hace medio minuto.
+  addEventListener("beforeunload", guardarPos);
   addEventListener("pagehide", guardarPos);
   addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden") guardarPos();
   });
 
-    // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-    //
-    // NO vale con esperar dos fotogramas. Al principio lo hacia asi y el resultado
-    // era abrir la pagina ABAJO del todo, en el final del documento. El motivo es
-    // que a los dos fotogramas la pagina todavia esta CORTA: la foto del angel, la
-    // fuente y el cartel del clip se estan descargando, y el alto que se mide ahi no
-    // es el alto bueno. La posicion recordada era mas grande que ese alto corto, y
-    // el tope que se ponia para no salirse (min(y, max)) la convertia en el final
-    // del documento. O sea: abrir abajo, que es justo el fallo.
-    //
-    // Ahora se espera al evento load, que es cuando ya han llegado las imagenes y
-    // la fuente y el alto por fin es el definitivo. Si load ya ha pasado, que es el
-    // caso de cuando se navega con la cache en calor, se va directo.
-    function devolverPos() {
-      if (location.hash) {
-        var saltar = function () {
-          var id = decodeURIComponent(location.hash.slice(1));
-          var el = document.getElementById(id);
-          if (el) {
-            requestAnimationFrame(function () {
-              requestAnimationFrame(function () {
-                el.scrollIntoView({ behavior: "smooth", block: "start" });
-              });
-            });
-          }
-        };
-        if (document.readyState === "complete") saltar();
-        else addEventListener("load", saltar, { once: true });
-        return;
+  // ── Cuando se devuelve la posicion ─────────────────────────────────────────
+  // Se restaura de forma inmediata tras inyectar el DOM dinamico para evitar
+  // el salto brusco de varios segundos despues del evento load.
+  function devolverPos() {
+    if (location.hash) {
+      var id = decodeURIComponent(location.hash.slice(1));
+      var el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "auto", block: "start" });
       }
-      var y = posGuardada;
-      if (y <= 0) return;
-
-      var poner = function () {
-        // Dos fotogramas DESPUES de load: el layout ya esta resuelto, y un
-        // requestAnimationFrame mas asegura que el navegador aplico los estilos
-        // calculados con los recursos nuevos.
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            var alto = document.documentElement.scrollHeight - innerHeight;
-            //
-            // NUNCA al final del documento. Este era el fallo de verdad y hacia mas
-            // de lo que parece. Si el punto guardado no existe ya —la pagina quedo
-            // mas corta que la ultima vez, o la ventana es mas baja, o el ancho
-            // cambio y la foto de las alas ocupa otra altura—, lo unico que se
-            // puede hacer con un tope es ir al final. Y "abajo del todo" es
-            // justamente lo que se quejaba el visitante: recargar y verse en la
-            // ultima linea del documento.
-            //
-            // Si el punto no existe, se empieza por arriba. Arriba siempre es un
-            // sitio del que se sale, y es lo que espera cualquiera que recarga.
-            scrollTo(0, y > alto ? 0 : y);
-          });
-        });
-      };
-
-      if (document.readyState === "complete") poner();
-      else addEventListener("load", poner, { once: true });
+      return;
     }
+    var y = posGuardada;
+    if (y <= 0) return;
+
+    var aplicar = function () {
+      var alto = document.documentElement.scrollHeight - innerHeight;
+      if (alto > 0) {
+        var destino = Math.min(y, Math.max(0, alto));
+        scrollTo(0, destino);
+      }
+    };
+
+    // Restaurar de inmediato y en los primeros fotogramas de render
+    aplicar();
+    requestAnimationFrame(function () {
+      aplicar();
+      requestAnimationFrame(aplicar);
+    });
+
+    if (document.readyState !== "complete") {
+      addEventListener("load", aplicar, { once: true });
+    }
+  }
 
   // ── La entrada ─────────────────────────────────────────────────────────────
   //
