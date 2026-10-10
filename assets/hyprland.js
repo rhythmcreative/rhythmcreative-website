@@ -88,8 +88,7 @@ window.RHYTHM_HYPRLAND = {
   instalar: {
     titulo: "Install",
     texto: "One line. It asks before changing anything, automatically detects your distro, and sets up the desktop cleanly.",
-    comando: 'bash -c "$(curl -fsSL --connect-timeout 10 --max-time 60 ' +
-             'https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh)"'
+    comando: 'curl -fsSL https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh | bash'
   },
 
   // Lo que habia aqui antes (lema, intro, bloques de datos vivos y las piezas
@@ -127,7 +126,7 @@ window.RHYTHM_HYPRLAND = {
         "terminal."
       ],
       tipo: "comando",
-      comando: 'bash -c "$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh)"',
+      comando: 'curl -fsSL https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh | bash',
       banderas: [
         ["--update", "sync configs, helpers and packages"],
         ["--preview", "run the script through without changing the system"],
