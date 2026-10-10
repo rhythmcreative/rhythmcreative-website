@@ -758,6 +758,7 @@ html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
 .instalar {
   margin-top: 3.4rem; padding-top: 2.4rem;
   border-top: 1px solid var(--linea);
+  scroll-margin-top: 5rem;
 }
 .instalar-titulo {
   display: flex; align-items: center; gap: 0.6rem;

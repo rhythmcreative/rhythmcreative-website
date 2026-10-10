@@ -57,6 +57,10 @@ window.RHYTHM_I18N.es = {
     "una p\u00e1gina para los repositorios de rhythmcrea",
   "repositories": "repositorios",
   "An Arch desktop that doesn\u2019t break.": "Un escritorio Arch que no se rompe.",
+  "A Hyprland desktop that doesn\u2019t break across modern Linux distributions.":
+    "Un escritorio Hyprland robusto en varias distribuciones Linux.",
+  "A clean, resilient Hyprland desktop across modern Linux distributions.":
+    "Un escritorio Hyprland limpio y robusto en distribuciones Linux modernas.",
 
   // El pie
   "THIS PAGE": "EN ESTA P\u00c1GINA",
@@ -199,6 +203,12 @@ window.RHYTHM_I18N.es = {
   "On a touchscreen laptop \u2014 not a phone, a laptop with a screen you can touch \u2014 the bar is handled properly. It matches on": "En un portatil con pantalla tactil, no un movil sino un portatil con una pantalla que se puede tocar, la barra esta bien resuelta. Se ajusta a",
   "One command that looks at the whole machine and says what is missing or wrong. Without it a problem shows up three weeks later and nobody knows where it came from.": "Una orden que mira la maquina entera y dice lo que falta o esta mal. Sin ella un problema aparece tres semanas despues y nadie sabe de donde salio.",
   "One line. It asks before it changes anything, and it stops if this isn't Arch.": "Una linea. Pregunta antes de cambiar nada, y se detiene si esto no es Arch.",
+  "One line. It asks before changing anything, automatically detects your distro, and sets up the desktop cleanly.":
+    "Una sola linea. Pregunta antes de hacer cambios, detecta tu distribucion automaticamente y configura el escritorio sin sorpresas.",
+  "It detects your distribution — Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu, or Alpine —, checks for sudo authentication and network connectivity before touching anything.":
+    "Detecta tu distribucion — Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu o Alpine —, verifica los permisos de sudo y la conexion antes de modificar nada.",
+  "The status bar at the top of the screen. Powered by Waybar, styled to match the active Pywal wallpaper palette automatically.":
+    "La barra de estado en la parte superior. Basada en Waybar, sincronizada con la paleta de Pywal del fondo de pantalla.",
   "Open the launcher, styled for the screen it is on": "Abre el lanzador, con el estilo de la pantalla en la que esta",
   "Pick a colour off the screen and copy its hex": "Elige un color de la pantalla y copia su hex",
   "Runs the whole script through without executing a single line. Useful for seeing what it would touch on a machine you do not want to touch yet.": "Pasa el script entero sin ejecutar ni una linea. Util para ver que tocaria en una maquina que todavia no quieres tocar.",

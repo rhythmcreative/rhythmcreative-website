@@ -1151,7 +1151,12 @@
     }
 
     var porGrupo = {}, orden = [];
+    var vistos = {}, conteoUnico = 0;
     lista.forEach(function (a) {
+      var clave = (a.grupo + "|" + a.tecla.toLowerCase() + "|" + (a.nota || a.que)).trim();
+      if (vistos[clave]) return;
+      vistos[clave] = true;
+      conteoUnico++;
       if (!porGrupo[a.grupo]) { porGrupo[a.grupo] = []; orden.push(a.grupo); }
       porGrupo[a.grupo].push(a);
     });
@@ -1178,7 +1183,7 @@
     }).join("");
 
     return buscadorAtajos() + '<div class="atajos" id="lista-atajos">' + cuerpo + "</div>" +
-      '<p class="nota-dato">' + lista.length + " keybindings, parsed from " +
+      '<p class="nota-dato">' + conteoUnico + " keybindings, parsed from " +
       "<code>hyprland.lua</code>" +
       (D && D.version ? " on " + esc(D.version) : "") +
       ". Read from the repository, not from a running compositor, so this is the " +
@@ -1307,28 +1312,15 @@
   }
 
   function seccionBarra() {
-    return '<p class="destacado">The strip along the top of the screen. A dynamic ' +
-      "island for Hyprland written in QML, from " +
-      '<a href="https://github.com/k4ditano/k4" target="_blank" rel="noopener">k4ditano/k4</a>' +
-      ". It is the one piece of this desktop written by somebody else, and the " +
-      "installer puts it in place along with everything else.</p>" +
+    return '<p class="destacado">The status bar at the top of the screen. Powered by Waybar, styled to match the active Pywal wallpaper palette automatically.</p>' +
       '<div class="filas">' +
-      fila("What it is", "Media keys, a control centre, notifications, an app " +
-        "launcher, screen capture, and a video editor, all in one strip that " +
-        "expands when you touch it and folds away when you do not.") +
-      fila("Dual mode", "The bar leaves the top of the screen and becomes a dock. " +
-        "Same process, same configuration, different place.") +
-      fila("Plugins", "Its own plugin API, and a documented one. Install from the " +
-        "bar itself, write one, or ask your agent for one.") +
-      fila("Wallpapers", "It pulls its colours out of the wallpaper, so the bar " +
-        "changes with the desktop instead of asking you to pick a palette twice.") +
+      fila("Workspaces & windows", "Shows your active workspaces, workspace indicators, and the title of the focused window.") +
+      fila("System monitors", "Real-time indicators for CPU, memory, temperatures, battery status, network connection, and audio volume.") +
+      fila("Dynamic theming", "Reloads colors automatically on wallpaper change without restarting the compositor.") +
+      fila("Tray and clock", "System tray icons for background services and a clean clock with date and calendar popover.") +
       "</div>" +
-      "<h4>What it does not do</h4>" +
-      "<p>It is not configurable from <code>hyprland.lua</code>. Everything about " +
-      "the bar lives in its own files under <code>~/.config/k4</code>, and a " +
-      "broken plugin there shows up in the bar and nowhere else — so when " +
-      "<code>rhythm-doctor</code> says the compositor is fine and the bar is not, " +
-      "the answer is in that directory.</p>";
+      "<h4>Configuration</h4>" +
+      "<p>Everything lives in <code>~/.config/waybar/config.jsonc</code> and <code>~/.config/waybar/style.css</code>. Custom module scripts reside in <code>scripts/waybar/</code> and can be tweaked without breaking the base layout.</p>";
   }
 
   // ── Desde un movil ──────────────────────────────────────────────────────────
@@ -1968,7 +1960,22 @@
     // la fuente y el alto por fin es el definitivo. Si load ya ha pasado, que es el
     // caso de cuando se navega con la cache en calor, se va directo.
     function devolverPos() {
-      if (location.hash) return;                 // manda el ancla
+      if (location.hash) {
+        var saltar = function () {
+          var id = decodeURIComponent(location.hash.slice(1));
+          var el = document.getElementById(id);
+          if (el) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            });
+          }
+        };
+        if (document.readyState === "complete") saltar();
+        else addEventListener("load", saltar, { once: true });
+        return;
+      }
       var y = posGuardada;
       if (y <= 0) return;
 

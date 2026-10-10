@@ -39,6 +39,8 @@ window.RHYTHM_I18N.fr = {
   "a page for rhythmcrea\u2019s repositories": "une page pour les d\u00e9p\u00f4ts de rhythmcrea",
   "repositories": "d\u00e9p\u00f4ts",
   "An Arch desktop that doesn\u2019t break.": "Un bureau Arch qui ne plante pas.",
+  "A Hyprland desktop that doesn\u2019t break across modern Linux distributions.": "Un bureau Hyprland robuste sur les distributions Linux actuelles.",
+  "One line. It asks before changing anything, automatically detects your distro, and sets up the desktop cleanly.": "Une seule ligne. Il demande avant toute modification, detecte votre distribution automatiquement et prepare le bureau proprement.",
   "THIS PAGE": "SUR CETTE PAGE",
   "the installer": "l'installeur",
   "Install": "Installer",

@@ -87,8 +87,7 @@ window.RHYTHM_HYPRLAND = {
   // manual, que esta enlazado dos lineas mas arriba.
   instalar: {
     titulo: "Install",
-    texto: "One line. It asks before it changes anything, and it stops if this " +
-           "isn't Arch.",
+    texto: "One line. It asks before changing anything, automatically detects your distro, and sets up the desktop cleanly.",
     comando: 'bash -c "$(curl -fsSL --connect-timeout 10 --max-time 60 ' +
              'https://raw.githubusercontent.com/rhythmcreative/hyprland/main/install.sh)"'
   },
@@ -96,7 +95,7 @@ window.RHYTHM_HYPRLAND = {
   // Lo que habia aqui antes (lema, intro, bloques de datos vivos y las piezas
   // desplegables) ya no se pinta. Se queda en el fichero de datos por si hay
   // que volver, pero la seccion es: cabecera, clip y los dos botones.
-  lema: "An Arch desktop that doesn't break.",
+  lema: "A clean, resilient Hyprland desktop across modern Linux distributions.",
   intro: "An installer that works the first time, updates that don't touch your " +
          "distro, and a doctor that tells you what's broken. You can have " +
          "Hyprland without any of this. With it, you have a desktop.",
@@ -114,12 +113,12 @@ window.RHYTHM_HYPRLAND = {
       id: "instalador",
       titulo: "The installer",
       resumen: "One line, and it works.",
-      chips: ["install.sh", "arch", "single pass"],
+      chips: ["install.sh", "multi-distro", "single pass"],
       filas: [
         "A single command: curl the install.sh and you're done. Nothing to clone, " +
         "no packages to pick by hand, nothing to fix afterwards.",
-        "It refuses to continue if this isn't Arch, if sudo isn't authenticated, " +
-        "or if there's no network. Before touching anything.",
+        "It detects your distribution — Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu, or Alpine —, " +
+        "checks for sudo authentication and network connectivity before touching anything.",
         "--preview runs the whole script through without executing a single line.",
         "--resume picks up an interrupted install: finished steps are skipped, " +
         "and configs that already match the repo are left alone instead of being " +

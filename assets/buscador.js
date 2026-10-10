@@ -451,6 +451,10 @@
       location.href = "manual.html#" + ancla;
       return;
     }
+    if (pagina !== "manual" && aquí) {
+      location.href = "index.html#" + ancla;
+      return;
+    }
     cerrar();
     var destino = document.getElementById(ancla);
     if (destino) {
