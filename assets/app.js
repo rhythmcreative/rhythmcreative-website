@@ -1478,57 +1478,41 @@
         estado: "actual",
         fase: "Milestone 6",
         tag: "Current status",
-        titulo: "Release v0.3.0 & multi-distro verification",
-        desc: "Live testing builds verified across real hardware and VMs for all 6 active distribution families, smooth scroll restoration, and comprehensive manual docs.",
-        tech: ["Release v0.3.0", "Verified VMs", "LiveRice"]
+        titulo: "Release v0.25 & multi-distro verification",
+        desc: "Current verified milestone. Fully tested across all 6 active distribution families with live testing builds, instant scroll restoration, and comprehensive manual docs.",
+        tech: ["Release v0.25", "Current stable", "Verified builds"]
       },
       {
         estado: "futuro",
         fase: "Milestone 7",
         tag: "Planned",
-        titulo: "Multi-touch gesture suite",
-        desc: "Native 3-finger and 4-finger touchpad gestures for smooth workspace switching, window spread overview, and zoom transitions.",
-        tech: ["Gestures", "Touchpad", "libinput"]
+        titulo: "Replace Waybar with Quickshell",
+        desc: "Migrate the status bar entirely to Quickshell in native QML, merging the top island and bar into a single reactive, unified framework.",
+        tech: ["Quickshell", "Native QML", "Unified bar & island"]
       },
       {
         estado: "futuro",
         fase: "Milestone 8",
         tag: "Planned",
-        titulo: "Automated display profiler",
-        desc: "Daemon remembering per-display resolution, refresh rate, and HiDPI scaling profiles across docking stations and multi-monitor setups.",
-        tech: ["HiDPI", "Docks", "hyprctl dispatch"]
+        titulo: "Full tablet & touchscreen support",
+        desc: "Complete touch and tablet experience: touch gestures, on-screen keyboard (wvkbd), auto-rotation sensor integration (iio-sensor-proxy), and 44px touch targets.",
+        tech: ["Tablets", "wvkbd", "Auto-rotate", "Touch gestures"]
       },
       {
         estado: "futuro",
         fase: "Milestone 9",
         tag: "Planned",
-        titulo: "Island widget extensions",
-        desc: "Modular plugins for the Quickshell island: real-time local weather forecasts, Pomodoro timers, and hardware sensor telemetry (CPU/GPU temps).",
-        tech: ["Widgets", "Weather", "Sensors"]
+        titulo: "Niri window manager support",
+        desc: "Native integration for the Niri scrollable-tiling Wayland compositor alongside Hyprland, sharing the same Pywal palette, Quickshell island, and configs.",
+        tech: ["Niri", "Scrollable tiling", "Wayland compositor"]
       },
       {
         estado: "futuro",
         fase: "Milestone 10",
         tag: "Planned",
-        titulo: "Atomic snapshot & restore",
-        desc: "Pre-update configuration snapshots with one-click rollback from the terminal or launcher if a package upgrade breaks dependencies.",
-        tech: ["Snapshots", "Rollback", "Backup"]
-      },
-      {
-        estado: "futuro",
-        fase: "Milestone 11",
-        tag: "Planned",
-        titulo: "Flatpak & container theme bridge",
-        desc: "Automatic real-time sync of Pywal color palettes to sandboxed Flatpak and containerized applications.",
-        tech: ["Flatpak", "Sandbox", "GTK Sync"]
-      },
-      {
-        estado: "futuro",
-        fase: "Milestone 12",
-        tag: "Planned",
-        titulo: "Live audio spectrum visualizer",
-        desc: "Embedded audio spectrum visualizer option directly inside the Waybar status strip or unfolded island view.",
-        tech: ["Cava", "PipeWire", "Spectrum"]
+        titulo: "Complete standalone Live ISO",
+        desc: "Full standalone bootable Live ISO ready to download, test in live session, and install out-of-the-box without requiring a pre-existing Linux install.",
+        tech: ["Live ISO", "Bootable image", "Offline installer"]
       }
     ];
 

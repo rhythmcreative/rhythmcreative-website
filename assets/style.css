@@ -3059,7 +3059,9 @@ html.claro .hito-dot {
   width: 13px;
   height: 13px;
   color: var(--gris);
-  transition: color 0.25s ease;
+  opacity: 0.2;
+  transform: scale(0.65);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.28s ease;
 }
 .hito-completado.alcanzado .hito-dot {
   border-color: var(--azul-4);
@@ -3068,6 +3070,8 @@ html.claro .hito-dot {
   transform: scale(1.08);
 }
 .hito-completado.alcanzado .ico-dot-check {
+  opacity: 1;
+  transform: scale(1);
   color: var(--azul-4);
 }
 html.claro .hito-completado.alcanzado .hito-dot {
@@ -3075,6 +3079,8 @@ html.claro .hito-completado.alcanzado .hito-dot {
   background: rgba(20, 22, 24, 0.04);
 }
 html.claro .hito-completado.alcanzado .ico-dot-check {
+  opacity: 1;
+  transform: scale(1);
   color: var(--azul-2);
 }
 
