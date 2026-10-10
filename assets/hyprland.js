@@ -365,9 +365,10 @@ window.RHYTHM_HYPRLAND = {
         { id: "login",      t: "The login screen",   pieza: "greeter" },
         { id: "doctor",     t: "The doctor",         pieza: "doctor" },
         { id: "actualizar", t: "Updating" },
+        { id: "distros",    t: "Supported distros" },
         { id: "arbol",      t: "The file tree" },
         { id: "problemas",  t: "When something breaks" },
-        { id: "movil",      t: "On a phone" }
+        { id: "futuro",     t: "Roadmap & status" }
       ]
     }
   ],

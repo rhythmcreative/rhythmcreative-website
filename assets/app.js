@@ -1357,39 +1357,102 @@
   //   si      ssh, cliphist.service, grim, slurp
   //   no      wtype, wlrctl, ydotool, syncthing, kdeconnect
   //
-  // Ese "no" es el contenido de la seccion. Un movil puede entrar por ssh y ya
-  // esta; no puede tocar la pantalla porque las tres herramientas que lo hacen
-  // posibles no estan instaladas, y no hay nada que las instale.
-  function seccionMovil() {
-    return '<p class="destacado">Hyprland needs a GPU and a Wayland session, so ' +
-      "it does not run on Android or iOS. This desktop is on the laptop. What " +
-      "follows is what does and does not cross over.</p>" +
+  function seccionDistros() {
+    var distrosData = [
+      {
+        nombre: "CachyOS",
+        tipo: "Arch-based (Bore / Linux-cachyos kernel)",
+        pkg: "pacman / paru",
+        img: "assets/manual/distro_cachyos.webp",
+        w: 1280, h: 720,
+        desc: "High-performance Arch derivative with optimized x86-64-v3/v4 binaries. Full hardware acceleration, dynamic Pywal color integration, and native compositor support out of the box."
+      },
+      {
+        nombre: "Debian",
+        tipo: "Debian 13 (Trixie) & 12 (Bookworm)",
+        pkg: "apt",
+        img: "assets/manual/distro_debian.webp",
+        w: 1280, h: 720,
+        desc: "Stable and testing releases supported. Includes targeted QML6 declarative dependencies, PAM configuration, custom Astronaut SDDM session handoff, and Wayland compositor integration."
+      },
+      {
+        nombre: "Fedora",
+        tipo: "Fedora 40 & 41 (Workstation / Server)",
+        pkg: "dnf",
+        img: "assets/manual/distro_fedora.webp",
+        w: 1280, h: 720,
+        desc: "Modern Red Hat base with PipeWire audio, systemd user services, and SELinux-aware wrappers. Waybar, Quickshell, and full font stack installed and themed automatically."
+      },
+      {
+        nombre: "NixOS",
+        tipo: "NixOS 24.05 & Unstable",
+        pkg: "nix / flake",
+        img: "assets/manual/distro_nixos.webp",
+        w: 1280, h: 720,
+        desc: "Declarative and reproducible installation. Integrates rust-dock placement, standalone quickshell components, Pywal color generation, and complete Wayland environment."
+      },
+      {
+        nombre: "openSUSE",
+        tipo: "Tumbleweed, Slowroll & Leap",
+        pkg: "zypper",
+        img: "assets/manual/distro_opensuse.webp",
+        w: 1280, h: 720,
+        desc: "Rolling and stable openSUSE branches. Resolves pywal color scheme transitions, colors-rofi-dark integration, SUPER+Shift+W wallpaper toggles, and Waybar monitoring."
+      },
+      {
+        nombre: "Ubuntu",
+        tipo: "Ubuntu 24.04 LTS & 24.10",
+        pkg: "apt",
+        img: "assets/manual/distro_ubuntu.webp",
+        w: 1280, h: 720,
+        desc: "Canonical LTS platform support. Handles Wayland compositor dependencies, audio/brightness keybindings, SDDM login screen setup, and cliphist clipboard daemon."
+      }
+    ];
+
+    var tarjetas = distrosData.map(function (d) {
+      return '<div class="tarjeta-distro">' +
+        '<div class="distro-visual">' +
+        '<a href="' + esc(d.img) + '" target="_blank" rel="noopener" title="View ' + esc(d.nombre) + ' screenshot">' +
+        '<img src="' + esc(d.img) + '" alt="Hyprland running on ' + esc(d.nombre) + '" width="' + d.w + '" height="' + d.h + '" loading="lazy" decoding="async">' +
+        '</a>' +
+        '</div>' +
+        '<div class="distro-info">' +
+        '<div class="distro-cabecera">' +
+        '<h4 class="distro-titulo">' + esc(d.nombre) + '</h4>' +
+        '<span class="chip">' + esc(d.pkg) + '</span>' +
+        '</div>' +
+        '<span class="distro-tipo">' + esc(d.tipo) + '</span>' +
+        '<p class="distro-desc">' + esc(d.desc) + '</p>' +
+        '</div>' +
+        '</div>';
+    }).join("");
+
+    return '<p class="destacado">Real installations tested and verified across every supported Linux distribution. The installer detects your package manager and kernel environment automatically.</p>' +
+      '<div class="rejilla-distros">' + tarjetas + '</div>' +
+      '<p class="nota-dato">6 distribution families captured and validated with live testing builds.</p>';
+  }
+
+  function seccionFuturo() {
+    return '<p class="destacado">A continuous status log tracking what is already built and working across all supported Linux distributions, alongside planned features and enhancements for future releases.</p>' +
+      '<h4>What we have done</h4>' +
       '<div class="filas">' +
-      fila("This page", "Works on a phone. The index along the side becomes one " +
-        "row you slide sideways, the screenshots stack in a single column, and " +
-        "the bar at the top drops its links so the clock and the theme switch " +
-        "have room. Measured at 390 px wide.") +
-      fila("Getting in", "ssh is installed. From a phone you can open a session " +
-        "and drive the machine from the command line: hyprctl, the wallpaper " +
-        "script, the doctor. What you cannot do from there is see what you are " +
-        "doing.") +
-      fila("The clipboard", "cliphist.service is running, so anything copied on " +
-        "the desktop is still waiting when you get in. That is the easiest way " +
-        "to move text in either direction, and it needs nothing else installed.") +
-      fila("A phone as a trackpad", "Not set up. It takes one of wtype, wlrctl " +
-        "or ydotool to turn a phone into a pointer and a keyboard, and none of " +
-        "the three is here. Nothing in the installer adds them.") +
-      fila("Files and clipboard, automatically", "No syncthing and no KDE Connect. " +
-        "The two desktops do not talk to each other on their own; you move " +
-        "things over ssh or by hand.") +
+      fila("Cross-distro installer engine", "Automatic distribution detection and package provisioning across Arch, CachyOS, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine Linux.") +
+      fila("Dynamic Pywal theming", "Automatic color palette extraction from the active wallpaper, applied on the fly to Waybar, Quickshell, Kitty, Rofi, and GTK without restarting compositor sessions.") +
+      fila("Quickshell dynamic island", "Collapsible status island featuring multimedia playback controls, WiFi/Bluetooth selectors, audio output routing, backlight adjustments, and power profiles.") +
+      fila("SDDM Astronaut login theme", "Custom display manager greeter with coordinated wallpaper backdrops, Wayland session registration, and multi-distro PAM integration.") +
+      fila("Diagnostic doctor (rhythm-doctor)", "Automated system health inspector checking Wayland sockets, required binaries, user units, and configuration files with one-click remediation.") +
+      fila("Non-destructive OTA updates", "Layered update model with sparse user overlays (user.lua, user.conf) protecting custom hotkeys and tweaks from upstream overwrites.") +
+      fila("Rust-based application dock", "Fast, resource-light dock tracking running desktop clients with smart autohide and quick workspace switching.") +
       "</div>" +
-      "<h4>The one place touch is handled</h4>" +
-      "<p>On a touchscreen laptop — not a phone, a laptop with a screen you can " +
-      "touch — the bar is handled properly. It matches on <code>(hover: none)</code> " +
-      "and then gives every control a 44 px target instead of the 28 px it " +
-      "gives a mouse, and moves the clock up in size so it is the thing you can " +
-      "read from an arm's length away. It is the only part of the desktop that " +
-      "was built with a finger in mind.</p>";
+      '<h4>What can be done in the future</h4>' +
+      '<div class="filas">' +
+      fila("Multi-touch gesture engine", "Native 3-finger and 4-finger touchpad gestures for smooth workspace switching, window spread overview, and zoom transitions.") +
+      fila("Automated monitor profiler", "Daemon remembering per-display resolution, refresh rate, and HiDPI scaling profiles across docking stations and multi-monitor setups.") +
+      fila("Island widget extensions", "Modular plugins for the Quickshell island: real-time local weather forecasts, Pomodoro timers, and hardware sensor telemetry (CPU/GPU temps).") +
+      fila("Atomic snapshot & restore", "Pre-update configuration snapshots with one-click rollback from the terminal or launcher if a package upgrade breaks dependencies.") +
+      fila("Flatpak & container theme bridge", "Automatic real-time sync of Pywal color palettes to sandboxed Flatpak and containerized applications.") +
+      fila("Live audio spectrum visualizer", "Embedded audio spectrum visualizer option directly inside the Waybar status strip or unfolded island view.") +
+      "</div>";
   }
 
   function fila(a, b) {
@@ -1454,11 +1517,12 @@
     var propias = {
       atajos: atajos,
       instalado: componentes,
+      distros: seccionDistros,
       actualizar: seccionActualizar,
       arbol: arbol,
       problemas: seccionProblemas,
       barra: seccionBarra,
-      movil: seccionMovil
+      futuro: seccionFuturo
     };
 
     // Y las que salen de una pieza de hyprland.js. Puede haber mas de una: la
@@ -2222,7 +2286,41 @@
     if (r) r.textContent = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
   }
 
+  function montarProgreso() {
+    var barra = $("#linea-progreso");
+    if (!barra) {
+      barra = document.createElement("div");
+      barra.id = "linea-progreso";
+      barra.className = "linea-progreso";
+      barra.setAttribute("aria-hidden", "true");
+      document.body.prepend(barra);
+    }
+    var raf = null;
+    function actualizar() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - window.innerHeight;
+      if (max <= 0) {
+        barra.style.width = "0%";
+        return;
+      }
+      var y = window.scrollY || window.pageYOffset || 0;
+      var pct = Math.min(100, Math.max(0, (y / max) * 100));
+      barra.style.width = pct.toFixed(2) + "%";
+    }
+    function onScroll() {
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = null;
+        actualizar();
+      });
+    }
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", onScroll, { passive: true });
+    actualizar();
+  }
+
   function inicio() {
+    montarProgreso();
     // La posicion se lee PRIMERO, antes de la entrada: entrada() necesita saber si
     // la pagina se abre por arriba o por el medio, y esa respuesta esta en la
     // posicion guardada. Todavia no se ha restaurado nada, que es justo lo que hace

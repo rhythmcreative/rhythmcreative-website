@@ -2202,6 +2202,31 @@ html.claro .indice li a.activo {
 }
 .indice-sello { margin-top: 0.9rem; font-size: 0.62rem; color: rgba(107, 130, 140, 0.6); }
 
+/* ── Línea de progreso de lectura ─────────────────────────────────────────────
+   Barra fija en el borde superior de la pantalla con gradiente animado, resplandor
+   brillante y transición suave al hacer scroll. */
+.linea-progreso {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  z-index: 1000;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--azul-4) 0%, var(--oxido) 50%, #4ecdc4 100%);
+  background-size: 200% 100%;
+  box-shadow: 0 0 10px rgba(153, 186, 201, 0.65), 0 0 4px var(--oxido);
+  animation: brillo-progreso 2.6s linear infinite;
+  transition: width 0.08s ease-out;
+}
+@keyframes brillo-progreso {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+html.claro .linea-progreso {
+  box-shadow: 0 0 8px rgba(32, 90, 120, 0.4), 0 0 3px var(--oxido);
+}
+
 /* ── El texto ───────────────────────────────────────────────────────────────── */
 .manual { min-width: 0; }
 .manual-cabecera { margin-bottom: clamp(2rem, 5vh, 3.5rem); }
@@ -2869,6 +2894,96 @@ html.claro .figura figcaption { color: rgba(30, 32, 34, 0.6); }
   .figuras-varias,
   .figuras-serie { grid-template-columns: 1fr; }
   .figura figcaption { font-size: 0.66rem; }
+}
+
+/* ── Rejilla de distribuciones soportadas ───────────────────────────────────── */
+.rejilla-distros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.2rem;
+  margin: 1.4rem 0 1rem;
+}
+.tarjeta-distro {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .tarjeta-distro:hover {
+    border-color: var(--linea-alta);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.38);
+  }
+}
+html.claro .tarjeta-distro {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+html.claro .tarjeta-distro:hover {
+  border-color: rgba(20, 22, 24, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.distro-visual {
+  position: relative;
+  overflow: hidden;
+  background: var(--suelo);
+  border-bottom: 1px solid var(--linea);
+}
+.distro-visual a {
+  display: block;
+  line-height: 0;
+}
+.distro-visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+.tarjeta-distro:hover .distro-visual img {
+  transform: scale(1.02);
+}
+.distro-info {
+  padding: 0.95rem 1.05rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.distro-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.distro-titulo {
+  margin: 0 !important;
+  font: 600 0.92rem/1.2 var(--f) !important;
+  color: var(--hielo) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+.distro-tipo {
+  font-size: 0.72rem;
+  color: var(--azul-4);
+  margin-top: 0.35rem;
+  font-family: var(--f);
+}
+html.claro .distro-tipo {
+  color: var(--azul-2);
+}
+.distro-desc {
+  font-size: 0.82rem !important;
+  line-height: 1.55 !important;
+  color: var(--gris) !important;
+  margin-top: 0.6rem !important;
+  flex: 1;
 }
 
 /* ══ LA SALIDA DE UN COMANDO ═════════════════════════════════════════════════
