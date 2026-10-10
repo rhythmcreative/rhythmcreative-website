@@ -141,8 +141,8 @@
     // un numero que sube y baja por gente que marca el repo sin abrirlo, y
     // delante de la version la hacia leer como si fuera el dato de la release.
     var meta = [];
-    if (d.release) meta.push(LOGO_ARCH + esc(d.release));
-    else if (d.lenguaje) meta.push(LOGO_ARCH + esc(d.lenguaje));
+    if (d.release) meta.push(esc(d.release));
+    else if (d.lenguaje) meta.push(esc(d.lenguaje));
     if (d.push) meta.push(esc(hace(d.push)));
     out.push('<span class="meta">' + meta.join("  ·  ") + "</span>");
     out.push("</div>");
@@ -156,19 +156,7 @@
     // El de github lleva el mark de verdad (el octocat del set oficial, que es
     // una sola ruta SVG) en un cuadrado con radio. Va en currentColor, asi que
     // no hay dos iconos que mantener ni que cambiar con el tema.
-    // El "_blank" del boton del manual se decide aqui y no en la cadena: el manual
-    // es una pagina de ESTE sitio, y abrir una pestana nueva para saltar dentro
-    // deja al visitante con dos pestanas y sin pila de retroceso. Si algun dia
-    // vuelve a apuntar a algo externo (un README, un foro), se vuelve a abrir en
-    // pestana nueva sin tocar nada mas.
     var manualExt = /^https?:/i.test(H.manual || "");
-
-      // El "_blank" del boton del manual se decide aqui y no dentro de la cadena: el
-      // manual es una pagina de ESTE sitio, y abrir una pestana nueva para saltar
-      // dentro deja al visitante con dos pestanas y sin pila de retroceso. Si
-      // algun dia vuelve a apuntar a algo externo (un README, un foro), se vuelve
-      // a abrir en pestana nueva sin tocar nada mas.
-      var manualExt = /^https?:/i.test(H.manual || "");
 
     out.push('<div class="acciones-seccion">' +
       '<a class="b b-gh" href="https://github.com/' + esc(H.repo) +
@@ -195,6 +183,15 @@
     out.push('<div class="instalar" id="instalar">' +
       '<h3 class="instalar-titulo">' + esc(H.instalar.titulo) + "</h3>" +
       '<p class="instalar-texto">' + esc(H.instalar.texto) + "</p>" +
+      '<div class="distros-soportadas" aria-label="Supported distributions">' +
+        '<span class="chip-distro">Arch</span>' +
+        '<span class="chip-distro">NixOS</span>' +
+        '<span class="chip-distro">openSUSE</span>' +
+        '<span class="chip-distro">Fedora</span>' +
+        '<span class="chip-distro">Debian</span>' +
+        '<span class="chip-distro">Ubuntu</span>' +
+        '<span class="chip-distro">Alpine</span>' +
+      '</div>' +
       '<div class="comando instalar-cmd"><code>' + esc(H.instalar.comando) + "</code>" +
       '<button class="copiar" type="button" data-copiar="' + esc(H.instalar.comando) +
       '">copy</button></div>' +
@@ -597,6 +594,11 @@
         });
       }
 
+      // Pinchar sobre el propio video cuando esta en marcha lo pausa.
+      video.addEventListener("click", function () {
+        if (!video.paused) alternar();
+      });
+
       // Pinchar en el clip lo para y lo reanuda. Antes no habia nada: como el
       // boton grande se apaga en cuanto arranca y ademas con pointer-events:
       // none, la unica manera de parar era el boton de la barra de abajo. En un
@@ -771,10 +773,22 @@
         pintar();
       });
 
-      // Espacio y k sobre el video, sin capturar la tecla en la pagina entera.
+      // Teclado sobre el video: espacio/k para alternar, m para silenciar, flechas para saltar 5s.
       video.setAttribute("tabindex", "0");
       video.addEventListener("keydown", function (ev) {
-        if (ev.key === " " || ev.key === "k") { ev.preventDefault(); alternar(); }
+        if (ev.key === " " || ev.key === "k" || ev.key === "K") {
+          ev.preventDefault();
+          alternar();
+        } else if (ev.key === "m" || ev.key === "M") {
+          ev.preventDefault();
+          btnMute.click();
+        } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+          if (!video.duration) return;
+          ev.preventDefault();
+          var salta = ev.key === "ArrowRight" ? 5 : -5;
+          video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + salta));
+          pintar();
+        }
       });
 
       pintar();
@@ -1653,6 +1667,13 @@
       });
     };
     busca.addEventListener("input", marcar, { passive: true });
+    busca.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && busca.value) {
+        e.preventDefault();
+        busca.value = "";
+        marcar();
+      }
+    });
     marcar();
   }
 

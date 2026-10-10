@@ -44,6 +44,21 @@
 .buscador-boton:hover { color: var(--hielo); border-color: var(--linea-alta); }
 .buscador-boton:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 
+.buscador-boton .tecla-atajo {
+  display: inline-block;
+  font-family: var(--fm, monospace);
+  font-size: 0.62rem;
+  line-height: 1;
+  padding: 0.15rem 0.32rem;
+  border-radius: 3px;
+  background: var(--cristal-opaco);
+  color: var(--gris);
+  border: 1px solid var(--linea);
+}
+@media (max-width: 680px) {
+  .buscador-boton .tecla-atajo { display: none; }
+}
+
 /* La lupa, dibujada con dos bordes en vez de con una fuente de iconos: un SVG o
    un glifo son un archivo más o una dependencia, y esto son cuatro líneas. */
 .buscador-boton span {

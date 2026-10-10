@@ -772,7 +772,29 @@ html.claro .halo { mix-blend-mode: multiply; opacity: 0.45; }
 }
 .instalar-texto {
   font-size: 0.78rem; color: var(--gris); max-width: 58ch;
-  margin: 0 0 1.4rem;
+  margin: 0 0 1rem;
+}
+
+.distros-soportadas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin: 0 0 1.2rem;
+}
+.distros-soportadas .chip-distro {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--ceniza);
+  padding: 0.16rem 0.48rem;
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  background: var(--cristal-opaco);
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.distros-soportadas .chip-distro:hover {
+  color: var(--hielo);
+  border-color: var(--linea-alta);
 }
 
 .instalar .instalar-cmd {
