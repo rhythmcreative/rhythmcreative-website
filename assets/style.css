@@ -1054,12 +1054,10 @@ html.claro .b-gh:hover {
 html.claro .b-gh .marca { color: #000000; }
 
 .acciones-seccion {
-  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem;
-  /* El de github a la izquierda y el del manual a la derecha, con el hueco en
-     medio. Antes eran dos enlaces juntos en una esquina y con space-between se
-     quedan en los dos extremos, que es lo que se ha pedido. En un movil, que no
-     cabe la separacion, se vuelven a juntar y se alinean a la izquierda. */
-  justify-content: space-between; align-items: center;
+  display: flex; flex-wrap: nowrap; gap: 0.6rem; margin-top: 1.6rem;
+  /* El de github a la izquierda y el del manual a la derecha, en las dos puntas
+     con el espacio en medio tanto en escritorio como en movil. */
+  justify-content: space-between; align-items: center; width: 100%;
 }
 
 /* El boton del manual, con la flecha dibujada con bordes y no con un glifo: la
@@ -1070,10 +1068,6 @@ html.claro .b-gh .marca { color: #000000; }
               border-top: 1px solid currentColor; border-right: 1px solid currentColor;
               transform: rotate(45deg); transition: transform 0.18s; }
 .b-flecha:hover i { transform: rotate(45deg) translate(2px, -2px); }
-
-@media (max-width: 560px) {
-  .acciones-seccion { justify-content: flex-start; }
-}
 
 /* ── Las piezas ─────────────────────────────────────────────────────────────
    Una fila, con un filo a la izquierda que se enciende al abrirla. Sin caja:
@@ -2526,24 +2520,45 @@ html.claro .fila:hover { background: rgba(20, 22, 24, 0.03); }
    animarla dentro del keyframe. Sin la declaracion seria una cadena y el
    fundido saldria de golpe en el ultimo fotograma. */
 
-/* Onda circular expansiva que nace de las coordenadas del interruptor (--vt-x, --vt-y).
-   El tema nuevo se despliega con clip-path circular y el anterior se desvanece suavemente. */
+/* Transición luminosa cinemática: el ángel y la escena se disuelven suavemente
+   con un sutil destello de luz y fundido orgánico, evitando cortes artificiales. */
 ::view-transition-old(root) {
-  animation: vt-fade-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: vt-angel-viejo 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 1;
 }
 
 ::view-transition-new(root) {
-  animation: vt-wipe 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: vt-angel-nuevo 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 2;
 }
 
-@keyframes vt-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@keyframes vt-angel-viejo {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  40% {
+    opacity: 0.85;
+    filter: brightness(1.12);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(1.2);
+  }
 }
 
-@keyframes vt-wipe {
-  from { clip-path: circle(0% at var(--vt-x, 85%) var(--vt-y, 25px)); }
-  to { clip-path: circle(150% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+@keyframes vt-angel-nuevo {
+  0% {
+    opacity: 0;
+    filter: brightness(1.15);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
 }
 
 /* Transición suave para navegadores sin View Transitions */

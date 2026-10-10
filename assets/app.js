@@ -1074,11 +1074,27 @@
     }
   }
 
+  function precargarTemaOpuesto() {
+    try {
+      var claro = document.documentElement.classList.contains("claro");
+      var imgs = claro
+        ? ["assets/angel-oscuro.webp", "assets/angel-oscuro-p.webp", "assets/fondo-oscuro.webp"]
+        : ["assets/angel-claro.webp", "assets/angel-claro-p.webp", "assets/fondo-claro.webp"];
+      imgs.forEach(function (src) {
+        var img = new Image();
+        img.src = src;
+      });
+    } catch (e) { /* sin precarga */ }
+  }
+
   function interruptor() {
     var b = $("#interruptor");
     if (!b) return;
     var modo = modoActual();
     aplicarTema(modo);
+
+    if (b._escuchando) return;
+    b._escuchando = true;
 
     b.addEventListener("click", function (ev) {
       if (ev) {
@@ -1092,6 +1108,14 @@
       var sig = MODOS[(MODOS.indexOf(actual) + 1) % MODOS.length];
       cambiarTema(sig, true);
     });
+
+    // Precargar las texturas del tema contrario cuando el hilo principal este libre,
+    // garantizando que la transicion del angel sea inmediata y fluida.
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(precargarTemaOpuesto);
+    } else {
+      setTimeout(precargarTemaOpuesto, 1200);
+    }
 
     // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo
     // de lo que decia al abrir la pagina. Sin esto, quien tiene el movil en
