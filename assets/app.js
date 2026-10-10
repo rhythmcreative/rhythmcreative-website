@@ -1941,17 +1941,10 @@
   // un sitio concreto y devolverle "donde estaba" le haria caso omiso.
   var paginaId = ((location.pathname || "").split("/").pop() || "index").replace(/\.html$/, "") || "index";
   var CLAVE_POS = "rhythm-scroll-" + paginaId;
+  var CLAVE_HASH = "rhythm-hash-" + paginaId;
   var posGuardada = leerPos();
   var restaurado = false;
   var hashInicial = location.hash || "";
-
-  var esRecarga = false;
-  try {
-    var nav = (performance.getEntriesByType &&
-      performance.getEntriesByType("navigation")[0]) || null;
-    esRecarga = nav ? nav.type === "reload" : ((performance.navigation &&
-      performance.navigation.type === 1) ? true : false);
-  } catch (e) { esRecarga = false; }
 
   try {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -1959,10 +1952,14 @@
 
   function leerPos() {
     try {
-      var v = parseInt(sessionStorage.getItem(CLAVE_POS), 10);
+      var v = parseInt(sessionStorage.getItem(CLAVE_POS), 10) ||
+              parseInt(sessionStorage.getItem(CLAVE_POS + ".html"), 10) ||
+              parseInt(sessionStorage.getItem("rhythm-crea-scroll"), 10);
       if (v > 0) return v;
       if (paginaId === "manual") {
-        var local = parseInt(localStorage.getItem(CLAVE_POS), 10);
+        var local = parseInt(localStorage.getItem(CLAVE_POS), 10) ||
+                    parseInt(localStorage.getItem(CLAVE_POS + ".html"), 10) ||
+                    parseInt(localStorage.getItem("rhythm-crea-scroll"), 10);
         if (local > 0) return local;
       }
       return 0;
@@ -1973,9 +1970,12 @@
     if (!restaurado && posGuardada > 0) return;
     try {
       var val = String(Math.round(window.scrollY));
+      var hsh = location.hash || "";
       sessionStorage.setItem(CLAVE_POS, val);
+      sessionStorage.setItem(CLAVE_HASH, hsh);
       if (paginaId === "manual") {
         localStorage.setItem(CLAVE_POS, val);
+        localStorage.setItem(CLAVE_HASH, hsh);
       }
     } catch (e) { /* sin storage */ }
   }
@@ -1991,37 +1991,60 @@
   addEventListener("beforeunload", function () {
     try {
       var val = String(Math.round(window.scrollY));
+      var hsh = location.hash || "";
       sessionStorage.setItem(CLAVE_POS, val);
-      if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
+      sessionStorage.setItem(CLAVE_HASH, hsh);
+      if (paginaId === "manual") {
+        localStorage.setItem(CLAVE_POS, val);
+        localStorage.setItem(CLAVE_HASH, hsh);
+      }
     } catch (e) { /* sin storage */ }
   });
   addEventListener("pagehide", function () {
     try {
       var val = String(Math.round(window.scrollY));
+      var hsh = location.hash || "";
       sessionStorage.setItem(CLAVE_POS, val);
-      if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
+      sessionStorage.setItem(CLAVE_HASH, hsh);
+      if (paginaId === "manual") {
+        localStorage.setItem(CLAVE_POS, val);
+        localStorage.setItem(CLAVE_HASH, hsh);
+      }
     } catch (e) { /* sin storage */ }
   });
   addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden") {
       try {
         var val = String(Math.round(window.scrollY));
+        var hsh = location.hash || "";
         sessionStorage.setItem(CLAVE_POS, val);
-        if (paginaId === "manual") localStorage.setItem(CLAVE_POS, val);
+        sessionStorage.setItem(CLAVE_HASH, hsh);
+        if (paginaId === "manual") {
+          localStorage.setItem(CLAVE_POS, val);
+          localStorage.setItem(CLAVE_HASH, hsh);
+        }
       } catch (e) { /* sin storage */ }
     }
   });
 
   // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-  // Si es una recarga o vuelta a la pagina, la prioridad absoluta es devolver
-  // al usuario exactamente donde estaba leyendo ("donde lo dejamos").
-  // Si es una navegacion fresca con ancla, se salta al ancla asegurando que
-  // los fotogramas de render y el layout hayan calculado la altura real.
+  // Si el usuario llega con un ancla nueva y distinta de la que tenia guardada,
+  // manda el ancla solicitada.
+  // En cualquier otro caso (recarga, continuar lectura donde lo dejamos, F5),
+  // se devuelve la posicion exacta de lectura que habia guardada.
   function devolverPos() {
-    var hashObjetivo = location.hash || hashInicial;
+    var hashActual = location.hash || hashInicial;
+    var hashGuardado = "";
+    try {
+      hashGuardado = sessionStorage.getItem(CLAVE_HASH) ||
+        (paginaId === "manual" ? localStorage.getItem(CLAVE_HASH) : "") || "";
+    } catch (e) {}
+
+    var esNuevoAncla = !!(hashActual && hashGuardado && hashActual !== hashGuardado);
+
     var saltarAHash = function () {
-      if (!hashObjetivo) return false;
-      var id = decodeURIComponent(hashObjetivo.slice(1));
+      if (!hashActual) return false;
+      var id = decodeURIComponent(hashActual.slice(1));
       var el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "auto", block: "start" });
@@ -2030,7 +2053,7 @@
       return false;
     };
 
-    if (!esRecarga && hashObjetivo) {
+    if (esNuevoAncla) {
       saltarAHash();
       requestAnimationFrame(function () {
         saltarAHash();
@@ -2051,7 +2074,7 @@
     var y = posGuardada;
     if (y <= 0) {
       restaurado = true;
-      if (hashObjetivo) saltarAHash();
+      if (hashActual) saltarAHash();
       return;
     }
 
