@@ -2526,24 +2526,45 @@ html.claro .fila:hover { background: rgba(20, 22, 24, 0.03); }
    animarla dentro del keyframe. Sin la declaracion seria una cadena y el
    fundido saldria de golpe en el ultimo fotograma. */
 
-/* Onda circular expansiva que nace de las coordenadas del interruptor (--vt-x, --vt-y).
-   El tema nuevo se despliega con clip-path circular y el anterior se desvanece suavemente. */
+/* Transición luminosa cinemática: el ángel y la escena se disuelven suavemente
+   con un sutil destello de luz y fundido orgánico, evitando cortes artificiales. */
 ::view-transition-old(root) {
-  animation: vt-fade-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: vt-angel-viejo 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 1;
 }
 
 ::view-transition-new(root) {
-  animation: vt-wipe 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: vt-angel-nuevo 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 2;
 }
 
-@keyframes vt-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@keyframes vt-angel-viejo {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  40% {
+    opacity: 0.85;
+    filter: brightness(1.12);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(1.2);
+  }
 }
 
-@keyframes vt-wipe {
-  from { clip-path: circle(0% at var(--vt-x, 85%) var(--vt-y, 25px)); }
-  to { clip-path: circle(150% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+@keyframes vt-angel-nuevo {
+  0% {
+    opacity: 0;
+    filter: brightness(1.15);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
 }
 
 /* Transición suave para navegadores sin View Transitions */
