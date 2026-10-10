@@ -18,17 +18,15 @@
       sitio, por el mismo motivo: en un móvil de 390 px, 26 px es medio dedo.
    ──────────────────────────────────────────────────────────────────────────── */
 
-/* El botón, delante del interruptor del tema. El margen izquierdo lo separa de los
-   enlaces; sin él se pega al último. */
+/* El botón, delante del interruptor del tema. */
 .buscador-boton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45em;
-  height: 36px;
-  min-width: 36px;
-  margin-left: 0.55rem;
-  padding: 0 0.5em;
+  gap: 0.4em;
+  height: 1.9rem;
+  padding: 0 0.55rem;
+  margin-left: 0.25rem;
   border: 1px solid var(--linea);
   border-radius: var(--r);
   background: transparent;
@@ -37,11 +35,19 @@
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   flex: none;
 }
 
-.buscador-boton:hover { color: var(--hielo); border-color: var(--linea-alta); }
+.buscador-boton:hover {
+  color: var(--hielo);
+  border-color: var(--linea-alta);
+  background: rgba(153, 186, 201, 0.08);
+}
+html.claro .buscador-boton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(20, 22, 24, 0.22);
+}
 .buscador-boton:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 
 .buscador-boton .tecla-atajo {
@@ -49,7 +55,7 @@
   font-family: var(--fm, monospace);
   font-size: 0.62rem;
   line-height: 1;
-  padding: 0.15rem 0.32rem;
+  padding: 0.14rem 0.34rem;
   border-radius: 3px;
   background: var(--cristal-opaco);
   color: var(--gris);

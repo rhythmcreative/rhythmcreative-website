@@ -317,10 +317,10 @@ html.claro .isla nav a:hover { background: rgba(0, 0, 0, 0.06); }
    estas en blanco y estas a punto de pasar a negro. */
 .interruptor { display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
                color: var(--gris); cursor: pointer; border-radius: var(--r);
-               border-left: 1px solid var(--linea);
-               transition: color 0.2s, background 0.2s; }
-.interruptor:hover { color: var(--hielo); background: rgba(153, 186, 201, 0.09); }
-html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.06); }
+               border: 1px solid var(--linea); margin-left: 0.25rem;
+               transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
+.interruptor:hover { color: var(--hielo); border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.08); }
+html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.05); border-color: rgba(20, 22, 24, 0.22); }
 .interruptor .ic { width: 1.05rem; height: 1.05rem; grid-area: 1 / 1;
                    transition: opacity 0.25s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
 /* Los tres iconos del tema, uno solo a la vez.
@@ -2132,18 +2132,10 @@ html.entrando #hyprland.hyprland-visto {
    El <pre> lleva overflow-x:auto, asi que con esto sale el scroll DENTRO del bloque
    de texto, que es donde tiene que estar. */
 .manual-envoltorio > * { min-width: 0; }
-/* Nota: hay un desborre lateral sin resolver a 900-1024 px de ventana, que se
-   NO se ha podido quitar. Con esas pantallas la columna del indice (15 rem) se
-   come el ancho y al texto le quedan 290-372 px, y alguna de las rejillas de dos
-   columnas del texto se sale: scrollWidth 1000 con 900 de ventana, y se puede
-   arrastrar 115 px hacia una franja vacia. Se ha buscado elemento a elemento y
-   sale de dentro de .bloque-proyecto, pero no de un solo elemento: tapar cualquiera
-   de sus hijos lo quita y ninguno es el culpable por si solo. El min-width:0 de
-   arriba es lo correcto en teoria y no lo arregla.
-   --
-   Se deja escrito para que no se vuelva a perder el tiempo, y para que el boton
-   de las tres rayas de mas abajo sea la respuesta: al plegar el indice el texto
-   pasa de 290 px a 698 px en una pantalla de 900, que es de donde salio el boton. */
+/* Desborre lateral resuelto: a 900-1060 px de ventana la columna del indice
+   (15 rem) reducia el espacio para las dos columnas de .bandera, .fila y .componentes.
+   Con @media (max-width: 1060px) colapsan a una sola columna de lectura limpia,
+   eliminando cualquier scroll lateral residual. */
 /* Indice plegado en escritorio: la columna se va a cero y el hueco tambien, para
    que el texto no deje un margen muerto a la izquierda. */
 .sin-indice .manual-envoltorio {
@@ -2499,6 +2491,9 @@ html.claro .seccion-manual h4 { color: rgba(30, 32, 34, 0.7); }
   .indice li a.activo { border-bottom-color: var(--hielo); border-left-color: transparent; }
   .indice-sello { margin-top: 0.5rem; }
   .seccion-manual h2 { font-size: 0.86rem; }
+}
+
+@media (max-width: 1060px) {
   .bandera, .fila, .fila-arbol, .componentes { grid-template-columns: 1fr; }
   .fila-arbol .cifra { text-align: left; }
   .componentes { gap: 0.1rem 0; }
@@ -2872,21 +2867,21 @@ html.claro .salida .linea-ok { color: var(--hielo); }
      La de arriba se va deslizando el `background-position` hacia arriba, fuera de
      la caja: como el fondo se dibuja recortado a la caja del boton, al salirse
      desaparece, y eso si se puede transicionar. */
-  width: 44px; height: 44px; min-width: 44px;
+  width: 1.9rem; height: 1.9rem; min-width: 1.9rem;
   padding: 0; margin: 0;
   position: relative;
   color: var(--enlace-barra);
   background-image: linear-gradient(currentColor 0 0);
   background-repeat: no-repeat;
   background-position: center 34%;
-  background-size: 17px 1.6px;
-  border: 0; border-left: 1px solid var(--linea);
+  background-size: 15px 1.6px;
+  border: 1px solid var(--linea);
   border-radius: var(--r); cursor: pointer;
   /* El background-position va en la lista. Sin el, la raya de arriba se teletransporta
      y el efecto se pierde entero. */
-  transition: color 0.2s, background-color 0.2s, background-position 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, background-position 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.contenidos:hover { color: var(--hielo); background-color: rgba(153, 186, 201, 0.09); }
+.contenidos:hover { color: var(--hielo); border-color: var(--linea-alta); background-color: rgba(153, 186, 201, 0.08); }
 .contenidos:focus-visible { outline: 2px solid var(--azul-4); outline-offset: 1px; }
 html.claro .contenidos:hover { background-color: rgba(0, 0, 0, 0.06); }
 
