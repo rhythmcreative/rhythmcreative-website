@@ -1433,26 +1433,143 @@
   }
 
   function seccionFuturo() {
-    return '<p class="destacado">A continuous status log tracking what is already built and working across all supported Linux distributions, alongside planned features and enhancements for future releases.</p>' +
-      '<h4>What we have done</h4>' +
-      '<div class="filas">' +
-      fila("Cross-distro installer engine", "Automatic distribution detection and package provisioning across Arch, CachyOS, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine Linux.") +
-      fila("Dynamic Pywal theming", "Automatic color palette extraction from the active wallpaper, applied on the fly to Waybar, Quickshell, Kitty, Rofi, and GTK without restarting compositor sessions.") +
-      fila("Quickshell dynamic island", "Collapsible status island featuring multimedia playback controls, WiFi/Bluetooth selectors, audio output routing, backlight adjustments, and power profiles.") +
-      fila("SDDM Astronaut login theme", "Custom display manager greeter with coordinated wallpaper backdrops, Wayland session registration, and multi-distro PAM integration.") +
-      fila("Diagnostic doctor (rhythm-doctor)", "Automated system health inspector checking Wayland sockets, required binaries, user units, and configuration files with one-click remediation.") +
-      fila("Non-destructive OTA updates", "Layered update model with sparse user overlays (user.lua, user.conf) protecting custom hotkeys and tweaks from upstream overwrites.") +
-      fila("Rust-based application dock", "Fast, resource-light dock tracking running desktop clients with smart autohide and quick workspace switching.") +
-      "</div>" +
-      '<h4>What can be done in the future</h4>' +
-      '<div class="filas">' +
-      fila("Multi-touch gesture engine", "Native 3-finger and 4-finger touchpad gestures for smooth workspace switching, window spread overview, and zoom transitions.") +
-      fila("Automated monitor profiler", "Daemon remembering per-display resolution, refresh rate, and HiDPI scaling profiles across docking stations and multi-monitor setups.") +
-      fila("Island widget extensions", "Modular plugins for the Quickshell island: real-time local weather forecasts, Pomodoro timers, and hardware sensor telemetry (CPU/GPU temps).") +
-      fila("Atomic snapshot & restore", "Pre-update configuration snapshots with one-click rollback from the terminal or launcher if a package upgrade breaks dependencies.") +
-      fila("Flatpak & container theme bridge", "Automatic real-time sync of Pywal color palettes to sandboxed Flatpak and containerized applications.") +
-      fila("Live audio spectrum visualizer", "Embedded audio spectrum visualizer option directly inside the Waybar status strip or unfolded island view.") +
-      "</div>";
+    var hitos = [
+      {
+        estado: "completado",
+        fase: "Milestone 1",
+        tag: "Completed",
+        titulo: "Cross-distro installer engine",
+        desc: "Automated distribution detection and package provisioning across Arch, CachyOS, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine Linux.",
+        tech: ["Multi-distro", "install.sh", "8 families"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 2",
+        tag: "Completed",
+        titulo: "Dynamic Pywal harmony",
+        desc: "Color palette extracted on the fly from active wallpapers and synchronized across Waybar, Quickshell, Kitty, Rofi, and GTK without restarting compositor sessions.",
+        tech: ["Pywal", "Hot reload", "Palette sync"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 3",
+        tag: "Completed",
+        titulo: "Quickshell dynamic island",
+        desc: "Collapsible top island with integrated media controls, WiFi/Bluetooth selectors, audio output routing, backlight adjustments, and power profiles.",
+        tech: ["Quickshell", "QML", "Dynamic island"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 4",
+        tag: "Completed",
+        titulo: "SDDM Astronaut login theme",
+        desc: "Custom display manager greeter with coordinated wallpaper backdrops, Wayland session registration, and multi-distro PAM integration.",
+        tech: ["SDDM", "Astronaut", "PAM"]
+      },
+      {
+        estado: "completado",
+        fase: "Milestone 5",
+        tag: "Completed",
+        titulo: "Diagnostic doctor & safe overlays",
+        desc: "Automated system inspector checking Wayland sockets, required binaries, and user units, combined with non-destructive overlays (user.lua, user.conf).",
+        tech: ["rhythm-doctor", "user.lua", "Overlays"]
+      },
+      {
+        estado: "actual",
+        fase: "Milestone 6",
+        tag: "Current status",
+        titulo: "Release v0.3.0 & multi-distro verification",
+        desc: "Live testing builds verified across real hardware and VMs for all 6 active distribution families, smooth scroll restoration, and comprehensive manual docs.",
+        tech: ["Release v0.3.0", "Verified VMs", "LiveRice"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 7",
+        tag: "Planned",
+        titulo: "Multi-touch gesture suite",
+        desc: "Native 3-finger and 4-finger touchpad gestures for smooth workspace switching, window spread overview, and zoom transitions.",
+        tech: ["Gestures", "Touchpad", "libinput"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 8",
+        tag: "Planned",
+        titulo: "Automated display profiler",
+        desc: "Daemon remembering per-display resolution, refresh rate, and HiDPI scaling profiles across docking stations and multi-monitor setups.",
+        tech: ["HiDPI", "Docks", "hyprctl dispatch"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 9",
+        tag: "Planned",
+        titulo: "Island widget extensions",
+        desc: "Modular plugins for the Quickshell island: real-time local weather forecasts, Pomodoro timers, and hardware sensor telemetry (CPU/GPU temps).",
+        tech: ["Widgets", "Weather", "Sensors"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 10",
+        tag: "Planned",
+        titulo: "Atomic snapshot & restore",
+        desc: "Pre-update configuration snapshots with one-click rollback from the terminal or launcher if a package upgrade breaks dependencies.",
+        tech: ["Snapshots", "Rollback", "Backup"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 11",
+        tag: "Planned",
+        titulo: "Flatpak & container theme bridge",
+        desc: "Automatic real-time sync of Pywal color palettes to sandboxed Flatpak and containerized applications.",
+        tech: ["Flatpak", "Sandbox", "GTK Sync"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 12",
+        tag: "Planned",
+        titulo: "Live audio spectrum visualizer",
+        desc: "Embedded audio spectrum visualizer option directly inside the Waybar status strip or unfolded island view.",
+        tech: ["Cava", "PipeWire", "Spectrum"]
+      }
+    ];
+
+    var htmlHitos = hitos.map(function (h, i) {
+      var dotContent = "";
+      if (h.estado === "completado") {
+        dotContent = '<svg class="ico-dot-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" fill="currentColor"/></svg>';
+      } else if (h.estado === "actual") {
+        dotContent = '<span class="pulso-radar" aria-hidden="true"></span><span class="dot-nucleo" aria-hidden="true"></span>';
+      } else {
+        dotContent = '<span class="dot-num" aria-hidden="true">' + (i + 1) + '</span>';
+      }
+
+      var chipsHtml = h.tech.map(function (t) {
+        return '<span class="chip">' + esc(t) + '</span>';
+      }).join("");
+
+      return '<article class="hito-roadmap hito-' + h.estado + '" data-estado="' + h.estado + '">' +
+        '<div class="hito-dot-col">' +
+        '<div class="hito-dot">' + dotContent + '</div>' +
+        '</div>' +
+        '<div class="hito-cuerpo">' +
+        '<div class="hito-meta">' +
+        '<span class="hito-tag hito-tag-' + h.estado + '">' + esc(h.tag) + '</span>' +
+        '<span class="hito-fase">' + esc(h.fase) + '</span>' +
+        '</div>' +
+        '<h4 class="hito-titulo">' + esc(h.titulo) + '</h4>' +
+        '<p class="hito-desc">' + esc(h.desc) + '</p>' +
+        '<div class="hito-chips">' + chipsHtml + '</div>' +
+        '</div>' +
+        '</article>';
+    }).join("");
+
+    return '<p class="destacado">An interactive timeline tracking shipped capabilities, our current active status, and planned developments for upcoming releases.</p>' +
+      '<div class="mapa-roadmap" id="mapa-roadmap">' +
+      '<div class="timeline-riel" aria-hidden="true">' +
+      '<div class="timeline-linea-progreso" id="timeline-linea-progreso"></div>' +
+      '</div>' +
+      '<div class="hitos-lista">' + htmlHitos + '</div>' +
+      '</div>' +
+      '<p class="nota-dato">Scroll through the roadmap to trace completed milestones up to the current release and into future planned features.</p>';
   }
 
   function fila(a, b) {
@@ -1714,12 +1831,43 @@
     indicePanel();
     montarBuscador();
     marcarIndice();
+    animarRoadmap();
 
-    // Un solo listener para todo el scroll, no uno por seccion. Con doce
-    // secciones, doce listeners cada uno midiendo doce rectangulos, es trabajo
-    // en cada fotograma por algo que aqui son doce medidas y un bucle.
-    addEventListener("scroll", marcarIndice, { passive: true });
-    addEventListener("resize", marcarIndice, { passive: true });
+    var enScroll = function () {
+      marcarIndice();
+      animarRoadmap();
+    };
+
+    addEventListener("scroll", enScroll, { passive: true });
+    addEventListener("resize", enScroll, { passive: true });
+  }
+
+  function animarRoadmap() {
+    var mapa = $("#mapa-roadmap");
+    if (!mapa) return;
+    var riel = $("#timeline-linea-progreso");
+    var hitos = $$("#mapa-roadmap .hito-roadmap");
+    if (!hitos.length) return;
+
+    var rect = mapa.getBoundingClientRect();
+    var viewH = window.innerHeight;
+    var puntoLectura = viewH * 0.65;
+    var distancia = puntoLectura - rect.top;
+    var pct = Math.max(0, Math.min(100, (distancia / rect.height) * 100));
+
+    if (riel) {
+      riel.style.height = pct.toFixed(1) + "%";
+    }
+
+    hitos.forEach(function (h) {
+      var hRect = h.getBoundingClientRect();
+      var hitoCentro = hRect.top + (hRect.height * 0.35);
+      if (hitoCentro <= puntoLectura) {
+        h.classList.add("alcanzado");
+      } else {
+        h.classList.remove("alcanzado");
+      }
+    });
   }
 
   function montarBuscador() {

@@ -2986,6 +2986,229 @@ html.claro .distro-tipo {
   flex: 1;
 }
 
+/* ── Mapa de dots animado: Roadmap ────────────────────────────────────────────
+   Línea de tiempo vertical con riel dinámico y dots que se iluminan al hacer
+   scroll. El hito actual pulsa con onda de radar. */
+.mapa-roadmap {
+  position: relative;
+  margin: 1.8rem 0 1.5rem;
+  padding-left: 0.2rem;
+}
+.timeline-riel {
+  position: absolute;
+  left: 1.4rem;
+  top: 1.4rem;
+  bottom: 2.2rem;
+  width: 3px;
+  background: var(--linea);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.timeline-linea-progreso {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, var(--azul-4) 0%, var(--oxido) 55%, #4ecdc4 100%);
+  box-shadow: 0 0 10px rgba(153, 186, 201, 0.7), 0 0 5px var(--oxido);
+  border-radius: 999px;
+  transition: height 0.08s ease-out;
+}
+.hitos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.hito-roadmap {
+  display: grid;
+  grid-template-columns: 2.8rem 1fr;
+  gap: 0.8rem;
+  align-items: start;
+  opacity: 0.52;
+  transform: translateY(6px);
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+.hito-roadmap.alcanzado {
+  opacity: 1;
+  transform: translateY(0);
+}
+.hito-dot-col {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  padding-top: 0.15rem;
+}
+.hito-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--suelo);
+  border: 2px solid var(--linea);
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+html.claro .hito-dot {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.16);
+}
+.ico-dot-check {
+  width: 13px;
+  height: 13px;
+  color: var(--gris);
+  transition: color 0.25s ease;
+}
+.hito-completado.alcanzado .hito-dot {
+  border-color: var(--azul-4);
+  background: rgba(153, 186, 201, 0.12);
+  box-shadow: 0 0 12px rgba(153, 186, 201, 0.45);
+  transform: scale(1.08);
+}
+.hito-completado.alcanzado .ico-dot-check {
+  color: var(--azul-4);
+}
+html.claro .hito-completado.alcanzado .hito-dot {
+  border-color: var(--azul-2);
+  background: rgba(20, 22, 24, 0.04);
+}
+html.claro .hito-completado.alcanzado .ico-dot-check {
+  color: var(--azul-2);
+}
+
+/* Hito actual con radar / pulso continuo */
+.hito-actual .hito-dot {
+  border-color: var(--oxido);
+  background: var(--cristal-opaco);
+  box-shadow: 0 0 14px rgba(184, 91, 53, 0.5);
+  position: relative;
+}
+.hito-actual .dot-nucleo {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--oxido);
+  box-shadow: 0 0 8px var(--oxido);
+  z-index: 2;
+}
+.hito-actual .pulso-radar {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--oxido);
+  animation: pulso-radar-onda 2s cubic-bezier(0.1, 0.8, 0.2, 1) infinite;
+  pointer-events: none;
+}
+@keyframes pulso-radar-onda {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Hitos futuros */
+.hito-futuro .hito-dot {
+  border: 2px dashed var(--linea);
+  color: var(--gris);
+}
+.hito-futuro .dot-num {
+  font: 600 0.62rem/1 var(--f);
+  font-variant-numeric: tabular-nums;
+  color: rgba(107, 130, 140, 0.65);
+}
+.hito-futuro.alcanzado .hito-dot {
+  border-color: var(--linea-alta);
+  box-shadow: 0 0 8px rgba(153, 186, 201, 0.25);
+  color: var(--hielo);
+  transform: scale(1.05);
+}
+.hito-futuro.alcanzado .dot-num {
+  color: var(--azul-4);
+}
+html.claro .hito-futuro.alcanzado .dot-num {
+  color: var(--azul-2);
+}
+
+/* Tarjeta del hito */
+.hito-cuerpo {
+  background: var(--cristal-opaco);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  padding: 0.95rem 1.15rem 1.05rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.hito-roadmap.alcanzado .hito-cuerpo {
+  border-color: var(--linea-alta);
+}
+.hito-actual .hito-cuerpo {
+  border-color: rgba(184, 91, 53, 0.45);
+  background: rgba(184, 91, 53, 0.04);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), 0 0 20px rgba(184, 91, 53, 0.08);
+}
+html.claro .hito-cuerpo {
+  background: #ffffff;
+  border-color: rgba(20, 22, 24, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+html.claro .hito-actual .hito-cuerpo {
+  background: rgba(184, 91, 53, 0.05);
+  border-color: rgba(184, 91, 53, 0.35);
+}
+.hito-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.hito-tag {
+  font: 600 0.58rem/1 var(--f);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+.hito-tag-completado {
+  background: rgba(153, 186, 201, 0.12);
+  color: var(--azul-4);
+  border: 1px solid rgba(153, 186, 201, 0.25);
+}
+.hito-tag-actual {
+  background: rgba(184, 91, 53, 0.2);
+  color: var(--oxido);
+  border: 1px solid var(--oxido);
+}
+.hito-tag-futuro {
+  background: rgba(107, 130, 140, 0.1);
+  color: var(--gris);
+  border: 1px solid var(--linea);
+}
+.hito-fase {
+  font-size: 0.65rem;
+  color: rgba(107, 130, 140, 0.7);
+  font-family: var(--f);
+}
+.hito-titulo {
+  font: 600 0.94rem/1.25 var(--f) !important;
+  color: var(--hielo) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  margin: 0.2rem 0 0.45rem !important;
+}
+.hito-desc {
+  font-size: 0.83rem !important;
+  line-height: 1.6 !important;
+  color: var(--gris) !important;
+  margin: 0 0 0.75rem !important;
+  max-width: 64ch !important;
+}
+.hito-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+}
+
 /* ══ LA SALIDA DE UN COMANDO ═════════════════════════════════════════════════
    El bloque del doctor. Es texto de un terminal, no un <pre> pelado: lleva los
    numeros de linea a la izquierda, que es lo que hace falta cuando algo falla y
