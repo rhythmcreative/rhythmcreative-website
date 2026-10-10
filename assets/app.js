@@ -1956,12 +1956,10 @@
               parseInt(sessionStorage.getItem(CLAVE_POS + ".html"), 10) ||
               parseInt(sessionStorage.getItem("rhythm-crea-scroll"), 10);
       if (v > 0) return v;
-      if (paginaId === "manual") {
-        var local = parseInt(localStorage.getItem(CLAVE_POS), 10) ||
-                    parseInt(localStorage.getItem(CLAVE_POS + ".html"), 10) ||
-                    parseInt(localStorage.getItem("rhythm-crea-scroll"), 10);
-        if (local > 0) return local;
-      }
+      var local = parseInt(localStorage.getItem(CLAVE_POS), 10) ||
+                  parseInt(localStorage.getItem(CLAVE_POS + ".html"), 10) ||
+                  parseInt(localStorage.getItem("rhythm-crea-scroll"), 10);
+      if (local > 0) return local;
       return 0;
     } catch (e) { return 0; }
   }
@@ -1970,9 +1968,7 @@
     try {
       var val = String(Math.round(window.scrollY));
       sessionStorage.setItem(CLAVE_POS, val);
-      if (paginaId === "manual") {
-        localStorage.setItem(CLAVE_POS, val);
-      }
+      localStorage.setItem(CLAVE_POS, val);
     } catch (e) { /* sin storage */ }
   }
 
@@ -2060,7 +2056,7 @@
     // la portada entrar. Recargar y que la portada entre animada cuando ya estas
     // mil pixeles mas abajo, no es una entrada: es un retraso en un sitio donde no
     // se nota.
-    if (paginaId === "manual" || posGuardada > 40 || location.hash) return;
+    if (paginaId === "manual" || window.scrollY > 20 || posGuardada > 20 || location.hash) return;
 
     // Tambien se mira aqui y no solo en el CSS. Es lo que hace omarchy.org: si el
     // sistema pide menos movimiento, la clase NO se pone. Es distinto de anularla
