@@ -1747,15 +1747,15 @@
                 (anterior
                   ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
                     '<i aria-hidden="true"></i><span>Previous</span>' +
-                    esc(anterior.sub.t) + "</a>"
+                    '<strong class="siguiente-tit">' + esc(anterior.sub.t) + "</strong></a>"
                   : "") +
                 (siguiente
                   ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
-                    "<span>Next</span>" + esc(siguiente.sub.t) +
+                    '<span>Next</span><strong class="siguiente-tit">' + esc(siguiente.sub.t) + "</strong>" +
                     '<i aria-hidden="true"></i></a>'
                   : '<a class="siguiente anterior arriba" href="#contenido">' +
                     '<i aria-hidden="true"></i><span>End of the manual</span>' +
-                    "Back to the top</a>") +
+                    '<strong class="siguiente-tit">Back to the top</strong></a>') +
                 "</div>"
               : "") +
             "</section>";

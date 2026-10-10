@@ -2787,25 +2787,7 @@ html.claro .proyecto:hover {
 }
 
 /* ── "Next", al final de cada seccion ─────────────────────────────────────────
-   El manual de omarchy cierra cada capitulo con el siguiente. Es de las pocas
-   cosas de ahi que si que Buckyan bien: un texto largo se lee peor cuando cada
-   pantalla te obliga a decidir como seguir. */
-.siguiente {
-  display: inline-flex; align-items: baseline; gap: 0.55rem;
-  margin-top: 1.6rem; padding-top: 0.7rem;
-  border-top: 1px solid var(--linea);
-  font-size: 0.8rem; color: var(--gris); text-decoration: none;
-}
-.siguiente span { font-size: 0.6rem; letter-spacing: 0.16em;
-                  text-transform: uppercase; color: rgba(107, 130, 140, 0.65); }
-.siguiente:hover { color: var(--hielo); }
-.siguiente:hover span { color: var(--azul-4); }
-.siguiente i { width: 0; height: 0; align-self: center;
-               border-left: 5px solid currentColor;
-               border-top: 3.5px solid transparent;
-               border-bottom: 3.5px solid transparent;
-               transition: transform 0.2s; }
-.siguiente:hover i { transform: translateX(3px); }
+
 
 .fin-manual { margin-top: 1.6rem; padding-top: 0.7rem;
               border-top: 1px solid var(--linea);
@@ -2833,9 +2815,7 @@ html.claro .proyecto-subs .n { color: rgba(30, 32, 34, 0.45); }
    falta una regla aparte. El indice sigue siendo la tira deslizable de antes. */
 @media (max-width: 860px) {
   .cabecera-proyecto h2 { font-size: 1.15rem; }
-  .indice h3 { padding-left: 0.5rem; }
-  .indice ol.subs li a { padding-left: 0.5rem; }
-  .siguiente i { display: none; }
+
 
   /* Una sola tira deslizable, sin un bloque por proyecto.
      --
@@ -3549,57 +3529,99 @@ html.claro .contenidos:hover { background-color: rgba(0, 0, 0, 0.06); }
 html.con-indice { overflow: hidden; }
 
 /* ── Anterior / siguiente ─────────────────────────────────────────────────────
-   Los dos en una fila: con uno solo no hay vuelta atras, que es justo lo que
-   hace falta en un movil donde el indice cuesta de abrir. */
+   Solo visible en tablet y movil (en escritorio el usuario dispone del indice
+   fijo a la vista). En movil ambos botones se alinean en una sola linea
+   horizontal sin apilarse, con texto recortado limpiamente en una linea. */
 .siguientes {
-  display: flex; align-items: stretch; gap: 1rem;
-  margin-top: 2rem; padding-top: 1.2rem;
-  border-top: 1px solid var(--linea);
-  flex-wrap: wrap;
+  display: none !important;
 }
-.siguiente {
-  display: inline-flex; align-items: center; gap: 0.65rem;
-  flex: 1 1 12rem;
-  font-size: 0.8rem; color: var(--gris); text-decoration: none;
-  padding: 0.65rem 0.95rem;
-  border: 1px solid var(--linea);
-  border-radius: var(--r);
-  background: var(--cristal-opaco);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
-}
-.siguiente.anterior { justify-content: flex-start; }
-.siguiente:not(.anterior) { justify-content: flex-end; text-align: right; }
-.siguiente span { font-size: 0.6rem; letter-spacing: 0.16em;
-                  text-transform: uppercase; color: rgba(107, 130, 140, 0.65);
-                  white-space: nowrap; }
-.siguiente:hover {
-  color: var(--hielo);
-  border-color: var(--linea-alta);
-  background: rgba(153, 186, 201, 0.08);
-  transform: translateY(-1px);
-}
-.siguiente:hover span { color: var(--azul-4); }
-.siguiente i { width: 0; height: 0; align-self: center; flex: none;
-               border-left: 5px solid currentColor;
-               border-top: 3.5px solid transparent;
-               border-bottom: 3.5px solid transparent;
-               transition: transform 0.2s; }
-.siguiente.anterior i { transform: rotate(180deg); }
-.siguiente:not(.anterior):hover i { transform: translateX(3px); }
-.siguiente.anterior:hover i { transform: rotate(180deg) translateX(3px); }
-.siguiente.arriba i { transform: rotate(-90deg); }
-.siguiente.arriba:hover i { transform: rotate(-90deg) translateX(3px); }
 
-/* En movil los dos van apilados y con altura de dedo, no en fila: con 390 px de
-   ancho, dos botones de texto largo en fila se parten en tres lineas cada uno. */
-@media (max-width: 620px) {
-  .siguientes { flex-direction: column; gap: 0.6rem; }
-  .siguiente { flex: none; justify-content: flex-start !important;
-               text-align: left !important; min-height: 44px;
-               align-items: center; }
-  .siguiente + .siguiente { border-top: 1px solid var(--linea); }
-  .siguiente i { display: none; }
+@media (max-width: 1024px) {
+  .siguientes {
+    display: flex !important;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--linea);
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .siguiente {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.78rem;
+    color: var(--gris);
+    text-decoration: none;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--linea);
+    border-radius: var(--r);
+    background: var(--cristal-opaco);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    overflow: hidden;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  }
+  .siguiente.anterior { justify-content: flex-start; text-align: left; }
+  .siguiente:not(.anterior) { justify-content: flex-end; text-align: right; }
+  .siguientes > .siguiente:only-child { margin-left: auto; flex: 0 1 auto; max-width: 100%; }
+
+  .siguiente span {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(107, 130, 140, 0.65);
+    white-space: nowrap;
+    flex: none;
+  }
+  .siguiente-tit {
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .siguiente:hover {
+    color: var(--hielo);
+    border-color: var(--linea-alta);
+    background: rgba(153, 186, 201, 0.08);
+    transform: translateY(-1px);
+  }
+  .siguiente:hover span { color: var(--azul-4); }
+  .siguiente i {
+    width: 0;
+    height: 0;
+    align-self: center;
+    flex: none;
+    border-left: 5px solid currentColor;
+    border-top: 3.5px solid transparent;
+    border-bottom: 3.5px solid transparent;
+    transition: transform 0.2s;
+  }
+  .siguiente.anterior i { transform: rotate(180deg); }
+  .siguiente:not(.anterior):hover i { transform: translateX(3px); }
+  .siguiente.anterior:hover i { transform: rotate(180deg) translateX(3px); }
+  .siguiente.arriba i { transform: rotate(-90deg); }
+  .siguiente.arriba:hover i { transform: rotate(-90deg) translateX(3px); }
+}
+
+@media (max-width: 520px) {
+  .siguientes {
+    gap: 0.4rem;
+  }
+  .siguiente {
+    padding: 0.5rem 0.55rem;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+  }
+  .siguiente span {
+    font-size: 0.52rem;
+    letter-spacing: 0.06em;
+  }
 }
 
 html.claro .siguiente {
