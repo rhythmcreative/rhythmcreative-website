@@ -61,32 +61,6 @@ window.RHYTHM_I18N.es = {
     "Un escritorio Hyprland robusto en varias distribuciones Linux.",
   "A clean, resilient Hyprland desktop across modern Linux distributions.":
     "Un escritorio Hyprland limpio y robusto en distribuciones Linux modernas.",
-  "Manual & Roadmap": "Manual y Hoja de ruta",
-  "Multi-Distro Core": "N\u00facleo Multi-Distro",
-  "Native installation scripts and packages for Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine with GPU driver detection.":
-    "Instalaci\u00f3n y paquetes nativos para Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu y Alpine con detecci\u00f3n de GPU.",
-  "7 distributions": "7 distribuciones",
-  "Quickshell Desktop": "Escritorio Quickshell",
-  "Reactive Wayland dynamic island status bar, volume and brightness OSDs, independent multi-monitor menus, and lockscreen integration.":
-    "Barra din\u00e1mica reactiva para Wayland, OSD de volumen y brillo, men\u00fas independientes por monitor y bloqueo de pantalla.",
-  "Wayland native": "Wayland nativo",
-  "Pywal Palette Sync": "Sincronizaci\u00f3n Pywal",
-  "Real-time wallpaper color extraction propagated live to Kitty, Alacritty, Rofi, notifications, and GTK without compositor restarts.":
-    "Propagaci\u00f3n de colores de fondo a Kitty, Alacritty, Rofi, notificaciones y GTK en tiempo real sin reiniciar la sesi\u00f3n.",
-  "Instant colors": "Colores al instante",
-  "Self-Healing Doctor": "Doctor Autocorrector",
-  "Integrated rhythm-doctor engine audits system state, audio daemons, and preserves custom configurations in user.conf and user.lua.":
-    "Motor rhythm-doctor integrado que audita el sistema, daemons de audio y protege tus configuraciones en user.conf y user.lua.",
-  "Explore the manual:": "Explora el manual:",
-  "Keybindings": "Atajos de teclado",
-  "Monitors": "Monitores",
-  "Wallpapers": "Fondos de pantalla",
-  "Status bar": "Barra de estado",
-  "Roadmap": "Hoja de ruta",
-  "Default": "Por defecto",
-  "Preview (dry run)": "Vista previa (simulaci\u00f3n)",
-  "Update & sync": "Actualizar y sincronizar",
-  "Doctor (check)": "Doctor (diagn\u00f3stico)",
 
   // El pie
   "THIS PAGE": "EN ESTA P\u00c1GINA",

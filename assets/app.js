@@ -173,68 +173,13 @@
       '</span><i aria-hidden="true"></i></a>' +
       "</div>");
 
-    // Los cuatro pilares de Hyprland
-    out.push('<div class="rejilla-pilares">' +
-      '<div class="pilar-card">' +
-        '<div class="pilar-cabecera">' +
-          '<svg class="pilar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-            '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' +
-          '</svg>' +
-          '<h3>Multi-Distro Core</h3>' +
-        '</div>' +
-        '<p>Native installation scripts and packages for Arch, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine with GPU driver detection.</p>' +
-        '<span class="pilar-tag">7 distributions</span>' +
-      '</div>' +
-      '<div class="pilar-card">' +
-        '<div class="pilar-cabecera">' +
-          '<svg class="pilar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-            '<rect x="4" y="3" width="16" height="5" rx="2.5"/><rect x="3" y="11" width="18" height="10" rx="2"/>' +
-          '</svg>' +
-          '<h3>Quickshell Desktop</h3>' +
-        '</div>' +
-        '<p>Reactive Wayland dynamic island status bar, volume and brightness OSDs, independent multi-monitor menus, and lockscreen integration.</p>' +
-        '<span class="pilar-tag">Wayland native</span>' +
-      '</div>' +
-      '<div class="pilar-card">' +
-        '<div class="pilar-cabecera">' +
-          '<svg class="pilar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-            '<circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/>' +
-          '</svg>' +
-          '<h3>Pywal Palette Sync</h3>' +
-        '</div>' +
-        '<p>Real-time wallpaper color extraction propagated live to Kitty, Alacritty, Rofi, notifications, and GTK without compositor restarts.</p>' +
-        '<span class="pilar-tag">Instant colors</span>' +
-      '</div>' +
-      '<div class="pilar-card">' +
-        '<div class="pilar-cabecera">' +
-          '<svg class="pilar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>' +
-          '</svg>' +
-          '<h3>Self-Healing Doctor</h3>' +
-        '</div>' +
-        '<p>Integrated rhythm-doctor engine audits system state, audio daemons, and preserves custom configurations in user.conf and user.lua.</p>' +
-        '<span class="pilar-tag">rhythm-doctor</span>' +
-      '</div>' +
-    '</div>');
-
-    // Accesos directos al manual
-    out.push('<div class="atajos-manual">' +
-      '<span class="atajos-titulo">Explore the manual:</span>' +
-      '<div class="atajos-fila">' +
-        '<a href="manual.html#hyprland/atajos" class="atajo-link">Keybindings</a>' +
-        '<a href="manual.html#hyprland/pantallas" class="atajo-link">Monitors</a>' +
-        '<a href="manual.html#hyprland/fondos" class="atajo-link">Wallpapers</a>' +
-        '<a href="manual.html#hyprland/barra" class="atajo-link">Status bar</a>' +
-        '<a href="manual.html#roadmap" class="atajo-link atajo-link-destacado">Roadmap</a>' +
-      '</div>' +
-    '</div>');
-
-    // Instalar. Con seleccion de modo y comandos directos.
-    var cmdDefault = H.instalar.comando;
-    var cmdPreview = cmdDefault + ' -- --preview';
-    var cmdUpdate = cmdDefault + ' -- --update';
-    var cmdDoctor = 'rhythm-doctor';
-
+    // Instalar. Va DEBAJO del clip y de los botones, y es lo ultimo de la
+    // seccion: es lo que se viene a hacer cuando ya se ha visto que esto es de
+    // fiar.
+    //
+    // Una sola linea, y el boton de copiar dentro de la caja. Lo de las banderas
+    // no va aqui: lo cuenta el manual, que ya esta enlazado un par de lineas mas
+    // arriba.
     out.push('<div class="instalar" id="instalar">' +
       '<h3 class="instalar-titulo">' + esc(H.instalar.titulo) + "</h3>" +
       '<p class="instalar-texto">' + esc(H.instalar.texto) + "</p>" +
@@ -247,14 +192,8 @@
         '<span class="chip-distro">Ubuntu</span>' +
         '<span class="chip-distro">Alpine</span>' +
       '</div>' +
-      '<div class="instalar-modos" role="tablist" aria-label="Installation modes">' +
-        '<button class="modo-btn activo" type="button" data-cmd="' + esc(cmdDefault) + '">Default</button>' +
-        '<button class="modo-btn" type="button" data-cmd="' + esc(cmdPreview) + '">Preview (dry run)</button>' +
-        '<button class="modo-btn" type="button" data-cmd="' + esc(cmdUpdate) + '">Update &amp; sync</button>' +
-        '<button class="modo-btn" type="button" data-cmd="' + esc(cmdDoctor) + '">Doctor (check)</button>' +
-      '</div>' +
-      '<div class="comando instalar-cmd"><code>' + esc(cmdDefault) + "</code>" +
-      '<button class="copiar" type="button" data-copiar="' + esc(cmdDefault) +
+      '<div class="comando instalar-cmd"><code>' + esc(H.instalar.comando) + "</code>" +
+      '<button class="copiar" type="button" data-copiar="' + esc(H.instalar.comando) +
       '">copy</button></div>' +
       "</div>");
 
@@ -1005,22 +944,6 @@
       try { document.execCommand("copy"); listo(); } catch (e) { /* nada */ }
       document.body.removeChild(ta);
     }
-
-    // Pestañas de modo de instalacion
-    document.addEventListener("click", function (ev) {
-      var b = ev.target.closest && ev.target.closest(".modo-btn");
-      if (!b) return;
-      var caja = b.closest(".instalar");
-      if (!caja) return;
-      var botones = caja.querySelectorAll(".modo-btn");
-      for (var i = 0; i < botones.length; i++) botones[i].classList.remove("activo");
-      b.classList.add("activo");
-      var cmd = b.getAttribute("data-cmd") || "";
-      var cod = caja.querySelector(".instalar-cmd code");
-      var cop = caja.querySelector(".instalar-cmd .copiar");
-      if (cod) cod.textContent = cmd;
-      if (cop) cop.setAttribute("data-copiar", cmd);
-    });
   // ── El tema: automatico, claro y negro ────────────────────────────────────
   //
   // Tres modos en vez de dos. El tercero es "automatico", que es el que se usa
