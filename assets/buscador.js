@@ -532,8 +532,8 @@
     b.type = "button";
     b.className = "buscador-boton";
     b.setAttribute("aria-label", T("Search this site"));
-    b.setAttribute("title", T("Search this site") + " (/)");
-    b.innerHTML = '<span aria-hidden="true"></span><kbd class="tecla-atajo" aria-hidden="true">/</kbd>';
+    b.setAttribute("title", T("Search this site"));
+    b.innerHTML = '<span aria-hidden="true"></span>';
     b.addEventListener("click", function (e) {
       e.preventDefault();
       abrir();

@@ -1081,9 +1081,17 @@
     var modo = modoActual();
     aplicarTema(modo);
 
-    b.addEventListener("click", function () {
-      modo = MODOS[(MODOS.indexOf(modo) + 1) % MODOS.length];
-      cambiarTema(modo, true);
+    b.addEventListener("click", function (ev) {
+      if (ev) {
+        var rect = b.getBoundingClientRect();
+        var x = ev.clientX || (rect.left + rect.width / 2);
+        var y = ev.clientY || (rect.top + rect.height / 2);
+        document.documentElement.style.setProperty("--vt-x", x + "px");
+        document.documentElement.style.setProperty("--vt-y", y + "px");
+      }
+      var esClaro = document.documentElement.classList.contains("claro");
+      var sig = esClaro ? "negro" : "claro";
+      cambiarTema(sig, true);
     });
 
     // En "automatico" hay que ENTERSE de que el sistema cambia de tema, no solo

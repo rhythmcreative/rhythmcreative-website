@@ -318,11 +318,13 @@ html.claro .isla nav a:hover { background: rgba(0, 0, 0, 0.06); }
 .interruptor { display: grid; place-items: center; width: 1.9rem; height: 1.9rem;
                color: var(--gris); cursor: pointer; border-radius: var(--r);
                border: 1px solid var(--linea); margin-left: 0.25rem;
-               transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
+               transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+               flex: none; }
 .interruptor:hover { color: var(--hielo); border-color: var(--linea-alta); background: rgba(153, 186, 201, 0.08); }
 html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.05); border-color: rgba(20, 22, 24, 0.22); }
+.interruptor:active { transform: scale(0.88); }
 .interruptor .ic { width: 1.05rem; height: 1.05rem; grid-area: 1 / 1;
-                   transition: opacity 0.25s, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+                   transition: opacity 0.28s ease, transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1); }
 /* Los tres iconos del tema, uno solo a la vez.
    --
    Antes eran dos y se elegian con la clase .claro del <html>: en oscuro se
@@ -336,25 +338,36 @@ html.claro .interruptor:hover { background: rgba(0, 0, 0, 0.05); border-color: r
    de esconder el anterior. */
 html[data-tema="auto"]  .ic-auto,
 html[data-tema="claro"] .ic-sol,
-html[data-tema="negro"] .ic-luna { opacity: 1; transform: none; }
-html[data-tema="auto"]  .ic-sol,
-html[data-tema="auto"]  .ic-luna,
+html[data-tema="negro"] .ic-luna {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
 html[data-tema="claro"] .ic-auto,
-html[data-tema="claro"] .ic-luna,
+html[data-tema="claro"] .ic-luna {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+  pointer-events: none;
+}
+
 html[data-tema="negro"] .ic-auto,
 html[data-tema="negro"] .ic-sol {
-  opacity: 0; transform: rotate(-70deg) scale(0.6);
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  pointer-events: none;
 }
-/* El giro va para el lado contrario segun cual entre, para que no parezca que
-   los dos iconos cruzan la misma puerta. */
-html[data-tema="claro"] .ic-auto,
-html[data-tema="claro"] .ic-luna,
-html[data-tema="negro"] .ic-auto,
-html[data-tema="negro"] .ic-sol { transform: rotate(70deg) scale(0.6); }
+
+html[data-tema="auto"] .ic-sol,
+html[data-tema="auto"] .ic-luna {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  pointer-events: none;
+}
+
 /* Antes de que app.js ponga data-tema —si algo falla al arrancar— se ve la luna,
    que es el estado por defecto de la pagina. Sin esto el boton sale vacio. */
-html:not([data-tema]) .ic-auto { opacity: 0; transform: rotate(70deg) scale(0.6); }
-html:not([data-tema]) .ic-sol  { opacity: 0; }
+html:not([data-tema]) .ic-auto { opacity: 0; transform: rotate(90deg) scale(0.5); }
+html:not([data-tema]) .ic-sol  { opacity: 0; transform: rotate(-90deg) scale(0.5); }
 
 /* Solo para lectores de pantalla: el icono no dice nada por si mismo. */
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -1715,38 +1728,60 @@ html.claro .copiar.hecho { color: #2f7a45; border-color: #2f7a45;
 .isla .der { justify-self: end; display: flex; align-items: center; gap: 0.1rem; }
 
 @media (max-width: 620px) {
-  /* 44 px es el objetivo tactil minimo (WCAG 2.5.5 y las guias de Apple y
-     Android). Todo lo que se pueda pulsar llega a esa altura. */
-  .barra-z { padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
-             padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-             padding-right: max(0.5rem, env(safe-area-inset-right, 0px)); }
+  .barra-z { padding-top: max(0.4rem, env(safe-area-inset-top, 0px));
+             padding-left: max(0.4rem, env(safe-area-inset-left, 0px));
+             padding-right: max(0.4rem, env(safe-area-inset-right, 0px)); }
 
-  /* En movil la barra ocupa todo el ancho disponible, como la de una app. Antes
-     se quedaba en los 330 px del clamp de --ancho, que a 390 de pantalla la
-     dejaban con 30 px de margen a cada lado. Con el hueco que sobra, las columnas
-     de los lados miden lo mismo y el reloj vuelve a caer en el centro: medido,
-     de 3 px de desvio a cero.
-
-     El ancho lo pone el padding de .barra-z, que ya lleva los safe-area. */
-  .isla { min-height: 44px; padding: 0.3rem 0.4rem;
+  .isla { min-height: 42px; padding: 0.25rem 0.35rem;
           max-width: none; width: 100%; }
 
-  /* El nombre se queda: es lo unico que sobrevive cuando se baja, y sin el no se
-     sabe donde estas. */
-  .isla .rotulo { font-size: 0.84rem; letter-spacing: 0.16em; padding-left: 0.25rem; }
+  .isla .rotulo { font-size: 0.82rem; letter-spacing: 0.12em; padding-left: 0.2rem; }
 
-  /* El reloj es lo que mas se mira en una barra: sube mas que el nombre, para
-     que sea el elemento legible de un vistazo. */
-  .isla .reloj { font-size: 0.92rem; letter-spacing: 0.04em; padding: 0 0.25rem; }
+  .isla .reloj { font-size: 0.82rem; letter-spacing: 0.02em; padding: 0 0.15rem; }
 
-  /* Los enlaces tambien se quedan si caben, y con 44 px de alto. Antes se
-     ocultaban enteros y no quedaba nada pulsable a la derecha. */
-  .isla nav { display: flex; gap: 0.1rem; }
-  .isla nav a { font-size: 0.72rem; padding: 0 0.5rem; min-height: 44px;
+  .isla .der { gap: 0.2rem; }
+
+  .isla nav { display: flex; gap: 0.15rem; }
+  .isla nav a { font-size: 0.72rem; padding: 0 0.4rem; min-height: 38px;
                 display: grid; place-items: center; }
 
-  .interruptor { width: 44px; height: 44px; border-left-color: var(--linea); }
-  .interruptor .ic { width: 1.2rem; height: 1.2rem; }
+  .interruptor,
+  .buscador-boton,
+  .contenidos {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    margin-left: 0.1rem;
+  }
+  .interruptor .ic { width: 1.1rem; height: 1.1rem; }
+}
+
+@media (max-width: 620px) {
+  .mapa-roadmap {
+    margin: 1.2rem 0;
+  }
+  .hito-roadmap {
+    grid-template-columns: 2.2rem 1fr;
+    gap: 0.6rem;
+  }
+  .timeline-riel {
+    left: calc(1.1rem - 1.5px);
+  }
+  .hito-dot {
+    width: 22px;
+    height: 22px;
+  }
+  .ico-dot-check {
+    width: 11px;
+    height: 11px;
+  }
+  .hito-actual .pulso-radar {
+    width: 18px;
+    height: 18px;
+  }
+  .hito-cuerpo {
+    padding: 0.75rem 0.85rem;
+  }
 }
 
 /* La zona derecha no cabe en su columna de 1fr, y cuando no cabe la columna se
@@ -2491,50 +2526,47 @@ html.claro .fila:hover { background: rgba(20, 22, 24, 0.03); }
    animarla dentro del keyframe. Sin la declaracion seria una cadena y el
    fundido saldria de golpe en el ultimo fotograma. */
 
-@property --barrido {
-  syntax: "<length-percentage>";
-  inherits: false;
-  initial-value: 0px;
-}
-
-/* La foto nueva, quieta debajo. La vieja, con la raja, encima. */
-::view-transition-new(root) { animation: none; }
-
+/* Onda circular expansiva que nace de las coordenadas del interruptor (--vt-x, --vt-y).
+   El tema nuevo se despliega con clip-path circular y el anterior se desvanece suavemente. */
 ::view-transition-old(root) {
-  animation: barrido-tema 240ms ease-out both;
-  mask-image: linear-gradient(
-    100deg,
-    #000 0,
-    #000 calc(50% - var(--barrido)),
-    transparent calc(50% - var(--barrido)),
-    transparent calc(50% + var(--barrido)),
-    #000 calc(50% + var(--barrido)),
-    #000 100%
-  );
-  mask-mode: alpha;
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
+  animation: vt-fade-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-@keyframes barrido-tema {
-  from { --barrido: 0px; }
-  to { --barrido: 75%; }
+::view-transition-new(root) {
+  animation: vt-wipe 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* Mientras se cambia la clase, ninguna transicion propia: si no, los colores
-   intentarian fundirse por su cuenta debajo de la foto congelada y al quitar la
-   raja se veria el fundido a medias. Se pone y se quita desde app.js. */
-html.sin-transicion *,
-html.sin-transicion *::before,
-html.sin-transicion *::after {
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes vt-wipe {
+  from { clip-path: circle(0% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+  to { clip-path: circle(150% at var(--vt-x, 85%) var(--vt-y, 25px)); }
+}
+
+/* Transición suave para navegadores sin View Transitions */
+html:not(.sin-transicion),
+html:not(.sin-transicion) body,
+html:not(.sin-transicion) .isla,
+html:not(.sin-transicion) .barra-z,
+html:not(.sin-transicion) .indice,
+html:not(.sin-transicion) #contenido,
+html:not(.sin-transicion) .cuadro,
+html:not(.sin-transicion) .panel,
+html:not(.sin-transicion) .hito-cuerpo {
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease;
+}
+
+/* Mientras se cambia la clase, silenciar transiciones excepto las del interruptor */
+html.sin-transicion *:not(.interruptor):not(.interruptor *) {
   transition: none !important;
 }
 
-/* Con movimiento reducido, o donde no hay View Transitions, el cambio es
-   instantaneo: es lo mismo que pedia el sistema, y una raja de 240 ms tambien
-   es movimiento. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root) { animation: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
 }
 
 /* ── El tema claro ───────────────────────────────────────────────────────────── */
@@ -2992,17 +3024,18 @@ html.claro .distro-tipo {
 .mapa-roadmap {
   position: relative;
   margin: 1.8rem 0 1.5rem;
-  padding-left: 0.2rem;
+  padding-left: 0;
 }
 .timeline-riel {
   position: absolute;
-  left: 1.4rem;
-  top: 1.4rem;
+  left: calc(1.4rem - 1.5px);
+  top: 1.3rem;
   bottom: 2.2rem;
   width: 3px;
   background: var(--linea);
   border-radius: 999px;
   overflow: hidden;
+  z-index: 1;
 }
 .timeline-linea-progreso {
   position: absolute;
@@ -3036,6 +3069,7 @@ html.claro .distro-tipo {
 .hito-dot-col {
   display: flex;
   justify-content: center;
+  align-items: center;
   position: relative;
   z-index: 2;
   padding-top: 0.15rem;
@@ -3049,6 +3083,8 @@ html.claro .distro-tipo {
   justify-content: center;
   background: var(--suelo);
   border: 2px solid var(--linea);
+  position: relative;
+  z-index: 2;
   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 html.claro .hito-dot {
@@ -3065,8 +3101,8 @@ html.claro .hito-dot {
 }
 .hito-completado.alcanzado .hito-dot {
   border-color: var(--azul-4);
-  background: rgba(153, 186, 201, 0.12);
-  box-shadow: 0 0 12px rgba(153, 186, 201, 0.45);
+  background: var(--suelo);
+  box-shadow: 0 0 14px rgba(153, 186, 201, 0.45);
   transform: scale(1.08);
 }
 .hito-completado.alcanzado .ico-dot-check {
@@ -3076,7 +3112,8 @@ html.claro .hito-dot {
 }
 html.claro .hito-completado.alcanzado .hito-dot {
   border-color: var(--azul-2);
-  background: rgba(20, 22, 24, 0.04);
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(40, 80, 110, 0.25);
 }
 html.claro .hito-completado.alcanzado .ico-dot-check {
   opacity: 1;
@@ -3087,9 +3124,13 @@ html.claro .hito-completado.alcanzado .ico-dot-check {
 /* Hito actual con radar / pulso continuo */
 .hito-actual .hito-dot {
   border-color: var(--oxido);
-  background: var(--cristal-opaco);
+  background: var(--suelo);
   box-shadow: 0 0 14px rgba(184, 91, 53, 0.5);
   position: relative;
+  z-index: 2;
+}
+html.claro .hito-actual .hito-dot {
+  background: #ffffff;
 }
 .hito-actual .dot-nucleo {
   width: 10px;
@@ -3117,6 +3158,12 @@ html.claro .hito-completado.alcanzado .ico-dot-check {
 .hito-futuro .hito-dot {
   border: 2px dashed var(--linea);
   color: var(--gris);
+  background: var(--suelo);
+  position: relative;
+  z-index: 2;
+}
+html.claro .hito-futuro .hito-dot {
+  background: #ffffff;
 }
 .hito-futuro .dot-num {
   font: 600 0.62rem/1 var(--f);
