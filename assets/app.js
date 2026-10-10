@@ -199,7 +199,7 @@
 
 
     var caja = $("#hyprland-caja");
-    if (caja) caja.innerHTML = out.join("");
+    if (caja && !caja.children.length) caja.innerHTML = out.join("");
   }
 
 
@@ -1513,7 +1513,7 @@
   // enlace a otra persona se lea "4. The island" y no un numero suelto.
   function pintarIndice() {
     var caja = $("#indice");
-    if (!caja) return;
+    if (!caja || caja.children.length) return;
     var D = window.RHYTHM_DOCS || null;
 
     // Antes al lado de "Hotkeys" salia "10 groups", el numero de grupos de atajos
@@ -1540,92 +1540,95 @@
   function pintarManual() {
     var caja = $("#manual");
     if (!caja) return;                    // no estamos en la pagina del manual
-    if (!PROYECTOS.length) {
-      caja.innerHTML = '<p class="sin-datos">No projects in <code>H.proyectos</code>.</p>';
-      return;
+    if (!caja.children.length) {
+      if (!PROYECTOS.length) {
+        caja.innerHTML = '<p class="sin-datos">No projects in <code>H.proyectos</code>.</p>';
+        return;
+      }
+
+      // La portada: los proyectos y lo que hay dentro de cada uno. Es el mismo
+      // dato que el indice, en grande. En omarchy esta lista es la pagina entera y
+      // cada capitulo tiene su URL; aqui la lista esta arriba y las dos coisas
+      // comparten fuente.
+      var portada = '<div class="portada' + (PROYECTOS.length === 1 ? " portada-una" : "") +
+        '">' + PROYECTOS.map(function (proy) {
+        var subs = proy.subs.map(function (sub) {
+          var e = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
+          return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
+            '<i class="n">' + (e ? e.n : "?") + "</i>" + esc(sub.t) + "</a></li>";
+        }).join("");
+        return '<article class="proyecto">' +
+          '<h2>' + esc(proy.titulo) + "</h2>" +
+          '<p class="proyecto-res">' + esc(proy.resumen || "") + "</p>" +
+          (proy.repo
+            ? '<a class="proyecto-repo" href="https://github.com/' + esc(proy.repo) +
+              '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
+            : "") +
+          '<ol class="proyecto-subs">' + subs + "</ol></article>";
+      }).join("") + "</div>";
+
+      // Las secciones. Cada proyecto abre con un encabezado propio y sus
+      // subsecciones van debajo, para que al leer en scroll largo se sepa de que
+      // parte se esta hablando.
+      var secciones = PROYECTOS.map(function (proy) {
+        var cuerpo = proy.subs.map(function (sub) {
+          var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
+          // PLANO va de 0 y la entrada n va de 1, asi que el siguiente es
+          // PLANO[entrada.n] y el anterior es PLANO[entrada.n - 2]. Con el -2
+          // al principio: la entrada numero 1 no tiene anterior y sale undefined,
+          // que es justo lo que hace falta para no pintarlo.
+          var siguiente = entrada ? PLANO[entrada.n] : null;
+          var anterior = entrada ? PLANO[entrada.n - 2] : null;
+          var chips = (piezaPorId(sub.pieza) || {}).chips || [];
+
+          return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
+            '<div class="cabecera-seccion">' +
+            '<span class="punto-mini"></span>' +
+            '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
+            "<h2>" + esc(sub.t) + "</h2>" +
+            (chips.length
+              ? '<span class="chips">' + chips.map(function (c) {
+                  return '<span class="chip">' + esc(c) + "</span>";
+                }).join("") + "</span>"
+              : "") +
+            "</div>" + cuerpoSeccion(proy, sub) +
+            // Abajo van los dos: antes solo el siguiente, con lo que en movil no
+            // habia manera de volver atras sin tirar del indice. Y en la ultima
+            // seccion, en vez de eso, un vuelta arriba —que es lo que se quiere
+            // pulsar al terminar, no un enlace a la portada.
+            (anterior || siguiente
+              ? '<div class="siguientes">' +
+                (anterior
+                  ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
+                    '<i aria-hidden="true"></i><span>Previous</span>' +
+                    esc(anterior.sub.t) + "</a>"
+                  : "") +
+                (siguiente
+                  ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
+                    "<span>Next</span>" + esc(siguiente.sub.t) +
+                    '<i aria-hidden="true"></i></a>'
+                  : '<a class="siguiente anterior arriba" href="#contenido">' +
+                    '<i aria-hidden="true"></i><span>End of the manual</span>' +
+                    "Back to the top</a>") +
+                "</div>"
+              : "") +
+            "</section>";
+        }).join("");
+
+        return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
+          '<div class="cabecera-proyecto">' +
+          '<h2>' + esc(proy.titulo) + "</h2>" +
+          '<p>' + esc(proy.resumen || "") + "</p>" +
+          (proy.repo
+            ? '<a href="https://github.com/' + esc(proy.repo) +
+              '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
+            : "") +
+          "</div>" + cuerpo + "</div>";
+      }).join("");
+
+      caja.innerHTML = portada + secciones;
+      pintarIndice();
     }
-
-    // La portada: los proyectos y lo que hay dentro de cada uno. Es el mismo
-    // dato que el indice, en grande. En omarchy esta lista es la pagina entera y
-    // cada capitulo tiene su URL; aqui la lista esta arriba y las dos coisas
-    // comparten fuente.
-    var portada = '<div class="portada' + (PROYECTOS.length === 1 ? " portada-una" : "") +
-      '">' + PROYECTOS.map(function (proy) {
-      var subs = proy.subs.map(function (sub) {
-        var e = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        return '<li><a href="#' + esc(idDe(proy, sub)) + '">' +
-          '<i class="n">' + (e ? e.n : "?") + "</i>" + esc(sub.t) + "</a></li>";
-      }).join("");
-      return '<article class="proyecto">' +
-        '<h2>' + esc(proy.titulo) + "</h2>" +
-        '<p class="proyecto-res">' + esc(proy.resumen || "") + "</p>" +
-        (proy.repo
-          ? '<a class="proyecto-repo" href="https://github.com/' + esc(proy.repo) +
-            '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-          : "") +
-        '<ol class="proyecto-subs">' + subs + "</ol></article>";
-    }).join("") + "</div>";
-
-    // Las secciones. Cada proyecto abre con un encabezado propio y sus
-    // subsecciones van debajo, para que al leer en scroll largo se sepa de que
-    // parte se esta hablando.
-    var secciones = PROYECTOS.map(function (proy) {
-      var cuerpo = proy.subs.map(function (sub) {
-        var entrada = PLANO.filter(function (x) { return x.proy === proy && x.sub === sub; })[0];
-        // PLANO va de 0 y la entrada n va de 1, asi que el siguiente es
-        // PLANO[entrada.n] y el anterior es PLANO[entrada.n - 2]. Con el -2
-        // al principio: la entrada numero 1 no tiene anterior y sale undefined,
-        // que es justo lo que hace falta para no pintarlo.
-        var siguiente = entrada ? PLANO[entrada.n] : null;
-        var anterior = entrada ? PLANO[entrada.n - 2] : null;
-        var chips = (piezaPorId(sub.pieza) || {}).chips || [];
-
-        return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
-          '<div class="cabecera-seccion">' +
-          '<span class="punto-mini"></span>' +
-          '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
-          "<h2>" + esc(sub.t) + "</h2>" +
-          (chips.length
-            ? '<span class="chips">' + chips.map(function (c) {
-                return '<span class="chip">' + esc(c) + "</span>";
-              }).join("") + "</span>"
-            : "") +
-          "</div>" + cuerpoSeccion(proy, sub) +
-          // Abajo van los dos: antes solo el siguiente, con lo que en movil no
-          // habia manera de volver atras sin tirar del indice. Y en la ultima
-          // seccion, en vez de eso, un vuelta arriba —que es lo que se quiere
-          // pulsar al terminar, no un enlace a la portada.
-          (anterior || siguiente
-            ? '<div class="siguientes">' +
-              (anterior
-                ? '<a class="siguiente anterior" href="#' + esc(anterior.id) + '">' +
-                  '<i aria-hidden="true"></i><span>Previous</span>' +
-                  esc(anterior.sub.t) + "</a>"
-                : "") +
-              (siguiente
-                ? '<a class="siguiente" href="#' + esc(siguiente.id) + '">' +
-                  "<span>Next</span>" + esc(siguiente.sub.t) +
-                  '<i aria-hidden="true"></i></a>'
-                : '<a class="siguiente anterior arriba" href="#contenido">' +
-                  '<i aria-hidden="true"></i><span>End of the manual</span>' +
-                  "Back to the top</a>") +
-              "</div>"
-            : "") +
-          "</section>";
-      }).join("");
-
-      return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
-        '<div class="cabecera-proyecto">' +
-        '<h2>' + esc(proy.titulo) + "</h2>" +
-        '<p>' + esc(proy.resumen || "") + "</p>" +
-        (proy.repo
-          ? '<a href="https://github.com/' + esc(proy.repo) +
-            '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-          : "") +
-        "</div>" + cuerpo + "</div>";
-    }).join("");
-
-    caja.innerHTML = portada + secciones;
 
     // El indice antes que nada: necesita el DOM ya pintado para poder medir, y
     // se pinta desde PLANO, no desde las secciones, asi que el orden entre estas
@@ -1711,13 +1714,10 @@
         (PROYECTOS.filter(function (p) { return p.id === proyecto; })[0] || {}).titulo);
     });
 
-    if (restaurado && history.replaceState) {
-      if (actual && location.hash !== "#" + actual) {
-        history.replaceState(null, "", "#" + actual);
-      } else if (!actual && location.hash) {
-        history.replaceState(null, "", location.pathname + location.search);
-      }
-    }
+    // Como en omarchy, no se cambia el hash de la URL al hacer scroll:
+    // cambiar location.hash mientras se lee ensucia la direccion y hace que
+    // una recarga salte a la cabecera de la seccion en vez de restaurar la
+    // linea exacta donde se habia quedado el lector.
   }
 
   // Lleva el enlace activo de la tira a la vista, sin mover la pagina.
@@ -1939,16 +1939,16 @@
   //
   // Y hay una excepcion: si la URL lleva #algo manda el ancla. El usuario ha pedido
   // un sitio concreto y devolverle "donde estaba" le haria caso omiso.
+  // Con el HTML pre-renderizado (como omarchy), el navegador ya conoce la altura
+  // real del documento en el primer tick de parseo. La restauracion nativa
+  // de scroll funciona de forma instantanea sin saltos ni pantallas negras.
+  //
+  // Guardamos la posicion en sessionStorage y localStorage como respaldo
+  // para cuando se abre una pestana nueva o se vuelve despues de cerrar el navegador.
   var paginaId = ((location.pathname || "").split("/").pop() || "index").replace(/\.html$/, "") || "index";
   var CLAVE_POS = "rhythm-scroll-" + paginaId;
-  var CLAVE_HASH = "rhythm-hash-" + paginaId;
   var posGuardada = leerPos();
   var restaurado = false;
-  var hashInicial = location.hash || "";
-
-  try {
-    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  } catch (e) { /* sin scrollRestoration */ }
 
   function leerPos() {
     try {
@@ -1967,15 +1967,11 @@
   }
 
   function guardarPos() {
-    if (!restaurado && posGuardada > 0) return;
     try {
       var val = String(Math.round(window.scrollY));
-      var hsh = location.hash || "";
       sessionStorage.setItem(CLAVE_POS, val);
-      sessionStorage.setItem(CLAVE_HASH, hsh);
       if (paginaId === "manual") {
         localStorage.setItem(CLAVE_POS, val);
-        localStorage.setItem(CLAVE_HASH, hsh);
       }
     } catch (e) { /* sin storage */ }
   }
@@ -1989,118 +1985,45 @@
   }, { passive: true });
 
   addEventListener("beforeunload", function () {
-    try {
-      var val = String(Math.round(window.scrollY));
-      var hsh = location.hash || "";
-      sessionStorage.setItem(CLAVE_POS, val);
-      sessionStorage.setItem(CLAVE_HASH, hsh);
-      if (paginaId === "manual") {
-        localStorage.setItem(CLAVE_POS, val);
-        localStorage.setItem(CLAVE_HASH, hsh);
-      }
-    } catch (e) { /* sin storage */ }
+    guardarPos();
   });
   addEventListener("pagehide", function () {
-    try {
-      var val = String(Math.round(window.scrollY));
-      var hsh = location.hash || "";
-      sessionStorage.setItem(CLAVE_POS, val);
-      sessionStorage.setItem(CLAVE_HASH, hsh);
-      if (paginaId === "manual") {
-        localStorage.setItem(CLAVE_POS, val);
-        localStorage.setItem(CLAVE_HASH, hsh);
-      }
-    } catch (e) { /* sin storage */ }
+    guardarPos();
   });
   addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") {
-      try {
-        var val = String(Math.round(window.scrollY));
-        var hsh = location.hash || "";
-        sessionStorage.setItem(CLAVE_POS, val);
-        sessionStorage.setItem(CLAVE_HASH, hsh);
-        if (paginaId === "manual") {
-          localStorage.setItem(CLAVE_POS, val);
-          localStorage.setItem(CLAVE_HASH, hsh);
-        }
-      } catch (e) { /* sin storage */ }
-    }
+    if (document.visibilityState === "hidden") guardarPos();
   });
 
   // ── Cuando se devuelve la posicion ─────────────────────────────────────────
-  // Si el usuario llega con un ancla nueva y distinta de la que tenia guardada,
-  // manda el ancla solicitada.
-  // En cualquier otro caso (recarga, continuar lectura donde lo dejamos, F5),
-  // se devuelve la posicion exacta de lectura que habia guardada.
   function devolverPos() {
-    var hashActual = location.hash || hashInicial;
-    var hashGuardado = "";
-    try {
-      hashGuardado = sessionStorage.getItem(CLAVE_HASH) ||
-        (paginaId === "manual" ? localStorage.getItem(CLAVE_HASH) : "") || "";
-    } catch (e) {}
+    // Si el navegador ya ha restaurado la posicion nativamente (como en una recarga normal),
+    // no se toca nada: el usuario ya esta donde estaba sin tirones.
+    if (window.scrollY > 0) {
+      restaurado = true;
+      return;
+    }
 
-    var esNuevoAncla = !!(hashActual && hashGuardado && hashActual !== hashGuardado);
-
-    var saltarAHash = function () {
-      if (!hashActual) return false;
+    var hashActual = location.hash || "";
+    if (hashActual) {
       var id = decodeURIComponent(hashActual.slice(1));
       var el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "auto", block: "start" });
-        return true;
+        restaurado = true;
+        return;
       }
-      return false;
-    };
-
-    if (esNuevoAncla) {
-      saltarAHash();
-      requestAnimationFrame(function () {
-        saltarAHash();
-        requestAnimationFrame(function () {
-          saltarAHash();
-          restaurado = true;
-        });
-      });
-      if (document.readyState !== "complete") {
-        addEventListener("load", function () {
-          saltarAHash();
-          restaurado = true;
-        }, { once: true });
-      }
-      return;
     }
 
+    // Respaldo cuando se vuelve a la pagina y el navegador empieza en 0:
     var y = posGuardada;
-    if (y <= 0) {
-      restaurado = true;
-      if (hashActual) saltarAHash();
-      return;
-    }
-
-    var aplicar = function () {
+    if (y > 0) {
       var alto = document.documentElement.scrollHeight - innerHeight;
       if (alto > 0) {
         var destino = Math.min(y, Math.max(0, alto));
         window.scrollTo(0, destino);
       }
-    };
-
-    aplicar();
-    requestAnimationFrame(function () {
-      aplicar();
-      requestAnimationFrame(function () {
-        aplicar();
-        restaurado = true;
-      });
-    });
-
-    if (document.readyState !== "complete") {
-      addEventListener("load", function () {
-        aplicar();
-        restaurado = true;
-      }, { once: true });
     }
+    restaurado = true;
   }
 
   // ── La entrada ─────────────────────────────────────────────────────────────
