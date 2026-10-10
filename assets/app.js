@@ -1592,7 +1592,6 @@
 
           return '<section class="seccion-manual" id="' + esc(idDe(proy, sub)) + '">' +
             '<div class="cabecera-seccion">' +
-            '<span class="punto-mini"></span>' +
             '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
             '<h2><a class="manual-titulo-link" href="#' + esc(idDe(proy, sub)) + '">' + esc(sub.t) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
             (chips.length
@@ -1624,15 +1623,19 @@
             "</section>";
         }).join("");
 
+        var cabecera = PROYECTOS.length > 1
+          ? ('<div class="cabecera-proyecto">' +
+             '<h2><a class="manual-titulo-link" href="#proy-' + esc(proy.id) + '">' + esc(proy.titulo) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
+             '<p>' + esc(proy.resumen || "") + "</p>" +
+             (proy.repo
+               ? '<a href="https://github.com/' + esc(proy.repo) +
+                 '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
+               : "") +
+             "</div>")
+          : "";
+
         return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
-          '<div class="cabecera-proyecto">' +
-          '<h2><a class="manual-titulo-link" href="#proy-' + esc(proy.id) + '">' + esc(proy.titulo) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
-          '<p>' + esc(proy.resumen || "") + "</p>" +
-          (proy.repo
-            ? '<a href="https://github.com/' + esc(proy.repo) +
-              '" target="_blank" rel="noopener">' + esc(proy.repo) + "</a>"
-            : "") +
-          "</div>" + cuerpo + "</div>";
+          cabecera + cuerpo + "</div>";
       }).join("");
 
       caja.innerHTML = portada + secciones;

@@ -2213,12 +2213,37 @@ html.claro .indice li a.activo {
                 max-width: 46ch; line-height: 1.55; }
 .manual-sello { margin-top: 0.5rem; font-size: 0.64rem; color: rgba(107, 130, 140, 0.65); }
 
-.seccion-manual { margin-bottom: clamp(2.6rem, 7vh, 4.5rem); scroll-margin-top: 6rem; }
+.seccion-manual { margin-bottom: clamp(2.8rem, 7vh, 4.8rem); scroll-margin-top: 7.2rem; }
+.seccion-manual .cabecera-seccion {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  margin-bottom: 1.15rem;
+  border-bottom: 1px solid var(--linea);
+}
+.seccion-manual .punto-mini { display: none; }
 .seccion-manual h2 {
-  font: 600 clamp(1.05rem, 2vw, 1.25rem)/1.25 var(--f);
-  letter-spacing: -0.01em;
+  font: 600 clamp(1.1rem, 2.2vw, 1.32rem)/1.2 var(--f);
+  letter-spacing: -0.015em;
   text-transform: none;
   color: var(--hielo);
+  margin: 0;
+}
+.seccion-manual .seccion-n {
+  font: 700 0.8rem/1 var(--f);
+  font-variant-numeric: tabular-nums;
+  color: var(--azul-4);
+  background: rgba(153, 186, 201, 0.08);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  padding: 0.2rem 0.45rem;
+  letter-spacing: 0.02em;
+}
+html.claro .seccion-manual .seccion-n {
+  color: var(--azul-2);
+  background: rgba(20, 22, 24, 0.05);
+  border-color: rgba(20, 22, 24, 0.12);
 }
 .manual-titulo-link {
   color: inherit;
@@ -2244,25 +2269,34 @@ html.claro .indice li a.activo {
   color: var(--oxido);
 }
 .seccion-manual h4 {
-  font: 600 0.76rem/1.2 var(--f);
-  letter-spacing: 0.1em;
+  font: 600 0.78rem/1.2 var(--f);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--azul-4);
-  margin: 1.8rem 0 0.6rem;
+  margin: 2rem 0 0.75rem;
 }
 .seccion-manual p {
-  font-size: 0.86rem;
-  line-height: 1.68;
+  font-size: 0.88rem;
+  line-height: 1.7;
   color: var(--gris);
-  max-width: 62ch;
-  margin-top: 0.7rem;
+  max-width: 68ch;
+  margin-top: 0.75rem;
 }
 .seccion-manual p.destacado {
-  font-size: 0.95rem;
+  font-size: 0.94rem;
+  line-height: 1.68;
   color: var(--hielo);
-  border-left: 2px solid var(--oxido);
-  padding-left: 0.85rem;
-  margin: 0.9rem 0;
+  background: rgba(184, 91, 53, 0.06);
+  border-left: 3px solid var(--oxido);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 0.8rem 1.1rem;
+  margin: 1.1rem 0;
+  max-width: 72ch;
+}
+html.claro .seccion-manual p.destacado {
+  background: rgba(184, 91, 53, 0.07);
+  color: #1a1c1e;
+  border-left-color: var(--oxido);
 }
 .seccion-manual a:not(.siguiente):not(.proyecto-repo):not(.manual-titulo-link) {
   color: var(--hielo);
@@ -2287,12 +2321,31 @@ html.claro .seccion-manual code:not(.comando code):not(.bandera code) {
   border-color: rgba(20, 22, 24, 0.12);
   color: #1b1d1f;
 }
+.seccion-manual .nota-dato {
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: rgba(107, 130, 140, 0.75);
+  margin-top: 0.95rem;
+  border-top: 1px dashed var(--linea);
+  padding-top: 0.55rem;
+}
+.seccion-manual .nota-dato code {
+  font-size: 0.85em;
+  color: var(--azul-4);
+}
+html.claro .seccion-manual .nota-dato {
+  color: rgba(30, 32, 34, 0.62);
+}
+html.claro .seccion-manual .nota-dato code {
+  color: var(--azul-2);
+}
 
 /* Las frases de la pieza. Es una lista y no un bloque de parrafos porque se
    leen como puntos: cada uno es una cosa distinta que hace. */
-.prosa { margin: 0.7rem 0 0; padding-left: 1.1rem; max-width: 68ch; }
-.prosa li { font-size: 0.86rem; line-height: 1.6; color: var(--gris); margin-bottom: 0.4rem; }
-.prosa li::marker { color: rgba(107, 130, 140, 0.5); }
+.prosa { margin: 0.8rem 0 0; padding-left: 1.25rem; max-width: 70ch; }
+.prosa li { font-size: 0.88rem; line-height: 1.68; color: var(--gris); margin-bottom: 0.45rem; }
+.prosa li::marker { color: var(--azul-4); }
+html.claro .prosa li::marker { color: var(--azul-2); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.3rem 0.45rem; margin-left: auto; }
 .chips .chip {
@@ -2332,9 +2385,9 @@ html.claro .chips .chip {
                    white-space: nowrap; }
 
 /* Las banderas del instalador. */
-.banderas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
+.banderas { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.1rem; }
 .bandera { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
-           gap: 0.5rem 1.2rem; padding: 0.48rem 0.5rem;
+           gap: 0.6rem 1.3rem; padding: 0.55rem 0.7rem;
            border-top: 1px solid var(--linea);
            border-radius: 4px;
            transition: background 0.15s ease; }
@@ -2343,41 +2396,58 @@ html.claro .chips .chip {
   .bandera:hover { background: rgba(153, 186, 201, 0.04); }
 }
 html.claro .bandera:hover { background: rgba(20, 22, 24, 0.03); }
-.bandera .nombres { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.bandera code { font-size: 0.74rem; color: var(--hielo); white-space: nowrap; }
-.bandera .que { font-size: 0.82rem; color: var(--gris); line-height: 1.5; }
+.bandera .nombres { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: baseline; }
+.bandera code { font-size: 0.76rem; color: var(--hielo); white-space: nowrap; }
+.bandera .que { font-size: 0.84rem; color: var(--gris); line-height: 1.55; }
 
 /* Los componentes: definicion y descripcion, en dos columnas. */
-.componentes { margin-top: 0.7rem; display: grid;
-               grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
-               gap: 0.42rem 1.4rem; }
-.componentes dt { font-size: 0.8rem; color: var(--hielo); }
-.componentes dd { margin: 0; font-size: 0.8rem; color: var(--gris); line-height: 1.5; }
+.componentes { margin-top: 0.85rem; display: grid;
+               grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+               gap: 0.45rem 1.3rem; }
+.componentes dt {
+  font-size: 0.82rem; font-weight: 600; color: var(--hielo);
+  padding: 0.4rem 0.65rem; background: rgba(153, 186, 201, 0.05);
+  border-radius: 4px; border-left: 2px solid var(--azul-4);
+}
+.componentes dd { margin: 0; font-size: 0.82rem; color: var(--gris); line-height: 1.55;
+                  padding: 0.4rem 0.2rem; }
+html.claro .componentes dt {
+  background: rgba(20, 22, 24, 0.04);
+  border-left-color: var(--azul-2);
+}
 
 /* El arbol: ruta, cifra y para que sirve. */
-.arbol { margin-top: 0.7rem; }
-.fila-arbol { display: grid; grid-template-columns: minmax(0, 16rem) 4rem minmax(0, 1fr);
-              gap: 0.5rem 1rem; padding: 0.48rem 0.5rem; border-top: 1px solid var(--linea);
+.arbol { margin-top: 0.85rem; }
+.fila-arbol { display: grid; grid-template-columns: minmax(0, 16rem) 4.5rem minmax(0, 1fr);
+              gap: 0.6rem 1.2rem; padding: 0.55rem 0.7rem; border-top: 1px solid var(--linea);
               border-radius: 4px;
-              transition: background 0.15s ease; }
+              transition: background 0.15s ease;
+              align-items: baseline; }
 @media (hover: hover) {
   .fila-arbol:hover { background: rgba(153, 186, 201, 0.04); }
 }
 html.claro .fila-arbol:hover { background: rgba(20, 22, 24, 0.03); }
-              align-items: baseline; }
 .fila-arbol:first-child { border-top: 0; }
-.fila-arbol .ruta { font-size: 0.76rem; color: var(--hielo); }
-.fila-arbol .cifra { font-size: 0.8rem; color: var(--hielo); text-align: right; }
-.fila-arbol .nota { font-size: 0.78rem; color: var(--gris); }
+.fila-arbol .ruta { font-size: 0.78rem; font-weight: 500; color: var(--hielo); }
+.fila-arbol .cifra { font-size: 0.82rem; font-variant-numeric: tabular-nums;
+                     color: var(--azul-4); text-align: right; font-weight: 600; }
+html.claro .fila-arbol .cifra { color: var(--azul-2); }
+.fila-arbol .nota { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
 
 /* Las filas de "cuando algo va mal": el sintoma a la izquierda, lo que hacer a
    la derecha. */
-.filas { margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.05rem; }
-.fila { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-        gap: 0.4rem 1.4rem; padding: 0.45rem 0; border-top: 1px solid var(--linea); }
+.filas { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.1rem; }
+.fila { display: grid; grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+        gap: 0.6rem 1.3rem; padding: 0.55rem 0.7rem; border-top: 1px solid var(--linea);
+        border-radius: 4px;
+        transition: background 0.15s ease; }
 .fila:first-child { border-top: 0; }
-.fila .k { font-size: 0.78rem; color: var(--hielo); }
-.fila .v { font-size: 0.82rem; color: var(--gris); line-height: 1.55; }
+@media (hover: hover) {
+  .fila:hover { background: rgba(153, 186, 201, 0.04); }
+}
+html.claro .fila:hover { background: rgba(20, 22, 24, 0.03); }
+.fila .k { font-size: 0.8rem; font-weight: 500; color: var(--hielo); }
+.fila .v { font-size: 0.84rem; color: var(--gris); line-height: 1.58; }
 
 
 /* ── El cambio de tema ─────────────────────────────────────────────────────────
