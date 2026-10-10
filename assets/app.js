@@ -1585,7 +1585,7 @@
             '<div class="cabecera-seccion">' +
             '<span class="punto-mini"></span>' +
             '<span class="seccion-n">' + (entrada ? entrada.n : "") + "</span>" +
-            "<h2>" + esc(sub.t) + "</h2>" +
+            '<h2><a class="manual-titulo-link" href="#' + esc(idDe(proy, sub)) + '">' + esc(sub.t) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
             (chips.length
               ? '<span class="chips">' + chips.map(function (c) {
                   return '<span class="chip">' + esc(c) + "</span>";
@@ -1617,7 +1617,7 @@
 
         return '<div class="bloque-proyecto" id="proy-' + esc(proy.id) + '">' +
           '<div class="cabecera-proyecto">' +
-          '<h2>' + esc(proy.titulo) + "</h2>" +
+          '<h2><a class="manual-titulo-link" href="#proy-' + esc(proy.id) + '">' + esc(proy.titulo) + '<span class="manual-hash" aria-hidden="true">#</span></a></h2>' +
           '<p>' + esc(proy.resumen || "") + "</p>" +
           (proy.repo
             ? '<a href="https://github.com/' + esc(proy.repo) +
@@ -2060,7 +2060,7 @@
     // la portada entrar. Recargar y que la portada entre animada cuando ya estas
     // mil pixeles mas abajo, no es una entrada: es un retraso en un sitio donde no
     // se nota.
-    if (posGuardada > 40 || location.hash) return;
+    if (paginaId === "manual" || posGuardada > 40 || location.hash) return;
 
     // Tambien se mira aqui y no solo en el CSS. Es lo que hace omarchy.org: si el
     // sistema pide menos movimiento, la clase NO se pone. Es distinto de anularla

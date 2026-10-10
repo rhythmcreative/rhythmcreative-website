@@ -108,10 +108,13 @@ manualContent = manualContent.replace(
   `<nav class="indice" id="indice" aria-label="On this page">\n${indiceHtml}\n  </nav>`
 );
 
-manualContent = manualContent.replace(
-  /<div id="manual">[\s\S]*?<\/div>/,
-  `<div id="manual">\n${manualHtml}\n    </div>`
-);
+const manualStart = manualContent.indexOf('<div id="manual">');
+const manualEnd = manualContent.indexOf('</main>', manualStart);
+if (manualStart !== -1 && manualEnd !== -1) {
+  manualContent = manualContent.slice(0, manualStart) +
+    `<div id="manual">\n${manualHtml}\n    </div>\n  ` +
+    manualContent.slice(manualEnd);
+}
 
 fs.writeFileSync(manualFile, manualContent, 'utf8');
 console.log('Updated manual.html');
@@ -120,10 +123,14 @@ console.log('Updated manual.html');
 const indexFile = path.join(root, 'index.html');
 let indexContent = fs.readFileSync(indexFile, 'utf8');
 
-indexContent = indexContent.replace(
-  /<div id="hyprland-caja">[\s\S]*?<\/div>/,
-  `<div id="hyprland-caja">\n${hyprlandHtml}\n  </div>`
-);
+const hyprStart = indexContent.indexOf('<div id="hyprland-caja">');
+const hyprEnd = indexContent.indexOf('</section>', hyprStart);
+if (hyprStart !== -1 && hyprEnd !== -1) {
+  const lastDiv = indexContent.lastIndexOf('</div>', hyprEnd);
+  indexContent = indexContent.slice(0, hyprStart) +
+    `<div id="hyprland-caja">\n${hyprlandHtml}\n  </div>\n` +
+    indexContent.slice(lastDiv + 6);
+}
 
 fs.writeFileSync(indexFile, indexContent, 'utf8');
 console.log('Updated index.html');
