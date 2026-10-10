@@ -1054,12 +1054,10 @@ html.claro .b-gh:hover {
 html.claro .b-gh .marca { color: #000000; }
 
 .acciones-seccion {
-  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem;
-  /* El de github a la izquierda y el del manual a la derecha, con el hueco en
-     medio. Antes eran dos enlaces juntos en una esquina y con space-between se
-     quedan en los dos extremos, que es lo que se ha pedido. En un movil, que no
-     cabe la separacion, se vuelven a juntar y se alinean a la izquierda. */
-  justify-content: space-between; align-items: center;
+  display: flex; flex-wrap: nowrap; gap: 0.6rem; margin-top: 1.6rem;
+  /* El de github a la izquierda y el del manual a la derecha, en las dos puntas
+     con el espacio en medio tanto en escritorio como en movil. */
+  justify-content: space-between; align-items: center; width: 100%;
 }
 
 /* El boton del manual, con la flecha dibujada con bordes y no con un glifo: la
@@ -1070,10 +1068,6 @@ html.claro .b-gh .marca { color: #000000; }
               border-top: 1px solid currentColor; border-right: 1px solid currentColor;
               transform: rotate(45deg); transition: transform 0.18s; }
 .b-flecha:hover i { transform: rotate(45deg) translate(2px, -2px); }
-
-@media (max-width: 560px) {
-  .acciones-seccion { justify-content: flex-start; }
-}
 
 /* ── Las piezas ─────────────────────────────────────────────────────────────
    Una fila, con un filo a la izquierda que se enciende al abrirla. Sin caja:
