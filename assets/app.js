@@ -1438,45 +1438,29 @@
         estado: "completado",
         fase: "Milestone 1",
         tag: "Completed",
-        titulo: "Cross-distro installer engine",
-        desc: "Automated distribution detection and package provisioning across Arch, CachyOS, NixOS, openSUSE, Fedora, Debian, Ubuntu, and Alpine Linux.",
-        tech: ["Multi-distro", "install.sh", "8 families"]
+        titulo: "First release: Arch Linux & base installer",
+        desc: "Initial stable release featuring native Arch Linux support and the automated base installer engine.",
+        tech: ["Arch Linux", "Base installer", "First release"]
       },
       {
         estado: "completado",
         fase: "Milestone 2",
         tag: "Completed",
-        titulo: "Dynamic Pywal harmony",
-        desc: "Color palette extracted on the fly from active wallpapers and synchronized across Waybar, Quickshell, Kitty, Rofi, and GTK without restarting compositor sessions.",
-        tech: ["Pywal", "Hot reload", "Palette sync"]
+        titulo: "Independent multi-monitor & Rofi support",
+        desc: "Multi-monitor workspace support with independent display handling and dynamic per-monitor Rofi launcher integration.",
+        tech: ["Multi-monitor", "Independent screens", "Rofi"]
       },
       {
         estado: "completado",
         fase: "Milestone 3",
         tag: "Completed",
-        titulo: "Quickshell dynamic island",
-        desc: "Collapsible top island with integrated media controls, WiFi/Bluetooth selectors, audio output routing, backlight adjustments, and power profiles.",
+        titulo: "Quickshell implementation",
+        desc: "Native integration of Quickshell in QML, bringing the top dynamic island, reactive media controls, and status widgets.",
         tech: ["Quickshell", "QML", "Dynamic island"]
       },
       {
-        estado: "completado",
-        fase: "Milestone 4",
-        tag: "Completed",
-        titulo: "SDDM Astronaut login theme",
-        desc: "Custom display manager greeter with coordinated wallpaper backdrops, Wayland session registration, and multi-distro PAM integration.",
-        tech: ["SDDM", "Astronaut", "PAM"]
-      },
-      {
-        estado: "completado",
-        fase: "Milestone 5",
-        tag: "Completed",
-        titulo: "Diagnostic doctor & safe overlays",
-        desc: "Automated system inspector checking Wayland sockets, required binaries, and user units, combined with non-destructive overlays (user.lua, user.conf).",
-        tech: ["rhythm-doctor", "user.lua", "Overlays"]
-      },
-      {
         estado: "actual",
-        fase: "Milestone 6",
+        fase: "Milestone 4",
         tag: "Current status",
         titulo: "Release v0.25 & multi-distro verification",
         desc: "Current verified milestone. Fully tested across all 6 active distribution families with live testing builds, instant scroll restoration, and comprehensive manual docs.",
@@ -1484,7 +1468,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 7",
+        fase: "Milestone 5",
         tag: "Planned",
         titulo: "Replace Waybar with Quickshell",
         desc: "Migrate the status bar entirely to Quickshell in native QML, merging the top island and bar into a single reactive, unified framework.",
@@ -1492,7 +1476,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 8",
+        fase: "Milestone 6",
         tag: "Planned",
         titulo: "Full tablet & touchscreen support",
         desc: "Complete touch and tablet experience: touch gestures, on-screen keyboard (wvkbd), auto-rotation sensor integration (iio-sensor-proxy), and 44px touch targets.",
@@ -1500,7 +1484,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 9",
+        fase: "Milestone 7",
         tag: "Planned",
         titulo: "Niri window manager support",
         desc: "Native integration for the Niri scrollable-tiling Wayland compositor alongside Hyprland, sharing the same Pywal palette, Quickshell island, and configs.",
@@ -1508,7 +1492,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 10",
+        fase: "Milestone 8",
         tag: "Planned",
         titulo: "Complete standalone Live ISO",
         desc: "Full standalone bootable Live ISO ready to download, test in live session, and install out-of-the-box without requiring a pre-existing Linux install.",
