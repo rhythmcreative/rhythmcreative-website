@@ -307,6 +307,8 @@ def limpia_sin_usar(usados):
     siempre, y el repo se va llenando de ficheros que ya no usa nadie.
     """
     for viejo in sorted(os.listdir(DESTINO)):
+        if viejo.startswith("distro_"):
+            continue
         if os.path.splitext(viejo)[0] not in usados:
             os.remove(os.path.join(DESTINO, viejo))
             print("  fuera %s (ya no esta en la lista)" % viejo)

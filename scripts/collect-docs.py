@@ -111,6 +111,9 @@ NOTAS = {
     "pywal wallpaper sync": "Recolour everything from the current wallpaper",
     "wallpaper selector": "Pick a wallpaper",
     "wallpaper change adaptive": "Pick a random wallpaper",
+    "spaces overview": "Toggle macOS-style Spaces overview in the Dynamic Island",
+    "toggle corner system monitor": "Toggle Corner Dynamic Island System Monitor",
+    "gpu selector": "Switch GPU power profile (Dedicated, Integrated, Hybrid)",
     # Media
     "media next": "Next track",
     "media play pause": "Play or pause",
@@ -310,10 +313,10 @@ def main():
     # esta el aviso, un parser roto que devuelva cero se cuela como si fuera
     # verdad: la pagina documentando un repo vacio, en silencio.
     avisos = []
-    if len(lista) != 78:
-        avisos.append("atajos: %d (se esperaban 78)" % len(lista))
-    if len(flags) != 14:
-        avisos.append("banderas: %d (se esperaban 14)" % len(flags))
+    if len(lista) != 79:
+        avisos.append("atajos: %d (se esperaban 79)" % len(lista))
+    if len(flags) != 16:
+        avisos.append("banderas: %d (se esperaban 16)" % len(flags))
     if len(comps) != 16:
         avisos.append("componentes: %d (se esperaban 16)" % len(comps))
     sin_nota = sorted(set(a["que"] for a in lista if a["nota"] == a["que"]

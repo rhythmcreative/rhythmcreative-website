@@ -133,6 +133,14 @@ def _de_comando(cmd):
     w = _wpctl(cmd)
     if w:
         return w
+    if "toggleSysMon" in cmd:
+        return "toggle corner system monitor"
+    if "notch-workspaces-helper" in cmd:
+        return "spaces overview"
+    if "wallpaper-changer" in cmd:
+        return "wallpaper change adaptive"
+    if "gpu-selector" in cmd:
+        return "gpu selector"
     # Una tuberia: lo que hace la cosa es la cabeza. grim -g ... | swappy -f -
     # es una captura, no "captura | swappy".
     cmd = re.split(r"[|;&]", cmd)[0].strip()

@@ -193,22 +193,23 @@ window.RHYTHM_HYPRLAND = {
       titulo: "The island",
       resumen: "The strip on the top edge. Quickshell, and every part of it " +
         "is a plugin.",
-      chips: ["quickshell", "qml", "plugins", "34 px"],
+      chips: ["quickshell", "qml", "spaces", "captive portal", "telemetry"],
       filas: [
         "The strip that sits against the top edge of the screen. It folds " +
         "down to 34 px and opens when it has something to show: a track " +
-        "changing, a network going down, a notification arriving. Reaching " +
+        "changing, a network going down, or a notification arriving. Reaching " +
         "the edge with the mouse brings it out as well.",
+        "Spaces overview: macOS Mission Control-style desktop switcher with live " +
+        "double-buffered workspace previews, running app chips, and interactive navigation.",
+        "Corner System Monitor: real-time hardware telemetry and htop metrics with " +
+        "concave spring-physics wings, multi-core CPU sparklines, and GPU profile switching.",
+        "Public Wi-Fi captive portal: automatic network connectivity probing that detects " +
+        "captive portals and renders a direct one-click browser login card.",
+        "Battery diagnostics: multi-battery laptop architecture telemetry (BAT0 + BAT1) " +
+        "with adaptive charging glyphs and real-time health panels.",
         "Nothing inside it is privileged. The clock, the launcher, the " +
-        "control centre and the screen capture tool are all plugins loaded " +
-        "the same way, in QML, and any of them can be taken out without " +
-        "breaking the rest.",
-        "It reads HYPRLAND_INSTANCE_SIGNATURE by itself, so hyprctl works " +
-        "for everything it starts. A panel that needs an environment " +
-        "variable set by hand is a panel that breaks the day you add a " +
-        "second monitor.",
-        "The dot is the real CPU temperature, not a decorative circle: it " +
-        "goes from blue to orange as the machine warms up.",
+        "control centre, and the screen capture tool are all plugins loaded " +
+        "in declarative QML, and any of them can be tweaked without breaking the rest.",
         "SUPER + I folds it by hand, which is the quickest way to check " +
         "whether it is doing something."
       ]

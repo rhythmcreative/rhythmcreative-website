@@ -1366,15 +1366,15 @@
   }
 
   function seccionBarra() {
-    return '<p class="destacado">The status bar at the top of the screen. Powered by Waybar, styled to match the active Pywal wallpaper palette automatically.</p>' +
+    return '<p class="destacado">The status bar at the top of the screen. Powered natively by Quickshell in reactive QML (with legacy Waybar support), styled to match the active Pywal wallpaper palette automatically.</p>' +
       '<div class="filas">' +
-      fila("Workspaces & windows", "Shows your active workspaces, workspace indicators, and the title of the focused window.") +
-      fila("System monitors", "Real-time indicators for CPU, memory, temperatures, battery status, network connection, and audio volume.") +
-      fila("Dynamic theming", "Reloads colors automatically on wallpaper change without restarting the compositor.") +
-      fila("Tray and clock", "System tray icons for background services and a clean clock with date and calendar popover.") +
+      fila("Workspaces & windows", "Reactive workspace indicators, active workspace pill, and the focused window title.") +
+      fila("System monitors", "Real-time indicators for multi-core CPU sparklines, memory, temperatures, dual-battery status (BAT0 + BAT1), network, and audio volume.") +
+      fila("Dynamic theming", "Reloads colors automatically on wallpaper change without restarting processes or flickering.") +
+      fila("Media & Tray", "Native MPRIS media controls, CAVA audio visualizer, system tray icons, and calendar popover.") +
       "</div>" +
       "<h4>Configuration</h4>" +
-      "<p>Everything lives in <code>~/.config/waybar/config.jsonc</code> and <code>~/.config/waybar/style.css</code>. Custom module scripts reside in <code>scripts/waybar/</code> and can be tweaked without breaking the base layout.</p>";
+      "<p>Quickshell top bar lives in <code>~/.config/quickshell/waybar-island/</code> and is built in declarative QML. Legacy Waybar configuration remains available in <code>~/.config/waybar/</code>.</p>";
   }
 
   // ── Desde un movil ──────────────────────────────────────────────────────────
@@ -1490,24 +1490,40 @@
         tech: ["Quickshell", "QML", "Dynamic island"]
       },
       {
-        estado: "actual",
+        estado: "completado",
         fase: "Milestone 4",
-        tag: "Current status",
+        tag: "Completed",
         titulo: "Release v0.25 & multi-distro verification",
-        desc: "Current verified milestone. Fully tested across all 6 active distribution families with live testing builds, instant scroll restoration, and comprehensive manual docs.",
-        tech: ["Release v0.25", "Current stable", "Verified builds"]
+        desc: "Tested across all 6 active distribution families with live testing builds, instant scroll restoration, and comprehensive manual docs.",
+        tech: ["Release v0.25", "Multi-distro", "Verified builds"]
       },
       {
-        estado: "futuro",
+        estado: "completado",
         fase: "Milestone 5",
-        tag: "Planned",
-        titulo: "Replace Waybar with Quickshell",
-        desc: "Migrate the status bar entirely to Quickshell in native QML, merging the top island and bar into a single reactive, unified framework.",
+        tag: "Completed",
+        titulo: "Replace Waybar with Quickshell (v0.27)",
+        desc: "Migrated the status bar entirely to Quickshell in native QML, merging the top island and bar into a single reactive, unified framework with multi-core sparklines.",
         tech: ["Quickshell", "Native QML", "Unified bar & island"]
       },
       {
-        estado: "futuro",
+        estado: "completado",
         fase: "Milestone 6",
+        tag: "Completed",
+        titulo: "Dynamic Island Spaces & Corner System Monitor (v0.28)",
+        desc: "macOS-inspired Spaces overview with live double-buffered previews, tactile Corner System Monitor with spring physics, and GPU profile switching.",
+        tech: ["Spaces overview", "Corner monitor", "GPU profiles"]
+      },
+      {
+        estado: "actual",
+        fase: "Milestone 7",
+        tag: "Current status",
+        titulo: "Release v0.29 & Public Wi-Fi Captive Portal & Dual-Battery Telemetry",
+        desc: "Current verified milestone. Public Wi-Fi captive portal auto-detection with browser authorization card, dual-battery architecture support & diagnostics panel, lower-spec hardware performance optimizations, and unified multi-keyboard layout switching.",
+        tech: ["Release v0.29", "Captive portal", "Dual-battery", "Performance"]
+      },
+      {
+        estado: "futuro",
+        fase: "Milestone 8",
         tag: "Planned",
         titulo: "Full tablet & touchscreen support",
         desc: "Complete touch and tablet experience: touch gestures, on-screen keyboard (wvkbd), auto-rotation sensor integration (iio-sensor-proxy), and 44px touch targets.",
@@ -1515,7 +1531,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 7",
+        fase: "Milestone 9",
         tag: "Planned",
         titulo: "Niri window manager support",
         desc: "Native integration for the Niri scrollable-tiling Wayland compositor alongside Hyprland, sharing the same Pywal palette, Quickshell island, and configs.",
@@ -1523,7 +1539,7 @@
       },
       {
         estado: "futuro",
-        fase: "Milestone 8",
+        fase: "Milestone 10",
         tag: "Planned",
         titulo: "Complete standalone Live ISO",
         desc: "Full standalone bootable Live ISO ready to download, test in live session, and install out-of-the-box without requiring a pre-existing Linux install.",
